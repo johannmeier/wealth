@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface AssetQuantityRepository extends JpaRepository<AssetQuantity, Long> {
     List<AssetQuantity> findByAssetAndDepotOrderByDateDesc(Asset asset, Depot depot);
     List<AssetQuantity> findByAssetOrderByDateDesc(Asset asset);
+    List<AssetQuantity> findByDepotOrderByDateDesc(Depot depot);
     Optional<AssetQuantity> findFirstByAssetAndDepotOrderByDateDesc(Asset asset, Depot depot);
 }

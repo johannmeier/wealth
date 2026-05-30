@@ -39,12 +39,14 @@
                   th:text="${s.assetAllocation.label}"></span>
           </td>
           <td class="text-end">
-            <span th:if="${s.currentPrice != null}" th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT')}"></span>
-            <span th:unless="${s.currentPrice != null}" class="text-muted">-</span>
+            <span th:if="${eurPrices.get(s.id) != null}"
+                  th:text="${#numbers.formatDecimal(eurPrices.get(s.id), 1, 'COMMA', 2, 'POINT')}"></span>
+            <span th:unless="${eurPrices.get(s.id) != null}" class="text-muted">-</span>
           </td>
           <td>
             <a th:href="@{/assets/{id}/edit(id=${s.id})}" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
             <a th:href="@{/assets/{id}/quantities(id=${s.id})}" class="btn btn-sm btn-outline-info">Bestände</a>
+            <a th:href="@{/assets/{id}/price-history(id=${s.id})}" class="btn btn-sm btn-outline-secondary">Kurse</a>
             <form th:if="${s.autoPrice}" th:action="@{/assets/{id}/refresh-price(id=${s.id})}" method="post" class="d-inline">
               <button type="submit" class="btn btn-sm btn-outline-success">Kurs</button>
             </form>

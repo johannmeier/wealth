@@ -1,14 +1,19 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.*;
-import de.wsc.wealth.service.PriceService;
 import de.wsc.wealth.service.AssetService;
+import de.wsc.wealth.service.ExchangeRateService;
+import de.wsc.wealth.service.PriceService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
 
 @Controller
 @RequestMapping("/assets")
@@ -16,15 +21,23 @@ public class AssetController {
 
     private final AssetService assetService;
     private final PriceService priceService;
+    private final ExchangeRateService exchangeRateService;
 
-    public AssetController(AssetService assetService, PriceService priceService) {
+    public AssetController(AssetService assetService, PriceService priceService, ExchangeRateService exchangeRateService) {
         this.assetService = assetService;
         this.priceService = priceService;
+        this.exchangeRateService = exchangeRateService;
     }
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("assets", assetService.findAll());
+        List<Asset> assets = assetService.findAll();
+        Map<Long, BigDecimal> eurPrices = new java.util.HashMap<>();
+        for (Asset a : assets) {
+            eurPrices.put(a.getId(), exchangeRateService.toEur(a.getCurrentPrice(), a.getCurrency()));
+        }
+        model.addAttribute("assets", assets);
+        model.addAttribute("eurPrices", eurPrices);
         return "assets/list";
     }
 
@@ -70,10 +83,26 @@ public class AssetController {
                                @RequestParam Long depotId,
                                @ModelAttribute AssetQuantity quantity,
                                RedirectAttributes ra) {
-        if (quantity.getDate() == null) quantity.setDate(LocalDate.now());
+        if (quantity.getDate() == null) {
+            quantity.setDate(LocalDate.now());
+        }
+        quantity.setId(null);
         assetService.saveQuantity(id, depotId, quantity);
         ra.addFlashAttribute("success", "Bestand gespeichert.");
         return "redirect:/assets/" + id + "/quantities";
+    }
+
+    @GetMapping("/{id}/price-history")
+    public String priceHistory(@PathVariable Long id, Model model) {
+        assetService.findById(id).ifPresent(s -> model.addAttribute("asset", s));
+        List<PriceHistory> history = assetService.getPriceHistory(id);
+        Map<Long, BigDecimal> historyEurPrices = new java.util.HashMap<>();
+        for (PriceHistory h : history) {
+            historyEurPrices.put(h.getId(), exchangeRateService.toEur(h.getPrice(), h.getCurrency()));
+        }
+        model.addAttribute("priceHistory", history);
+        model.addAttribute("historyEurPrices", historyEurPrices);
+        return "assets/price-history";
     }
 
     @PostMapping("/{id}/refresh-price")

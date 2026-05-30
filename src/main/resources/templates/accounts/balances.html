@@ -34,15 +34,21 @@
   <h5>Historie</h5>
   <table class="table table-striped align-middle">
     <thead class="table-dark">
-      <tr><th>Datum</th><th class="text-end">Saldo</th></tr>
+      <tr><th>Datum</th><th class="text-end">Saldo</th><th></th></tr>
     </thead>
     <tbody>
       <tr th:each="b : ${balances}">
         <td th:text="${#temporals.format(b.date, 'dd.MM.yyyy')}"></td>
         <td class="text-end" th:text="${#numbers.formatDecimal(b.balance, 1, 'COMMA', 2, 'POINT')} + ' ' + ${account.currency}"></td>
+        <td>
+          <form th:action="@{/accounts/{id}/balances/{bid}/delete(id=${account.id},bid=${b.id})}" method="post" class="d-inline"
+                onsubmit="return confirm('Saldo wirklich löschen?')">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
+          </form>
+        </td>
       </tr>
       <tr th:if="${#lists.isEmpty(balances)}">
-        <td colspan="2" class="text-center text-muted">Noch keine Salden eingetragen.</td>
+        <td colspan="3" class="text-center text-muted">Noch keine Salden eingetragen.</td>
       </tr>
     </tbody>
   </table>

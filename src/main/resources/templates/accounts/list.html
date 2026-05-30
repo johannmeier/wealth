@@ -18,7 +18,7 @@
   </div>
   <table class="table table-striped table-hover align-middle">
     <thead class="table-dark">
-      <tr><th>Name</th><th>Währung</th><th>Allocation</th><th>Aktionen</th></tr>
+      <tr><th>Name</th><th>Währung</th><th>Allocation</th><th class="text-end">Aktueller Saldo</th><th>Aktionen</th></tr>
     </thead>
     <tbody>
       <tr th:each="a : ${accounts}">
@@ -28,6 +28,11 @@
           <span th:if="${a.assetAllocation != null}"
                 th:class="${a.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
                 th:text="${a.assetAllocation.label}"></span>
+        </td>
+        <td class="text-end">
+          <span th:if="${latestBalances.containsKey(a.id)}"
+                th:text="${#numbers.formatDecimal(latestBalances.get(a.id), 1, 'COMMA', 2, 'POINT')} + ' ' + ${a.currency}"></span>
+          <span th:unless="${latestBalances.containsKey(a.id)}" class="text-muted">—</span>
         </td>
         <td>
           <a th:href="@{/accounts/{id}/edit(id=${a.id})}" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
@@ -39,9 +44,16 @@
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(accounts)}">
-        <td colspan="4" class="text-center text-muted">Keine Konten vorhanden.</td>
+        <td colspan="5" class="text-center text-muted">Keine Konten vorhanden.</td>
       </tr>
     </tbody>
+    <tfoot th:if="${!#lists.isEmpty(accounts)}">
+      <tr class="table-secondary fw-bold">
+        <td colspan="3">Gesamt</td>
+        <td class="text-end" th:text="${#numbers.formatDecimal(balanceTotal, 1, 'COMMA', 2, 'POINT')} + ' EUR'"></td>
+        <td></td>
+      </tr>
+    </tfoot>
   </table>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

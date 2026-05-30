@@ -21,17 +21,20 @@ public class StatisticsService {
     private final DepotRepository depotRepository;
     private final AssetQuantityRepository quantityRepository;
     private final AccountBalanceRepository balanceRepository;
+    private final ExchangeRateService exchangeRateService;
 
     public StatisticsService(AssetRepository assetRepository,
                              AccountRepository accountRepository,
                              DepotRepository depotRepository,
                              AssetQuantityRepository quantityRepository,
-                             AccountBalanceRepository balanceRepository) {
+                             AccountBalanceRepository balanceRepository,
+                             ExchangeRateService exchangeRateService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.depotRepository = depotRepository;
         this.quantityRepository = quantityRepository;
         this.balanceRepository = balanceRepository;
+        this.exchangeRateService = exchangeRateService;
     }
 
     public List<WealthPosition> getAllPositions() {
@@ -50,10 +53,11 @@ public class StatisticsService {
                         p.setAssetAllocation(asset.getAssetAllocation());
                         p.setIndexName(asset.getIndexName());
                         p.setQuantity(sq.getQuantity());
-                        p.setPrice(asset.getCurrentPrice());
-                        p.setCurrency(asset.getCurrency());
+                        BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
+                        p.setPrice(priceEur);
+                        p.setCurrency("EUR");
                         p.setDepotName(depot.getName());
-                        BigDecimal value = computeValue(sq.getQuantity(), asset.getCurrentPrice());
+                        BigDecimal value = computeValue(sq.getQuantity(), priceEur);
                         p.setValue(value);
                         positions.add(p);
                     });

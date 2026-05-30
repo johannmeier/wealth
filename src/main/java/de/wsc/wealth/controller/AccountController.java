@@ -10,7 +10,11 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Controller
 @RequestMapping("/accounts")
@@ -29,7 +33,14 @@ public class AccountController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("accounts", accountService.findAll());
+        List<Account> accounts = accountService.findAll();
+        Map<Long, BigDecimal> latestBalances = accountService.getLatestBalancesByAccountId();
+        BigDecimal total = latestBalances.values().stream()
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("latestBalances", latestBalances);
+        model.addAttribute("balanceTotal", total);
         return "accounts/list";
     }
 
@@ -67,6 +78,13 @@ public class AccountController {
         model.addAttribute("balances", accountService.getBalances(id));
         model.addAttribute("newBalance", new AccountBalance());
         return "accounts/balances";
+    }
+
+    @PostMapping("/{id}/balances/{balanceId}/delete")
+    public String deleteBalance(@PathVariable Long id, @PathVariable Long balanceId, RedirectAttributes ra) {
+        accountService.deleteBalance(balanceId);
+        ra.addFlashAttribute("success", "Saldo gelöscht.");
+        return "redirect:/accounts/" + id + "/balances";
     }
 
     @PostMapping("/{id}/balances/save")

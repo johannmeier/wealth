@@ -7,7 +7,10 @@ import de.wsc.wealth.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -43,5 +46,19 @@ public class AccountService {
     public List<AccountBalance> getBalances(Long accountId) {
         Account account = accountRepository.findById(accountId).orElseThrow();
         return balanceRepository.findByAccountOrderByDateDesc(account);
+    }
+
+    public void deleteBalance(Long balanceId) {
+        balanceRepository.deleteById(balanceId);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> getLatestBalancesByAccountId() {
+        Map<Long, BigDecimal> result = new LinkedHashMap<>();
+        for (Account account : accountRepository.findAllByOrderByNameAsc()) {
+            balanceRepository.findFirstByAccountOrderByDateDesc(account)
+                .ifPresent(ab -> result.put(account.getId(), ab.getBalance()));
+        }
+        return result;
     }
 }
