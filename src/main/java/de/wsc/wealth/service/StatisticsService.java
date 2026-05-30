@@ -42,25 +42,35 @@ public class StatisticsService {
         List<Depot> depots = depotRepository.findAllByOrderByNameAsc();
 
         for (Asset asset : assetRepository.findAllByOrderByNameAsc()) {
+            BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
+            BigDecimal totalQuantity = BigDecimal.ZERO;
+            BigDecimal totalValue = BigDecimal.ZERO;
+            List<String> assetDepots = new ArrayList<>();
+
             for (Depot depot : depots) {
-                quantityRepository.findFirstByAssetAndDepotOrderByDateDesc(asset, depot)
-                    .ifPresent(sq -> {
-                        WealthPosition p = new WealthPosition();
-                        p.setId(asset.getId());
-                        p.setName(asset.getName());
-                        p.setType("ASSET");
-                        p.setAssetType(asset.getType());
-                        p.setAssetAllocation(asset.getAssetAllocation());
-                        p.setIndexName(asset.getIndexName());
-                        p.setQuantity(sq.getQuantity());
-                        BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
-                        p.setPrice(priceEur);
-                        p.setCurrency("EUR");
-                        p.setDepotName(depot.getName());
-                        BigDecimal value = computeValue(sq.getQuantity(), priceEur);
-                        p.setValue(value);
-                        positions.add(p);
-                    });
+                var latest = quantityRepository.findFirstByAssetAndDepotOrderByDateDesc(asset, depot);
+                if (latest.isPresent() && latest.get().getQuantity() != null) {
+                    BigDecimal qty = latest.get().getQuantity();
+                    totalQuantity = totalQuantity.add(qty);
+                    totalValue = totalValue.add(computeValue(qty, priceEur));
+                    assetDepots.add(depot.getName());
+                }
+            }
+
+            if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+                WealthPosition p = new WealthPosition();
+                p.setId(asset.getId());
+                p.setName(asset.getName());
+                p.setType("ASSET");
+                p.setAssetType(asset.getType());
+                p.setAssetAllocation(asset.getAssetAllocation());
+                p.setIndexName(asset.getIndexName());
+                p.setQuantity(totalQuantity);
+                p.setPrice(priceEur);
+                p.setCurrency("EUR");
+                p.setValue(totalValue);
+                p.setDepotName(String.join(", ", assetDepots));
+                positions.add(p);
             }
         }
 
