@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" th:href="@{/}">💰 Vermögen</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" th:href="@{/assets}">Wertpapiere</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/accounts}">Konten</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/depots}">Depots</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/standing-orders}">Daueraufträge</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Statistiken</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" th:href="@{/statistics/overview}">Übersicht</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-index}">Nach Index</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-type}">Nach Wertpapierart</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}">Nach Allocation</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+</body>
+</html>
