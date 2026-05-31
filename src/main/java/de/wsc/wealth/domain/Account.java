@@ -12,7 +12,14 @@ public class Account {
     private Long id;
 
     @NotBlank
-    private String name;
+    private String bank;
+
+    @NotBlank
+    private String accountNumber;
+
+    private String description;
+
+    private String iban;
 
     private String currency = "EUR";
 
@@ -23,8 +30,15 @@ public class Account {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getBank() { return bank; }
+    public void setBank(String bank) { this.bank = bank; }
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+    public String getDisplayName() { return bank + " – " + accountNumber; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getIban() { return iban; }
+    public void setIban(String iban) { this.iban = iban; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public AssetAllocation getAssetAllocation() { return assetAllocation; }

@@ -12,8 +12,20 @@
   <form th:action="@{/accounts/save}" th:object="${account}" method="post">
     <input type="hidden" th:field="*{id}"/>
     <div class="mb-3">
-      <label class="form-label">Name *</label>
-      <input type="text" th:field="*{name}" class="form-control" required/>
+      <label class="form-label">Bank *</label>
+      <input type="text" th:field="*{bank}" class="form-control" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Kontonummer *</label>
+      <input type="text" th:field="*{accountNumber}" class="form-control" required/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">IBAN</label>
+      <input type="text" th:field="*{iban}" class="form-control" placeholder="DE00 0000 0000 0000 0000 00"/>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Beschreibung</label>
+      <textarea th:field="*{description}" class="form-control" rows="3" placeholder="Optionale Beschreibung"></textarea>
     </div>
     <div class="mb-3">
       <label class="form-label">Währung</label>

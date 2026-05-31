@@ -74,11 +74,11 @@ public class StatisticsService {
             }
         }
 
-        for (Account account : accountRepository.findAllByOrderByNameAsc()) {
+        for (Account account : accountRepository.findAllByOrderByBankAscAccountNumberAsc()) {
             balanceRepository.findFirstByAccountOrderByDateDesc(account).ifPresent(ab -> {
                 WealthPosition p = new WealthPosition();
                 p.setId(account.getId());
-                p.setName(account.getName());
+                p.setName(account.getDisplayName());
                 p.setType("ACCOUNT");
                 p.setAssetAllocation(account.getAssetAllocation());
                 p.setValue(ab.getBalance());

@@ -26,7 +26,7 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<Account> findAll() { return accountRepository.findAllByOrderByNameAsc(); }
+    public List<Account> findAll() { return accountRepository.findAllByOrderByBankAscAccountNumberAsc(); }
 
     @Transactional(readOnly = true)
     public Optional<Account> findById(Long id) { return accountRepository.findById(id); }
@@ -55,7 +55,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getLatestBalancesByAccountId() {
         Map<Long, BigDecimal> result = new LinkedHashMap<>();
-        for (Account account : accountRepository.findAllByOrderByNameAsc()) {
+        for (Account account : accountRepository.findAllByOrderByBankAscAccountNumberAsc()) {
             balanceRepository.findFirstByAccountOrderByDateDesc(account)
                 .ifPresent(ab -> result.put(account.getId(), ab.getBalance()));
         }

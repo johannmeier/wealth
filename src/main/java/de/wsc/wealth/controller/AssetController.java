@@ -1,6 +1,7 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.*;
+import de.wsc.wealth.service.AssetSearchService;
 import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.ExchangeRateService;
 import de.wsc.wealth.service.PriceService;
@@ -22,11 +23,14 @@ public class AssetController {
     private final AssetService assetService;
     private final PriceService priceService;
     private final ExchangeRateService exchangeRateService;
+    private final AssetSearchService assetSearchService;
 
-    public AssetController(AssetService assetService, PriceService priceService, ExchangeRateService exchangeRateService) {
+    public AssetController(AssetService assetService, PriceService priceService,
+                           ExchangeRateService exchangeRateService, AssetSearchService assetSearchService) {
         this.assetService = assetService;
         this.priceService = priceService;
         this.exchangeRateService = exchangeRateService;
+        this.assetSearchService = assetSearchService;
     }
 
     @GetMapping
@@ -114,6 +118,12 @@ public class AssetController {
         });
         ra.addFlashAttribute("success", "Kurs aktualisiert.");
         return "redirect:/assets";
+    }
+
+    @GetMapping("/search")
+    @ResponseBody
+    public List<Map<String, String>> search(@RequestParam String q) {
+        return assetSearchService.search(q);
     }
 
     private void addEnums(Model model) {
