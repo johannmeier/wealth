@@ -16,7 +16,11 @@
     <div class="mb-3">
       <label class="form-label">Name *</label>
       <input type="text" th:field="*{name}" class="form-control" required
+             list="coinNames" autocomplete="off"
              placeholder="z.B. Krügerrand, Maple Leaf, Wiener Philharmoniker"/>
+      <datalist id="coinNames">
+        <option th:each="n : ${existingNames}" th:value="${n}"></option>
+      </datalist>
     </div>
 
     <div class="row">

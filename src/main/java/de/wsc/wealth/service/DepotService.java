@@ -5,6 +5,7 @@ import de.wsc.wealth.domain.AssetQuantity;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.repository.AssetQuantityRepository;
 import de.wsc.wealth.repository.AssetRepository;
+import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +26,22 @@ public class DepotService {
     private final DepotRepository depotRepository;
     private final AssetRepository assetRepository;
     private final AssetQuantityRepository quantityRepository;
-
+    private final CoinRepository coinRepository;
     private final ExchangeRateService exchangeRateService;
+    private final CoinService coinService;
 
     public DepotService(DepotRepository depotRepository,
                         AssetRepository assetRepository,
                         AssetQuantityRepository quantityRepository,
-                        ExchangeRateService exchangeRateService) {
+                        CoinRepository coinRepository,
+                        ExchangeRateService exchangeRateService,
+                        CoinService coinService) {
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
+        this.coinRepository = coinRepository;
         this.exchangeRateService = exchangeRateService;
+        this.coinService = coinService;
     }
 
     @Transactional(readOnly = true)
@@ -82,9 +88,10 @@ public class DepotService {
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getCurrentValueByDepotId() {
         Map<Long, BigDecimal> result = new LinkedHashMap<>();
+        var spotPrices = coinService.fetchSpotPricesUsd();
         for (Depot depot : depotRepository.findAllByOrderByNameAsc()) {
             // group by asset, keep only the most recent entry per asset (list is already date-desc)
-            BigDecimal depotValue = quantityRepository.findByDepotOrderByDateDesc(depot).stream()
+            BigDecimal assetValue = quantityRepository.findByDepotOrderByDateDesc(depot).stream()
                 .collect(Collectors.toMap(
                     q -> q.getAsset().getId(),
                     q -> q,
@@ -97,7 +104,13 @@ public class DepotService {
                     .multiply(exchangeRateService.toEur(q.getAsset().getCurrentPrice(), q.getAsset().getCurrency()))
                     .setScale(2, RoundingMode.HALF_UP))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            result.put(depot.getId(), depotValue);
+
+            BigDecimal coinValue = coinRepository.findByDepotOrderByMetalAscNameAscMintYearAsc(depot).stream()
+                .map(c -> coinService.valueEur(c, spotPrices))
+                .filter(v -> v != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            result.put(depot.getId(), assetValue.add(coinValue));
         }
         return result;
     }

@@ -48,6 +48,7 @@ public class CoinController {
         model.addAttribute("coin", new Coin());
         model.addAttribute("metals", CoinMetal.values());
         model.addAttribute("depots", coinService.findAllDepots());
+        model.addAttribute("existingNames", coinService.findAllNames());
         return "coins/form";
     }
 
@@ -56,6 +57,7 @@ public class CoinController {
         coinService.findById(id).ifPresent(c -> model.addAttribute("coin", c));
         model.addAttribute("metals", CoinMetal.values());
         model.addAttribute("depots", coinService.findAllDepots());
+        model.addAttribute("existingNames", coinService.findAllNames());
         return "coins/form";
     }
 

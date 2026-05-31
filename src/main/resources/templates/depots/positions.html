@@ -45,13 +45,14 @@
     </div>
   </div>
 
-  <h5>Wertpapiere</h5>
+  <h5>Positionen</h5>
   <div class="table-responsive">
     <table class="table table-striped align-middle">
       <thead class="table-dark">
         <tr>
-          <th>Datum</th><th>Wertpapier</th>
-          <th class="text-end">Anzahl</th>
+          <th>Datum</th>
+          <th>Bezeichnung</th>
+          <th class="text-end">Menge</th>
           <th class="text-end">Wert (€)</th>
           <th></th>
         </tr>
@@ -79,17 +80,35 @@
             </form>
           </td>
         </tr>
-        <tr th:if="${#lists.isEmpty(quantities)}">
-          <td colspan="5" class="text-center text-muted">Noch keine Bestände eingetragen.</td>
+        <tr th:each="entry : ${coinOzByMetal}">
+          <td class="text-muted">-</td>
+          <td>
+            <a th:href="@{/coins}">
+              <span th:text="${entry.key.label}"></span>
+            </a>
+          </td>
+          <td class="text-end"
+              th:text="${#numbers.formatDecimal(entry.value, 1, 'COMMA', 4, 'POINT') + ' oz'}"></td>
+          <td class="text-end">
+            <span th:if="${coinValueByMetal.containsKey(entry.key)}"
+                  th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key), 1, 'COMMA', 2, 'POINT')}"></span>
+            <span th:unless="${coinValueByMetal.containsKey(entry.key)}" class="text-muted">-</span>
+          </td>
+          <td></td>
         </tr>
-        <tr th:unless="${#lists.isEmpty(quantities)}" class="table-secondary fw-bold">
+        <tr th:if="${#lists.isEmpty(quantities) and #maps.isEmpty(coinOzByMetal)}">
+          <td colspan="5" class="text-center text-muted">Noch keine Positionen eingetragen.</td>
+        </tr>
+        <tr class="table-dark fw-bold">
           <td colspan="3">Gesamt</td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(positionTotal, 1, 'COMMA', 2, 'POINT')}"></td>
+          <td class="text-end"
+              th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal), 1, 'COMMA', 2, 'POINT')}"></td>
           <td></td>
         </tr>
       </tbody>
     </table>
   </div>
+
   <a th:href="@{/depots}" class="btn btn-outline-secondary">Zurück</a>
 </div>
 

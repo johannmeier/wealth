@@ -1,7 +1,10 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.AssetQuantity;
+import de.wsc.wealth.domain.Coin;
+import de.wsc.wealth.domain.CoinMetal;
 import de.wsc.wealth.domain.Depot;
+import de.wsc.wealth.service.CoinService;
 import de.wsc.wealth.service.DepotService;
 import de.wsc.wealth.service.ExchangeRateService;
 import org.springframework.stereotype.Controller;
@@ -23,10 +26,13 @@ public class DepotController {
 
     private final DepotService depotService;
     private final ExchangeRateService exchangeRateService;
+    private final CoinService coinService;
 
-    public DepotController(DepotService depotService, ExchangeRateService exchangeRateService) {
+    public DepotController(DepotService depotService, ExchangeRateService exchangeRateService,
+                           CoinService coinService) {
         this.depotService = depotService;
         this.exchangeRateService = exchangeRateService;
+        this.coinService = coinService;
     }
 
     @InitBinder("quantity")
@@ -90,6 +96,25 @@ public class DepotController {
         }
         model.addAttribute("positionValues", positionValues);
         model.addAttribute("positionTotal", total);
+
+        List<Coin> coins = coinService.findByDepotId(id);
+        Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
+        Map<CoinMetal, BigDecimal> coinOzByMetal = new java.util.EnumMap<>(CoinMetal.class);
+        Map<CoinMetal, BigDecimal> coinValueByMetal = new java.util.EnumMap<>(CoinMetal.class);
+        BigDecimal coinTotal = BigDecimal.ZERO;
+        for (Coin c : coins) {
+            if (c.getMetal() == null || c.getWeightGrams() == null || c.getQuantity() == null) continue;
+            BigDecimal oz = c.getWeightOz().multiply(c.getQuantity());
+            coinOzByMetal.merge(c.getMetal(), oz, BigDecimal::add);
+            BigDecimal val = coinService.valueEur(c, spotPrices);
+            if (val != null) {
+                coinValueByMetal.merge(c.getMetal(), val, BigDecimal::add);
+                coinTotal = coinTotal.add(val);
+            }
+        }
+        model.addAttribute("coinOzByMetal", coinOzByMetal);
+        model.addAttribute("coinValueByMetal", coinValueByMetal);
+        model.addAttribute("coinTotal", coinTotal);
         return "depots/positions";
     }
 

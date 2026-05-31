@@ -40,6 +40,22 @@ public class CoinService {
     @Transactional(readOnly = true)
     public Optional<Coin> findById(Long id) { return coinRepository.findById(id); }
 
+    @Transactional(readOnly = true)
+    public List<String> findAllNames() { return coinRepository.findDistinctNames(); }
+
+    @Transactional(readOnly = true)
+    public List<Coin> findByDepotId(Long depotId) {
+        Depot depot = depotRepository.findById(depotId).orElseThrow();
+        return coinRepository.findByDepotOrderByMetalAscNameAscMintYearAsc(depot);
+    }
+
+    public BigDecimal totalValueEur(List<Coin> coins, Map<CoinMetal, BigDecimal> spotPricesUsd) {
+        return coins.stream()
+            .map(c -> valueEur(c, spotPricesUsd))
+            .filter(v -> v != null)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     public Coin save(Long depotId, Coin coin) {
         Depot depot = depotRepository.findById(depotId).orElseThrow();
         coin.setDepot(depot);
