@@ -30,6 +30,10 @@ public class Coin {
     private AssetAllocation assetAllocation;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "asset_id")
+    private Asset asset;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "depot_id")
     private Depot depot;
 
@@ -49,6 +53,8 @@ public class Coin {
     public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
     public AssetAllocation getAssetAllocation() { return assetAllocation; }
     public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
+    public Asset getAsset() { return asset; }
+    public void setAsset(Asset asset) { this.asset = asset; }
     public Depot getDepot() { return depot; }
     public void setDepot(Depot depot) { this.depot = depot; }
 

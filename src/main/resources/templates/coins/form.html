@@ -61,6 +61,18 @@
              placeholder="z.B. 3"/>
     </div>
 
+    <div class="mb-3">
+      <label class="form-label">Wertpapier (Preisquelle)</label>
+      <select name="assetId" class="form-select">
+        <option value="">-- keines (Spot-Preis) --</option>
+        <option th:each="a : ${assets}"
+                th:value="${a.id}"
+                th:text="${a.name + (a.symbol != null ? ' (' + a.symbol + ')' : '')}"
+                th:selected="${coin.asset != null and coin.asset.id == a.id}"></option>
+      </select>
+      <small class="text-muted">Wenn gesetzt, wird der Kurs dieses Wertpapiers als EUR/oz verwendet.</small>
+    </div>
+
     <div class="mb-4">
       <label class="form-label">Depot *</label>
       <select name="depotId" class="form-select" required>

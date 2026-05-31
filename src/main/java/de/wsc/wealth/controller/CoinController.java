@@ -47,6 +47,7 @@ public class CoinController {
     public String newForm(Model model) {
         model.addAttribute("coin", new Coin());
         model.addAttribute("metals", CoinMetal.values());
+        model.addAttribute("assets", coinService.findAllAssets());
         model.addAttribute("depots", coinService.findAllDepots());
         model.addAttribute("existingNames", coinService.findAllNames());
         return "coins/form";
@@ -56,6 +57,7 @@ public class CoinController {
     public String editForm(@PathVariable Long id, Model model) {
         coinService.findById(id).ifPresent(c -> model.addAttribute("coin", c));
         model.addAttribute("metals", CoinMetal.values());
+        model.addAttribute("assets", coinService.findAllAssets());
         model.addAttribute("depots", coinService.findAllDepots());
         model.addAttribute("existingNames", coinService.findAllNames());
         return "coins/form";
@@ -63,9 +65,10 @@ public class CoinController {
 
     @PostMapping("/save")
     public String save(@RequestParam Long depotId,
+                       @RequestParam(required = false) Long assetId,
                        @ModelAttribute Coin coin,
                        RedirectAttributes ra) {
-        coinService.save(depotId, coin);
+        coinService.save(depotId, assetId, coin);
         ra.addFlashAttribute("success", "Münze gespeichert.");
         return "redirect:/coins";
     }

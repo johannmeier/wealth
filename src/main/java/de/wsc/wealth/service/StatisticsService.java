@@ -94,17 +94,43 @@ public class StatisticsService {
         }
 
         Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
+        Map<Long, BigDecimal> coinValueByAssetId = new HashMap<>();
+        Map<Long, Set<String>> coinDepotsByAssetId = new HashMap<>();
         Map<CoinMetal, BigDecimal> coinValueByMetal = new EnumMap<>(CoinMetal.class);
+        Map<CoinMetal, Set<String>> coinDepotsByMetal = new EnumMap<>(CoinMetal.class);
         for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
             BigDecimal val = coinService.valueEur(coin, spotPrices);
-            if (val != null) coinValueByMetal.merge(coin.getMetal(), val, BigDecimal::add);
+            if (val == null) continue;
+            String depotName = coin.getDepot() != null ? coin.getDepot().getName() : null;
+            if (coin.getAsset() != null) {
+                Long aid = coin.getAsset().getId();
+                coinValueByAssetId.merge(aid, val, BigDecimal::add);
+                if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
+            } else {
+                coinValueByMetal.merge(coin.getMetal(), val, BigDecimal::add);
+                if (depotName != null) coinDepotsByMetal.computeIfAbsent(coin.getMetal(), k -> new LinkedHashSet<>()).add(depotName);
+            }
         }
+        // Coin-Werte zu den verknüpften Wertpapier-Positionen addieren und Depot ergänzen
+        for (WealthPosition p : positions) {
+            BigDecimal extra = coinValueByAssetId.get(p.getId());
+            if (extra == null) continue;
+            p.setValue(p.getValue() != null ? p.getValue().add(extra) : extra);
+            Set<String> coinDepots = coinDepotsByAssetId.get(p.getId());
+            if (coinDepots != null) {
+                String existing = p.getDepotName() != null && !p.getDepotName().isBlank() ? p.getDepotName() + ", " : "";
+                p.setDepotName(existing + String.join(", ", coinDepots));
+            }
+        }
+        // Coins ohne Wertpapier separat nach Metall anzeigen
         for (Map.Entry<CoinMetal, BigDecimal> entry : coinValueByMetal.entrySet()) {
             WealthPosition p = new WealthPosition();
             p.setName(entry.getKey().getLabel() + " (physisch)");
             p.setType("COIN");
             p.setValue(entry.getValue());
             p.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
+            Set<String> coinDepots = coinDepotsByMetal.get(entry.getKey());
+            if (coinDepots != null) p.setDepotName(String.join(", ", coinDepots));
             positions.add(p);
         }
 

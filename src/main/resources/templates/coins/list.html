@@ -38,6 +38,7 @@
           <th class="text-end">Gewicht (oz)</th>
           <th>Prägejahr</th>
           <th class="text-end">Anzahl</th>
+          <th>Preisquelle</th>
           <th>Depot</th>
           <th class="text-end">Wert (EUR)</th>
           <th>Aktionen</th>
@@ -55,6 +56,11 @@
           <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
           <td th:text="${c.mintYear ?: '-'}"></td>
           <td class="text-end" th:text="${c.quantity != null} ? ${#numbers.formatDecimal(c.quantity, 1, 'COMMA', 0, 'POINT')} : '-'"></td>
+          <td>
+            <a th:if="${c.asset != null}" th:href="@{/assets/{id}/edit(id=${c.asset.id})}"
+               th:text="${c.asset.name}" class="small"></a>
+            <span th:unless="${c.asset != null}" class="text-muted small">Spot</span>
+          </td>
           <td th:text="${c.depot?.name ?: '-'}"></td>
           <td class="text-end fw-semibold">
             <span th:if="${values.get(c.id) != null}"
@@ -85,7 +91,7 @@
       </tbody>
       <tfoot th:if="${!#lists.isEmpty(coins)}">
         <tr class="table-secondary fw-bold">
-          <td colspan="7">Gesamt</td>
+          <td colspan="8">Gesamt</td>
           <td class="text-end" th:text="${#numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT') + ' €'}"></td>
           <td></td>
         </tr>
