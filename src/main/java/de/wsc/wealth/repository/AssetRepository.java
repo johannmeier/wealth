@@ -6,7 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface AssetRepository extends JpaRepository<Asset, Long> {
-    List<Asset> findByCategory(AssetCategory category);
-    List<Asset> findBySymbolIsNotNull();
-    List<Asset> findAllByOrderByNameAsc();
+    List<Asset> findByArchivedFalseAndCategory(AssetCategory category);
+    List<Asset> findByArchivedFalseAndSymbolIsNotNull();
+    List<Asset> findAllByArchivedFalseOrderByNameAsc();
+    List<Asset> findAllByArchivedTrueOrderByNameAsc();
+    java.util.Optional<Asset> findFirstByArchivedTrueAndIsin(String isin);
+    java.util.Optional<Asset> findFirstByArchivedTrueAndSymbol(String symbol);
 }

@@ -43,8 +43,8 @@ public class PriceService {
     @Scheduled(cron = "0 0 18 * * MON-FRI")
     @Transactional
     public void updatePrices() {
-        List<Asset> assets = assetRepository.findAll().stream()
-            .filter(s -> s.isAutoPrice() && s.getSymbol() != null && !s.getSymbol().isBlank())
+        List<Asset> assets = assetRepository.findByArchivedFalseAndSymbolIsNotNull().stream()
+            .filter(s -> s.isAutoPrice() && !s.getSymbol().isBlank())
             .toList();
         log.info("Updating prices for {} assets", assets.size());
         assets.forEach(this::updatePrice);

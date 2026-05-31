@@ -23,7 +23,8 @@
           <label class="form-label">Wertpapier</label>
           <select name="assetId" id="assetId" class="form-select" required>
             <option value="">-- wählen --</option>
-            <option th:each="a : ${assets}" th:value="${a.id}" th:text="${a.name}"></option>
+            <option th:each="a : ${assets}" th:value="${a.id}"
+                    th:text="${a.name + (a.symbol != null ? ' (' + a.symbol + ')' : '')}"></option>
           </select>
         </div>
         <div class="mb-3">
@@ -58,7 +59,7 @@
       <tbody>
         <tr th:each="q : ${quantities}">
           <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
-          <td th:text="${q.asset.name}"></td>
+          <td><a th:href="@{/assets/{id}/edit(id=${q.asset.id})}" th:text="${q.asset.name}"></a></td>
           <td class="text-end" th:text="${q.quantity.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
           <td class="text-end">
             <span th:if="${positionValues.containsKey(q.id)}"

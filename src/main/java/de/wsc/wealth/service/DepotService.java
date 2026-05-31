@@ -77,7 +77,7 @@ public class DepotService {
     }
 
     @Transactional(readOnly = true)
-    public List<Asset> findAllAssets() { return assetRepository.findAllByOrderByNameAsc(); }
+    public List<Asset> findAllAssets() { return assetRepository.findAllByArchivedFalseOrderByNameAsc(); }
 
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getCurrentValueByDepotId() {

@@ -23,11 +23,11 @@
       <tbody>
         <tr th:each="h : ${priceHistory}">
           <td th:text="${#temporals.format(h.date, 'dd.MM.yyyy')}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(h.price, 1, 'COMMA', 4, 'POINT')}"></td>
+          <td class="text-end" th:text="${h.price.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
           <td th:text="${h.currency}"></td>
           <td class="text-end">
             <span th:if="${historyEurPrices.get(h.id) != null}"
-                  th:text="${#numbers.formatDecimal(historyEurPrices.get(h.id), 1, 'COMMA', 4, 'POINT')}"></span>
+                  th:text="${historyEurPrices.get(h.id).stripTrailingZeros().toPlainString().replace('.', ',')}"></span>
             <span th:unless="${historyEurPrices.get(h.id) != null}" class="text-muted">—</span>
           </td>
         </tr>

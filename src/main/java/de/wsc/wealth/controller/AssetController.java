@@ -42,6 +42,8 @@ public class AssetController {
         }
         model.addAttribute("assets", assets);
         model.addAttribute("eurPrices", eurPrices);
+        model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
+        model.addAttribute("archivedAssets", assetService.findAllArchived());
         return "assets/list";
     }
 
@@ -69,7 +71,14 @@ public class AssetController {
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         assetService.delete(id);
-        ra.addFlashAttribute("success", "Wertpapier gelöscht.");
+        ra.addFlashAttribute("success", "Wertpapier archiviert.");
+        return "redirect:/assets";
+    }
+
+    @PostMapping("/{id}/restore")
+    public String restore(@PathVariable Long id, RedirectAttributes ra) {
+        assetService.restore(id);
+        ra.addFlashAttribute("success", "Wertpapier wiederhergestellt.");
         return "redirect:/assets";
     }
 
@@ -120,10 +129,26 @@ public class AssetController {
         return "redirect:/assets";
     }
 
+    @PostMapping("/refresh-all-prices")
+    public String refreshAllPrices(RedirectAttributes ra) {
+        long count = assetService.findAll().stream()
+            .filter(s -> s.isAutoPrice() && s.getSymbol() != null)
+            .peek(priceService::updatePrice)
+            .count();
+        ra.addFlashAttribute("success", count + " Kurse aktualisiert.");
+        return "redirect:/assets";
+    }
+
     @GetMapping("/search")
     @ResponseBody
     public List<Map<String, String>> search(@RequestParam String q) {
         return assetSearchService.search(q);
+    }
+
+    @GetMapping("/quote-details")
+    @ResponseBody
+    public Map<String, String> quoteDetails(@RequestParam String symbol) {
+        return assetSearchService.getQuoteDetails(symbol);
     }
 
     private void addEnums(Model model) {

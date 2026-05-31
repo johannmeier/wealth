@@ -30,6 +30,9 @@ public class Asset {
 
     private String indexName;
     private String currency = "EUR";
+    @org.hibernate.annotations.ColumnDefault("false")
+    @Column(nullable = false)
+    private boolean archived = false;
 
     @Column(precision = 19, scale = 10)
     private BigDecimal currentPrice;
@@ -59,6 +62,9 @@ public class Asset {
     public void setCurrentPrice(BigDecimal currentPrice) { this.currentPrice = currentPrice; }
     public LocalDateTime getLastPriceUpdate() { return lastPriceUpdate; }
     public void setLastPriceUpdate(LocalDateTime lastPriceUpdate) { this.lastPriceUpdate = lastPriceUpdate; }
+
+    public boolean isArchived() { return archived; }
+    public void setArchived(boolean archived) { this.archived = archived; }
 
     public boolean isAutoPrice() {
         return category == AssetCategory.BOERSENGEHANDELT || category == AssetCategory.EDELMETALL;

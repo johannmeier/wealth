@@ -12,4 +12,5 @@ public interface AssetQuantityRepository extends JpaRepository<AssetQuantity, Lo
     List<AssetQuantity> findByAssetOrderByDateDesc(Asset asset);
     List<AssetQuantity> findByDepotOrderByDateDesc(Depot depot);
     Optional<AssetQuantity> findFirstByAssetAndDepotOrderByDateDesc(Asset asset, Depot depot);
+    void deleteByAsset(Asset asset);
 }

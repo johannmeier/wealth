@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long> {
     List<PriceHistory> findByAssetOrderByDateAsc(Asset asset);
+    void deleteByAsset(Asset asset);
 }

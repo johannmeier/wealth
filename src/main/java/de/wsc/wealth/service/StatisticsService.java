@@ -41,7 +41,7 @@ public class StatisticsService {
         List<WealthPosition> positions = new ArrayList<>();
         List<Depot> depots = depotRepository.findAllByOrderByNameAsc();
 
-        for (Asset asset : assetRepository.findAllByOrderByNameAsc()) {
+        for (Asset asset : assetRepository.findAllByArchivedFalseOrderByNameAsc()) {
             BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
             BigDecimal totalQuantity = BigDecimal.ZERO;
             BigDecimal totalValue = BigDecimal.ZERO;

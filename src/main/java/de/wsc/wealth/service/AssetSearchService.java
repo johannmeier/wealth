@@ -28,6 +28,20 @@ public class AssetSearchService {
             .build();
     }
 
+    public Map<String, String> getQuoteDetails(String symbol) {
+        try {
+            String json = restClient.get()
+                .uri("https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d", symbol)
+                .retrieve()
+                .body(String.class);
+            JsonNode meta = objectMapper.readTree(json).path("chart").path("result").get(0).path("meta");
+            return Map.of("currency", meta.path("currency").asText(""));
+        } catch (Exception e) {
+            log.warn("Quote details fetch failed for '{}': {}", symbol, e.getMessage());
+            return Map.of();
+        }
+    }
+
     public List<Map<String, String>> search(String query) {
         try {
             String json = restClient.get()
@@ -43,10 +57,13 @@ public class AssetSearchService {
                 if (quoteType.isBlank() || quoteType.equals("OPTION") || quoteType.equals("FUTURE")) continue;
 
                 Map<String, String> r = new HashMap<>();
+                String exchange = q.path("exchange").asText("");
+                String currency = q.path("currency").asText("");
+                if (currency.isBlank()) currency = currencyForExchange(exchange);
                 r.put("name", q.path("longname").asText(q.path("shortname").asText("")));
                 r.put("symbol", q.path("symbol").asText(""));
-                r.put("exchange", q.path("exchange").asText(""));
-                r.put("currency", q.path("currency").asText(""));
+                r.put("exchange", exchange);
+                r.put("currency", currency);
                 r.put("type", mapType(quoteType));
                 r.put("category", mapCategory(quoteType));
                 results.add(r);
@@ -65,6 +82,22 @@ public class AssetSearchService {
             case "EQUITY"     -> "AKTIE";
             case "CURRENCY"   -> "WAEHRUNG";
             default           -> "SONSTIGE";
+        };
+    }
+
+    private String currencyForExchange(String exchange) {
+        return switch (exchange) {
+            case "GER", "FRA", "HAM", "HAN", "MUN", "STU", "DUS", "BER",
+                 "PAR", "AMS", "MIL", "MCE", "ATH", "HEL", "LIS", "VIE" -> "EUR";
+            case "LSE", "IOB"                                              -> "GBP";
+            case "TOR"                                                     -> "CAD";
+            case "ASX"                                                     -> "AUD";
+            case "TSE", "TYO"                                              -> "JPY";
+            case "HKG"                                                     -> "HKD";
+            case "SHH", "SHZ"                                              -> "CNY";
+            case "BSE", "NSI"                                              -> "INR";
+            case "SAO"                                                     -> "BRL";
+            default                                                        -> "USD";
         };
     }
 
