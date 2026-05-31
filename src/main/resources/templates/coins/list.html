@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Münzen</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div class="container mt-4">
+  <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+    <span th:text="${success}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Münzen &amp; Edelmetalle</h3>
+    <a th:href="@{/coins/new}" class="btn btn-primary">+ Neu</a>
+  </div>
+
+  <!-- Spot-Preise -->
+  <div class="mb-3 d-flex flex-wrap gap-3">
+    <span th:each="entry : ${spotPrices}"
+          class="badge bg-secondary fs-6 fw-normal px-3 py-2">
+      <span th:text="${entry.key.label}"></span>:
+      <span th:text="${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}"></span> USD/oz
+    </span>
+    <span th:if="${#maps.isEmpty(spotPrices)}" class="text-muted small">Spotpreise nicht verfügbar</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Metall</th>
+          <th class="text-end">Gewicht (g)</th>
+          <th class="text-end">Gewicht (oz)</th>
+          <th>Prägejahr</th>
+          <th class="text-end">Anzahl</th>
+          <th>Depot</th>
+          <th class="text-end">Wert (EUR)</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="c : ${coins}">
+          <td th:text="${c.name}"></td>
+          <td>
+            <span th:class="${c.metal?.name() == 'GOLD'} ? 'badge' : 'badge'"
+                  th:style="${c.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${c.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
+                  th:text="${c.metal?.label ?: '-'}"></span>
+          </td>
+          <td class="text-end" th:text="${c.weightGrams != null} ? ${#numbers.formatDecimal(c.weightGrams, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
+          <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
+          <td th:text="${c.mintYear ?: '-'}"></td>
+          <td class="text-end" th:text="${c.quantity != null} ? ${#numbers.formatDecimal(c.quantity, 1, 'COMMA', 0, 'POINT')} : '-'"></td>
+          <td th:text="${c.depot?.name ?: '-'}"></td>
+          <td class="text-end fw-semibold">
+            <span th:if="${values.get(c.id) != null}"
+                  th:text="${#numbers.formatDecimal(values.get(c.id), 1, 'COMMA', 2, 'POINT') + ' €'}"></span>
+            <span th:unless="${values.get(c.id) != null}" class="text-muted">-</span>
+          </td>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Aktionen
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}">Bearbeiten</a></li>
+                <li><hr class="dropdown-divider"/></li>
+                <li>
+                  <form th:action="@{/coins/{id}/delete(id=${c.id})}" method="post"
+                        onsubmit="return confirm('Münze wirklich löschen?')">
+                    <button type="submit" class="dropdown-item text-danger">Löschen</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(coins)}">
+          <td colspan="9" class="text-center text-muted">Keine Münzen vorhanden.</td>
+        </tr>
+      </tbody>
+      <tfoot th:if="${!#lists.isEmpty(coins)}">
+        <tr class="table-secondary fw-bold">
+          <td colspan="7">Gesamt</td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT') + ' €'}"></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

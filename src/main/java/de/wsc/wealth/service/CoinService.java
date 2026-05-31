@@ -1,0 +1,74 @@
+package de.wsc.wealth.service;
+
+import de.wsc.wealth.domain.Coin;
+import de.wsc.wealth.domain.CoinMetal;
+import de.wsc.wealth.domain.Depot;
+import de.wsc.wealth.repository.CoinRepository;
+import de.wsc.wealth.repository.DepotRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+@Transactional
+public class CoinService {
+
+    private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1035");
+
+    private final CoinRepository coinRepository;
+    private final DepotRepository depotRepository;
+    private final PriceService priceService;
+    private final ExchangeRateService exchangeRateService;
+
+    public CoinService(CoinRepository coinRepository, DepotRepository depotRepository,
+                       PriceService priceService, ExchangeRateService exchangeRateService) {
+        this.coinRepository = coinRepository;
+        this.depotRepository = depotRepository;
+        this.priceService = priceService;
+        this.exchangeRateService = exchangeRateService;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Coin> findAll() { return coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc(); }
+
+    @Transactional(readOnly = true)
+    public Optional<Coin> findById(Long id) { return coinRepository.findById(id); }
+
+    public Coin save(Long depotId, Coin coin) {
+        Depot depot = depotRepository.findById(depotId).orElseThrow();
+        coin.setDepot(depot);
+        return coinRepository.save(coin);
+    }
+
+    public void delete(Long id) { coinRepository.deleteById(id); }
+
+    @Transactional(readOnly = true)
+    public List<Depot> findAllDepots() { return depotRepository.findAllByOrderByNameAsc(); }
+
+    // Spot-Preise (USD/oz) für alle drei Metalle auf einmal holen
+    public Map<CoinMetal, BigDecimal> fetchSpotPricesUsd() {
+        Map<CoinMetal, BigDecimal> prices = new EnumMap<>(CoinMetal.class);
+        for (CoinMetal metal : CoinMetal.values()) {
+            try {
+                prices.put(metal, priceService.fetchPrice(metal.getYahooSymbol()));
+            } catch (Exception ignored) {}
+        }
+        return prices;
+    }
+
+    // Wert einer Münze in EUR: Anzahl × (Gewicht / 31,1035) × Spotpreis(USD/oz) × USD→EUR
+    public BigDecimal valueEur(Coin coin, Map<CoinMetal, BigDecimal> spotPricesUsd) {
+        if (coin.getMetal() == null || coin.getWeightGrams() == null || coin.getQuantity() == null) return null;
+        BigDecimal spotUsd = spotPricesUsd.get(coin.getMetal());
+        if (spotUsd == null) return null;
+        BigDecimal oz = coin.getWeightGrams().divide(GRAMS_PER_OZ, 10, RoundingMode.HALF_UP);
+        BigDecimal valueUsd = coin.getQuantity().multiply(oz).multiply(spotUsd);
+        return exchangeRateService.toEur(valueUsd, "USD");
+    }
+}
