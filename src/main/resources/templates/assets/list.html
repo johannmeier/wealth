@@ -58,16 +58,28 @@
             <span th:unless="${eurPrices.get(s.id) != null}" class="text-muted">-</span>
           </td>
           <td>
-            <a th:href="@{/assets/{id}/edit(id=${s.id})}" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
-            <a th:href="@{/assets/{id}/quantities(id=${s.id})}" class="btn btn-sm btn-outline-info">Bestände</a>
-            <a th:href="@{/assets/{id}/price-history(id=${s.id})}" class="btn btn-sm btn-outline-secondary">Kurse</a>
-            <form th:if="${s.autoPrice}" th:action="@{/assets/{id}/refresh-price(id=${s.id})}" method="post" class="d-inline">
-              <button type="submit" class="btn btn-sm btn-outline-success">Kurs</button>
-            </form>
-            <form th:action="@{/assets/{id}/delete(id=${s.id})}" method="post" class="d-inline"
-                  onsubmit="return confirm('Wertpapier archivieren? Die Kurs- und Bestandshistorie bleibt erhalten.')">
-              <button type="submit" class="btn btn-sm btn-outline-secondary">Archivieren</button>
-            </form>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Aktionen
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" th:href="@{/assets/{id}/edit(id=${s.id})}">Bearbeiten</a></li>
+                <li><a class="dropdown-item" th:href="@{/assets/{id}/quantities(id=${s.id})}">Bestände</a></li>
+                <li><a class="dropdown-item" th:href="@{/assets/{id}/price-history(id=${s.id})}">Kurshistorie</a></li>
+                <li th:if="${s.autoPrice}">
+                  <form th:action="@{/assets/{id}/refresh-price(id=${s.id})}" method="post">
+                    <button type="submit" class="dropdown-item">Kurs aktualisieren</button>
+                  </form>
+                </li>
+                <li><hr class="dropdown-divider"/></li>
+                <li>
+                  <form th:action="@{/assets/{id}/delete(id=${s.id})}" method="post"
+                        onsubmit="return confirm('Wertpapier archivieren? Die Kurs- und Bestandshistorie bleibt erhalten.')">
+                    <button type="submit" class="dropdown-item text-secondary">Archivieren</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(assets)}">

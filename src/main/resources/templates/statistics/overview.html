@@ -8,38 +8,52 @@
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div class="container mt-4">
-  <h3>Übersicht aller Positionen</h3>
-  <div class="alert alert-info">
-    Gesamtvermögen: <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'"></strong>
+  <h3>Übersicht</h3>
+  <div class="alert alert-info d-flex justify-content-between align-items-center">
+    <span>Gesamtvermögen</span>
+    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'"></strong>
   </div>
 
-  <table class="table table-striped table-hover align-middle">
-    <thead class="table-dark">
-      <tr><th>Name</th><th>Art</th><th>Allocation</th><th>Index</th><th>Depot</th>
-          <th class="text-end">Wert (€)</th><th class="text-end">Anteil %</th></tr>
-    </thead>
-    <tbody>
-      <tr th:each="p : ${positions}">
-        <td th:text="${p.name}"></td>
-        <td>
-          <span th:if="${p.type == 'ACCOUNT'}" class="badge bg-info">Konto</span>
-          <span th:if="${p.assetType != null}" class="badge bg-primary" th:text="${p.assetType.label}"></span>
-        </td>
-        <td>
-          <span th:if="${p.assetAllocation != null}"
-                th:class="${p.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                th:text="${p.assetAllocation.label}"></span>
-        </td>
-        <td th:text="${p.indexName ?: '-'}"></td>
-        <td th:text="${p.depotName ?: '-'}"></td>
-        <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(p.value, 1, 'COMMA', 2, 'POINT')}"></td>
-        <td class="text-end" th:text="${p.percentage} + ' %'"></td>
-      </tr>
-      <tr th:if="${#lists.isEmpty(positions)}">
-        <td colspan="7" class="text-center text-muted">Keine Positionen vorhanden.</td>
-      </tr>
-    </tbody>
-  </table>
+  <div th:each="group : ${groups}" class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <h5 class="mb-0">
+        <span th:class="${group.name == 'Risikobehaftet'} ? 'badge bg-warning text-dark fs-6' : 'badge bg-success fs-6'"
+              th:text="${group.name}"></span>
+      </h5>
+      <span class="text-muted fw-semibold"
+            th:text="${#numbers.formatDecimal(group.totalValue, 1, 'COMMA', 2, 'POINT')} + ' € · ' + ${group.percentage} + ' %'"></span>
+    </div>
+    <table class="table table-sm table-striped table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Art</th>
+          <th>Index</th>
+          <th>Depot</th>
+          <th class="text-end">Wert (€)</th>
+          <th class="text-end">Anteil %</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${group.positions}">
+          <td th:text="${p.name}"></td>
+          <td>
+            <span th:if="${p.type == 'ACCOUNT'}" class="badge bg-info text-dark">Konto</span>
+            <span th:if="${p.type == 'COIN'}" class="badge" style="background-color:#b8860b">Edelmetall</span>
+            <span th:if="${p.assetType != null}" class="badge bg-primary" th:text="${p.assetType.label}"></span>
+          </td>
+          <td th:text="${p.indexName ?: '-'}"></td>
+          <td th:text="${p.depotName ?: '-'}"></td>
+          <td class="text-end fw-semibold"
+              th:text="${#numbers.formatDecimal(p.value, 1, 'COMMA', 2, 'POINT')}"></td>
+          <td class="text-end text-muted"
+              th:text="${p.percentage} + ' %'"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div th:if="${#lists.isEmpty(groups)}" class="text-muted">Keine Positionen vorhanden.</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

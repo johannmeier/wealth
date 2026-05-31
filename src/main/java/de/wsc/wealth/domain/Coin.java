@@ -26,6 +26,9 @@ public class Coin {
     @Column(precision = 19, scale = 10)
     private BigDecimal quantity;
 
+    @Enumerated(EnumType.STRING)
+    private AssetAllocation assetAllocation;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "depot_id")
     private Depot depot;
@@ -44,6 +47,8 @@ public class Coin {
     public void setMintYear(Integer mintYear) { this.mintYear = mintYear; }
     public BigDecimal getQuantity() { return quantity; }
     public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+    public AssetAllocation getAssetAllocation() { return assetAllocation; }
+    public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
     public Depot getDepot() { return depot; }
     public void setDepot(Depot depot) { this.depot = depot; }
 

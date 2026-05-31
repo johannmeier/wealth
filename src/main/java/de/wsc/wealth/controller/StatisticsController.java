@@ -18,7 +18,7 @@ public class StatisticsController {
 
     @GetMapping("/overview")
     public String overview(Model model) {
-        model.addAttribute("positions", statisticsService.getAllPositions());
+        model.addAttribute("groups", statisticsService.getStatsByAllocation());
         model.addAttribute("totalWealth", statisticsService.getTotalWealth());
         return "statistics/overview";
     }

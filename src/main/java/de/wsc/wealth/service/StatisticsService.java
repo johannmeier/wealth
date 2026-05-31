@@ -22,19 +22,25 @@ public class StatisticsService {
     private final AssetQuantityRepository quantityRepository;
     private final AccountBalanceRepository balanceRepository;
     private final ExchangeRateService exchangeRateService;
+    private final CoinRepository coinRepository;
+    private final CoinService coinService;
 
     public StatisticsService(AssetRepository assetRepository,
                              AccountRepository accountRepository,
                              DepotRepository depotRepository,
                              AssetQuantityRepository quantityRepository,
                              AccountBalanceRepository balanceRepository,
-                             ExchangeRateService exchangeRateService) {
+                             ExchangeRateService exchangeRateService,
+                             CoinRepository coinRepository,
+                             CoinService coinService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.depotRepository = depotRepository;
         this.quantityRepository = quantityRepository;
         this.balanceRepository = balanceRepository;
         this.exchangeRateService = exchangeRateService;
+        this.coinRepository = coinRepository;
+        this.coinService = coinService;
     }
 
     public List<WealthPosition> getAllPositions() {
@@ -85,6 +91,21 @@ public class StatisticsService {
                 p.setCurrency(account.getCurrency());
                 positions.add(p);
             });
+        }
+
+        Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
+        Map<CoinMetal, BigDecimal> coinValueByMetal = new EnumMap<>(CoinMetal.class);
+        for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
+            BigDecimal val = coinService.valueEur(coin, spotPrices);
+            if (val != null) coinValueByMetal.merge(coin.getMetal(), val, BigDecimal::add);
+        }
+        for (Map.Entry<CoinMetal, BigDecimal> entry : coinValueByMetal.entrySet()) {
+            WealthPosition p = new WealthPosition();
+            p.setName(entry.getKey().getLabel() + " (physisch)");
+            p.setType("COIN");
+            p.setValue(entry.getValue());
+            p.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
+            positions.add(p);
         }
 
         BigDecimal total = totalValue(positions);

@@ -31,3 +31,24 @@ Es können folgende Statistiken angezeigt werden:
 
 Für jede Position der Positionen einer Auflistung wird der Prozentanteil am Gesamtvermögen der Wertpapiere und Konten angezeigt.
 
+
+# Sonstiges
+Für physisch gekauftes Edelmetall gibt es keine ISIN — aber Yahoo Finance bietet Spot-Preise, die du als Symbol eintragen kannst:
+
+┌────────┬──────────────┬──────────────────┬─────────┐
+│ Metall │ Yahoo-Symbol │     Einheit      │ Währung │
+├────────┼──────────────┼──────────────────┼─────────┤
+│ Gold   │ GC=F         │ Troy Oz (31,1 g) │ USD     │
+├────────┼──────────────┼──────────────────┼─────────┤
+│ Silber │ SI=F         │ Troy Oz          │ USD     │
+├────────┼──────────────┼──────────────────┼─────────┤
+│ Platin │ PL=F         │ Troy Oz          │ USD     │
+└────────┴──────────────┴──────────────────┴─────────┘
+
+Vorgehen in der App:
+1. Neues Wertpapier anlegen (manuell, ohne Suche)
+2. Name z.B. Gold (physisch), Symbol GC=F, Währung USD
+3. Kategorie Börsengehandelt → dann funktioniert "Kurs aktualisieren" automatisch
+4. Als Bestand die Menge in Troy Oz eintragen (1 g = 0,03215 oz)
+
+Die App rechnet den USD-Kurs dann automatisch in EUR um.
