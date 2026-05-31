@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,15 @@ public class DepotService {
         quantity.setDepot(depot);
         quantity.setAsset(asset);
         return quantityRepository.save(quantity);
+    }
+
+    public void updateQuantity(Long quantityId, Long assetId, LocalDate date, BigDecimal quantity) {
+        AssetQuantity q = quantityRepository.findById(quantityId).orElseThrow();
+        Asset asset = assetRepository.findById(assetId).orElseThrow();
+        q.setAsset(asset);
+        q.setDate(date);
+        q.setQuantity(quantity);
+        quantityRepository.save(q);
     }
 
     public void deleteQuantity(Long quantityId) {

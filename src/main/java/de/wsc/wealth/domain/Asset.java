@@ -30,6 +30,8 @@ public class Asset {
 
     private String indexName;
     private String currency = "EUR";
+
+    @Column(precision = 19, scale = 10)
     private BigDecimal currentPrice;
     private LocalDateTime lastPriceUpdate;
 

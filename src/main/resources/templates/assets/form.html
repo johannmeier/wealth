@@ -9,6 +9,22 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div class="container mt-4" style="max-width:700px">
   <h3 th:text="${asset.id == null} ? 'Neues Wertpapier' : 'Wertpapier bearbeiten'"></h3>
+
+  <!-- Suche – nur beim Anlegen -->
+  <div th:if="${asset.id == null}" class="card mb-4 border-0 bg-light">
+    <div class="card-body pb-2">
+      <label class="form-label fw-semibold">Suche (Name, ISIN oder WKN)</label>
+      <div class="input-group">
+        <input type="text" id="searchInput" class="form-control"
+               placeholder="z.B. Vanguard FTSE, DE0007231334, 723133…" autocomplete="off"/>
+        <button type="button" class="btn btn-outline-secondary" id="clearBtn" style="display:none"
+                onclick="clearSearch()">&#x2715;</button>
+      </div>
+      <div id="searchResults" class="list-group mt-1 shadow-sm" style="display:none; max-height:280px; overflow-y:auto; position:relative; z-index:10;"></div>
+      <small class="text-muted">Ergebnisse von Yahoo Finance – Felder können anschließend angepasst werden.</small>
+    </div>
+  </div>
+
   <form th:action="@{/assets/save}" th:object="${asset}" method="post">
     <input type="hidden" th:field="*{id}"/>
     <div class="mb-3">
@@ -71,5 +87,97 @@
   </form>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  const searchInput = document.getElementById('searchInput');
+  if (!searchInput) return;
+
+  const resultsBox = document.getElementById('searchResults');
+  const clearBtn   = document.getElementById('clearBtn');
+  let timer;
+
+  searchInput.addEventListener('input', function () {
+    clearTimeout(timer);
+    const q = this.value.trim();
+    clearBtn.style.display = q ? 'inline-block' : 'none';
+    if (q.length < 2) { hide(); return; }
+    timer = setTimeout(() => doSearch(q), 350);
+  });
+
+  function doSearch(q) {
+    fetch('/assets/search?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(list => {
+        resultsBox.innerHTML = '';
+        if (!list.length) {
+          resultsBox.innerHTML = '<div class="list-group-item text-muted">Keine Treffer</div>';
+        } else {
+          list.forEach(r => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            btn.innerHTML =
+              '<span><strong>' + esc(r.name) + '</strong>' +
+              ' <small class="text-muted">' + esc(r.symbol) + ' &middot; ' + esc(r.exchange) + '</small></span>' +
+              '<span class="badge bg-secondary ms-2">' + esc(r.type) + '</span>';
+            btn.addEventListener('click', () => fill(r, q));
+            resultsBox.appendChild(btn);
+          });
+        }
+        resultsBox.style.display = 'block';
+      })
+      .catch(() => {
+        resultsBox.innerHTML = '<div class="list-group-item text-danger">Suche fehlgeschlagen</div>';
+        resultsBox.style.display = 'block';
+      });
+  }
+
+  function fill(r, searchQuery) {
+    set('name',     r.name);
+    set('symbol',   r.symbol);
+    set('currency', r.currency || 'EUR');
+    selectOption('category', r.category);
+    selectOption('type',     r.type);
+
+    // ISIN auto-fill: if the search query looks like an ISIN, pre-fill
+    if (/^[A-Z]{2}[A-Z0-9]{10}$/i.test(searchQuery.trim())) {
+      set('isin', searchQuery.trim().toUpperCase());
+    }
+
+    hide();
+    searchInput.value = r.name;
+    clearBtn.style.display = 'inline-block';
+  }
+
+  function set(id, val) {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  }
+
+  function selectOption(id, val) {
+    const sel = document.getElementById(id);
+    if (!sel || !val) return;
+    for (const opt of sel.options) {
+      if (opt.value === val) { opt.selected = true; return; }
+    }
+  }
+
+  function hide() { resultsBox.style.display = 'none'; }
+
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.clearSearch = function () {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    hide();
+  };
+
+  document.addEventListener('click', e => {
+    if (!resultsBox.contains(e.target) && e.target !== searchInput) hide();
+  });
+})();
+</script>
 </body>
 </html>

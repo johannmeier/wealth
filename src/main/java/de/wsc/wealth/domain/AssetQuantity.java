@@ -21,6 +21,8 @@ public class AssetQuantity {
     private Depot depot;
 
     private LocalDate date;
+
+    @Column(precision = 19, scale = 10)
     private BigDecimal quantity;
 
     public AssetQuantity() {}

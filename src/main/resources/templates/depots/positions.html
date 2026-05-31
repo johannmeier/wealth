@@ -15,41 +15,63 @@
   <h3>Positionen: <span th:text="${depot.name}"></span></h3>
 
   <div class="card mb-4" style="max-width:500px">
-    <div class="card-header">Neuer Bestand</div>
+    <div class="card-header" id="formHeader">Neuer Bestand</div>
     <div class="card-body">
       <form th:action="@{/depots/{id}/positions/save(id=${depot.id})}" method="post">
+        <input type="hidden" name="quantityId" id="quantityId" value=""/>
         <div class="mb-3">
           <label class="form-label">Wertpapier</label>
-          <select name="assetId" class="form-select" required>
+          <select name="assetId" id="assetId" class="form-select" required>
             <option value="">-- wählen --</option>
             <option th:each="a : ${assets}" th:value="${a.id}" th:text="${a.name}"></option>
           </select>
         </div>
         <div class="mb-3">
           <label class="form-label">Datum</label>
-          <input type="date" name="date" class="form-control" th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+          <input type="date" name="date" id="date" class="form-control"
+                 th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
         </div>
         <div class="mb-3">
           <label class="form-label">Anzahl</label>
-          <input type="number" name="quantity" class="form-control" step="0.0001" required/>
+          <input type="number" name="quantity" id="quantity" class="form-control" step="any" required/>
         </div>
-        <button type="submit" class="btn btn-primary">Speichern</button>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">Speichern</button>
+          <button type="button" class="btn btn-outline-secondary" id="cancelBtn"
+                  style="display:none" onclick="cancelEdit()">Abbrechen</button>
+        </div>
       </form>
     </div>
   </div>
 
-  <h5>Historie</h5>
+  <h5>Wertpapiere</h5>
   <div class="table-responsive">
     <table class="table table-striped align-middle">
       <thead class="table-dark">
-        <tr><th>Datum</th><th>Wertpapier</th><th class="text-end">Anzahl</th><th></th></tr>
+        <tr>
+          <th>Datum</th><th>Wertpapier</th>
+          <th class="text-end">Anzahl</th>
+          <th class="text-end">Wert (€)</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
         <tr th:each="q : ${quantities}">
           <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
           <td th:text="${q.asset.name}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'COMMA', 4, 'POINT')}"></td>
-          <td>
+          <td class="text-end" th:text="${q.quantity.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
+          <td class="text-end">
+            <span th:if="${positionValues.containsKey(q.id)}"
+                  th:text="${#numbers.formatDecimal(positionValues.get(q.id), 1, 'COMMA', 2, 'POINT')}"></span>
+            <span th:unless="${positionValues.containsKey(q.id)}" class="text-muted">-</span>
+          </td>
+          <td class="text-nowrap">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    th:attr="data-qid=${q.id},
+                             data-assetid=${q.asset.id},
+                             data-date=${q.date},
+                             data-quantity=${q.quantity.toPlainString()}"
+                    onclick="startEdit(this)">Bearbeiten</button>
             <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post" class="d-inline"
                   onsubmit="return confirm('Bestand wirklich löschen?')">
               <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
@@ -57,13 +79,42 @@
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(quantities)}">
-          <td colspan="4" class="text-center text-muted">Noch keine Bestände eingetragen.</td>
+          <td colspan="5" class="text-center text-muted">Noch keine Bestände eingetragen.</td>
+        </tr>
+        <tr th:unless="${#lists.isEmpty(quantities)}" class="table-secondary fw-bold">
+          <td colspan="3">Gesamt</td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(positionTotal, 1, 'COMMA', 2, 'POINT')}"></td>
+          <td></td>
         </tr>
       </tbody>
     </table>
   </div>
   <a th:href="@{/depots}" class="btn btn-outline-secondary">Zurück</a>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+  const todayIso = /*[[${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}]]*/ '';
+
+  function startEdit(btn) {
+    document.getElementById('quantityId').value = btn.dataset.qid;
+    document.getElementById('date').value       = btn.dataset.date;
+    document.getElementById('quantity').value   = btn.dataset.quantity;
+    const sel = document.getElementById('assetId');
+    for (const opt of sel.options) opt.selected = (opt.value === btn.dataset.assetid);
+    document.getElementById('formHeader').textContent = 'Bestand bearbeiten';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.querySelector('.card').scrollIntoView({behavior: 'smooth'});
+  }
+
+  function cancelEdit() {
+    document.getElementById('quantityId').value = '';
+    document.getElementById('date').value       = todayIso;
+    document.getElementById('quantity').value   = '';
+    document.getElementById('assetId').value    = '';
+    document.getElementById('formHeader').textContent = 'Neuer Bestand';
+    document.getElementById('cancelBtn').style.display = 'none';
+  }
+</script>
 </body>
 </html>

@@ -17,6 +17,8 @@ public class PriceHistory {
     private Asset asset;
 
     private LocalDate date;
+
+    @Column(precision = 19, scale = 10)
     private BigDecimal price;
     private String currency;
 

@@ -3,6 +3,7 @@ package de.wsc.wealth.controller;
 import de.wsc.wealth.domain.AssetQuantity;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.service.DepotService;
+import de.wsc.wealth.service.ExchangeRateService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
@@ -10,7 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -18,9 +22,11 @@ import java.util.Map;
 public class DepotController {
 
     private final DepotService depotService;
+    private final ExchangeRateService exchangeRateService;
 
-    public DepotController(DepotService depotService) {
+    public DepotController(DepotService depotService, ExchangeRateService exchangeRateService) {
         this.depotService = depotService;
+        this.exchangeRateService = exchangeRateService;
     }
 
     @InitBinder("quantity")
@@ -67,19 +73,40 @@ public class DepotController {
     @GetMapping("/{id}/positions")
     public String positions(@PathVariable Long id, Model model) {
         depotService.findById(id).ifPresent(d -> model.addAttribute("depot", d));
-        model.addAttribute("quantities", depotService.getQuantities(id));
+        List<AssetQuantity> quantities = depotService.getQuantities(id);
+        model.addAttribute("quantities", quantities);
         model.addAttribute("assets", depotService.findAllAssets());
+
+        Map<Long, BigDecimal> positionValues = new HashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (AssetQuantity q : quantities) {
+            BigDecimal eurPrice = exchangeRateService.toEur(
+                q.getAsset().getCurrentPrice(), q.getAsset().getCurrency());
+            if (q.getQuantity() != null && eurPrice != null) {
+                BigDecimal val = q.getQuantity().multiply(eurPrice).setScale(2, RoundingMode.HALF_UP);
+                positionValues.put(q.getId(), val);
+                total = total.add(val);
+            }
+        }
+        model.addAttribute("positionValues", positionValues);
+        model.addAttribute("positionTotal", total);
         return "depots/positions";
     }
 
     @PostMapping("/{id}/positions/save")
     public String savePosition(@PathVariable Long id,
                                @RequestParam Long assetId,
+                               @RequestParam(required = false) Long quantityId,
                                @ModelAttribute AssetQuantity quantity,
                                RedirectAttributes ra) {
         if (quantity.getDate() == null) quantity.setDate(LocalDate.now());
-        depotService.saveQuantity(id, assetId, quantity);
-        ra.addFlashAttribute("success", "Bestand gespeichert.");
+        if (quantityId != null) {
+            depotService.updateQuantity(quantityId, assetId, quantity.getDate(), quantity.getQuantity());
+            ra.addFlashAttribute("success", "Bestand aktualisiert.");
+        } else {
+            depotService.saveQuantity(id, assetId, quantity);
+            ra.addFlashAttribute("success", "Bestand gespeichert.");
+        }
         return "redirect:/depots/" + id + "/positions";
     }
 
