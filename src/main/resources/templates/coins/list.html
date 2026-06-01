@@ -15,17 +15,25 @@
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Münzen &amp; Edelmetalle</h3>
-    <a th:href="@{/coins/new}" class="btn btn-primary">+ Neu</a>
+    <div class="d-flex gap-2">
+      <button id="toggleAll" class="btn btn-outline-secondary btn-sm">Alle aufklappen</button>
+      <a th:href="@{/coins/new}" class="btn btn-primary">+ Neu</a>
+    </div>
   </div>
 
-  <!-- Spot-Preise -->
-  <div class="mb-3 d-flex flex-wrap gap-3">
+  <!-- Spot-Preise und Mengenübersicht -->
+  <div class="mb-3 d-flex flex-wrap gap-3 align-items-center">
     <span th:each="entry : ${spotPrices}"
           class="badge bg-secondary fs-6 fw-normal px-3 py-2">
       <span th:text="${entry.key.label}"></span>:
       <span th:text="${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}"></span> USD/oz
     </span>
     <span th:if="${#maps.isEmpty(spotPrices)}" class="text-muted small">Spotpreise nicht verfügbar</span>
+    <span th:each="entry : ${totalQtyByMetal}" class="badge fs-6 fw-normal px-3 py-2"
+          th:style="${entry.key.name() == 'GOLD'} ? 'background-color:#b8860b' : (${entry.key.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')">
+      <span th:text="${entry.key.label}"></span>:
+      <span th:text="${entry.value}"></span> Stück
+    </span>
   </div>
 
   <div class="table-responsive">
@@ -45,54 +53,108 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="c : ${coins}">
-          <td th:text="${c.name}"></td>
-          <td>
-            <span th:class="${c.metal?.name() == 'GOLD'} ? 'badge' : 'badge'"
-                  th:style="${c.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${c.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
-                  th:text="${c.metal?.label ?: '-'}"></span>
-          </td>
-          <td class="text-end" th:text="${c.weightGrams != null} ? ${#numbers.formatDecimal(c.weightGrams, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
-          <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
-          <td th:text="${c.mintYear ?: '-'}"></td>
-          <td class="text-end" th:text="${c.quantity != null} ? ${#numbers.formatDecimal(c.quantity, 1, 'COMMA', 0, 'POINT')} : '-'"></td>
-          <td>
-            <a th:if="${c.asset != null}" th:href="@{/assets/{id}/edit(id=${c.asset.id})}"
-               th:text="${c.asset.name}" class="small"></a>
-            <span th:unless="${c.asset != null}" class="text-muted small">Spot</span>
-          </td>
-          <td th:text="${c.depot?.name ?: '-'}"></td>
-          <td class="text-end fw-semibold">
-            <span th:if="${values.get(c.id) != null}"
-                  th:text="${#numbers.formatDecimal(values.get(c.id), 1, 'COMMA', 2, 'POINT') + ' €'}"></span>
-            <span th:unless="${values.get(c.id) != null}" class="text-muted">-</span>
-          </td>
-          <td>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Aktionen
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}">Bearbeiten</a></li>
-                <li><hr class="dropdown-divider"/></li>
-                <li>
-                  <form th:action="@{/coins/{id}/delete(id=${c.id})}" method="post"
-                        onsubmit="return confirm('Münze wirklich löschen?')">
-                    <button type="submit" class="dropdown-item text-danger">Löschen</button>
-                  </form>
-                </li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(coins)}">
-          <td colspan="9" class="text-center text-muted">Keine Münzen vorhanden.</td>
+        <th:block th:each="entry : ${groupedCoins}" th:with="first=${entry.value.get(0)}, groupSize=${#lists.size(entry.value)}">
+          <!-- Aggregierte Zeile -->
+          <tr class="coin-summary fw-semibold">
+            <td th:text="${first.name}"></td>
+            <td>
+              <span class="badge"
+                    th:style="${first.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${first.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
+                    th:text="${first.metal?.label ?: '-'}"></span>
+            </td>
+            <td class="text-end" th:text="${first.weightGrams != null} ? ${#numbers.formatDecimal(first.weightGrams, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
+            <td class="text-end" th:text="${first.weightOz != null} ? ${#numbers.formatDecimal(first.weightOz, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
+            <td th:text="${groupSize == 1} ? ${first.mintYear ?: '-'} : '-'"></td>
+            <td class="text-end" th:text="${groupedQty.get(entry.key)}"></td>
+            <td>
+              <a th:if="${first.asset != null}" th:href="@{/assets/{id}/edit(id=${first.asset.id})}"
+                 th:text="${first.asset.name}" class="small"></a>
+              <span th:unless="${first.asset != null}" class="text-muted small">Spot</span>
+            </td>
+            <td th:text="${groupedDepots.get(entry.key)}"></td>
+            <td class="text-end">
+              <span th:if="${groupedValues.get(entry.key)?.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                    th:text="${#numbers.formatDecimal(groupedValues.get(entry.key), 1, 'COMMA', 2, 'POINT')} + ' €'"></span>
+              <span th:unless="${groupedValues.get(entry.key)?.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="text-muted">-</span>
+            </td>
+            <td>
+              <!-- Einzelne Münze: Aktionen direkt anzeigen -->
+              <th:block th:if="${groupSize == 1}">
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aktionen</button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${first.id})}">Bearbeiten</a></li>
+                    <li><hr class="dropdown-divider"/></li>
+                    <li>
+                      <form th:action="@{/coins/{id}/delete(id=${first.id})}" method="post"
+                            onsubmit="return confirm('Münze wirklich löschen?')">
+                        <button type="submit" class="dropdown-item text-danger">Löschen</button>
+                      </form>
+                    </li>
+                  </ul>
+                </div>
+              </th:block>
+              <!-- Mehrere Münzen: Aufklapp-Button -->
+              <th:block th:if="${groupSize > 1}">
+                <button class="btn btn-sm btn-outline-secondary toggle-group"
+                        th:attr="data-group=${entry.key}"
+                        th:data-count="${groupSize}">
+                  <span th:text="${groupSize}"></span> ▶
+                </button>
+              </th:block>
+            </td>
+          </tr>
+          <!-- Detail-Zeilen (nur bei mehreren Einträgen) -->
+          <tr th:each="c : ${entry.value}"
+              th:if="${groupSize > 1}"
+              class="coin-detail d-none table-secondary"
+              th:attr="data-group=${entry.key}">
+            <td class="ps-4 text-muted small" th:text="${c.name}"></td>
+            <td>
+              <span class="badge"
+                    th:style="${c.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${c.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
+                    th:text="${c.metal?.label ?: '-'}"></span>
+            </td>
+            <td class="text-end" th:text="${c.weightGrams != null} ? ${#numbers.formatDecimal(c.weightGrams, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
+            <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'COMMA', 4, 'POINT')} : '-'"></td>
+            <td th:text="${c.mintYear ?: '-'}"></td>
+            <td class="text-end" th:text="${c.quantity ?: '-'}"></td>
+            <td>
+              <a th:if="${c.asset != null}" th:href="@{/assets/{id}/edit(id=${c.asset.id})}"
+                 th:text="${c.asset.name}" class="small"></a>
+              <span th:unless="${c.asset != null}" class="text-muted small">Spot</span>
+            </td>
+            <td th:text="${c.depot?.name ?: '-'}"></td>
+            <td class="text-end">
+              <span th:if="${values.get(c.id) != null}"
+                    th:text="${#numbers.formatDecimal(values.get(c.id), 1, 'COMMA', 2, 'POINT')} + ' €'"></span>
+              <span th:unless="${values.get(c.id) != null}" class="text-muted">-</span>
+            </td>
+            <td>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aktionen</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}">Bearbeiten</a></li>
+                  <li><hr class="dropdown-divider"/></li>
+                  <li>
+                    <form th:action="@{/coins/{id}/delete(id=${c.id})}" method="post"
+                          onsubmit="return confirm('Münze wirklich löschen?')">
+                      <button type="submit" class="dropdown-item text-danger">Löschen</button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </th:block>
+        <tr th:if="${#maps.isEmpty(groupedCoins)}">
+          <td colspan="10" class="text-center text-muted">Keine Münzen vorhanden.</td>
         </tr>
       </tbody>
-      <tfoot th:if="${!#lists.isEmpty(coins)}">
+      <tfoot th:if="${!#maps.isEmpty(groupedCoins)}">
         <tr class="table-secondary fw-bold">
           <td colspan="8">Gesamt</td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT') + ' €'}"></td>
+          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT')} + ' €'"></td>
           <td></td>
         </tr>
       </tfoot>
@@ -100,5 +162,36 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  function setGroupExpanded(group, expand) {
+    var rows = document.querySelectorAll('tr.coin-detail[data-group="' + CSS.escape(group) + '"]');
+    rows.forEach(function (r) { r.classList.toggle('d-none', !expand); });
+    document.querySelectorAll('.toggle-group[data-group="' + CSS.escape(group) + '"]').forEach(function (btn) {
+      btn.innerHTML = btn.dataset.count + (expand ? ' ▼' : ' ▶');
+    });
+  }
+
+  document.querySelectorAll('.toggle-group').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var group = this.dataset.group;
+      var firstRow = document.querySelector('tr.coin-detail[data-group="' + CSS.escape(group) + '"]');
+      setGroupExpanded(group, firstRow && firstRow.classList.contains('d-none'));
+    });
+  });
+
+  var toggleAllBtn = document.getElementById('toggleAll');
+  if (toggleAllBtn) {
+    toggleAllBtn.addEventListener('click', function () {
+      var allDetail = document.querySelectorAll('tr.coin-detail');
+      var anyHidden = Array.from(allDetail).some(function (r) { return r.classList.contains('d-none'); });
+      document.querySelectorAll('.toggle-group').forEach(function (btn) {
+        setGroupExpanded(btn.dataset.group, anyHidden);
+      });
+      toggleAllBtn.textContent = anyHidden ? 'Alle zuklappen' : 'Alle aufklappen';
+    });
+  }
+})();
+</script>
 </body>
 </html>

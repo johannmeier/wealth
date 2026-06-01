@@ -28,8 +28,7 @@
           <th>Name</th><th>ISIN</th><th>Symbol</th><th>Kategorie</th>
           <th>Art</th><th>Index</th><th>Allocation</th>
           <th>Depots</th>
-          <th>Währung</th>
-          <th class="text-end">Kurs (€)</th><th>Aktionen</th>
+          <th class="text-end">Kurs</th><th>Aktionen</th>
         </tr>
       </thead>
       <tbody>
@@ -51,11 +50,23 @@
               <a th:href="@{/depots/{id}/positions(id=${entry.key})}" th:text="${entry.value}"></a><span th:unless="${i.last}">, </span>
             </span>
           </td>
-          <td th:text="${s.currency ?: '-'}"></td>
           <td class="text-end">
-            <span th:if="${eurPrices.get(s.id) != null}"
-                  th:text="${eurPrices.get(s.id).stripTrailingZeros().toPlainString().replace('.', ',')}"></span>
-            <span th:unless="${eurPrices.get(s.id) != null}" class="text-muted">-</span>
+            <th:block th:if="${s.currentPrice != null}">
+              <th:block th:if="${s.currency == null or s.currency == 'EUR'}">
+                <span style="white-space:nowrap"
+                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT')} + ' €'"></span>
+              </th:block>
+              <th:block th:unless="${s.currency == null or s.currency == 'EUR'}">
+                <span style="white-space:nowrap"
+                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT')} + ' ' + ${s.currency}"></span>
+                <th:block th:if="${eurPrices.get(s.id) != null}">
+                  <br/>
+                  <small class="text-muted" style="white-space:nowrap"
+                         th:text="${#numbers.formatDecimal(eurPrices.get(s.id), 1, 'COMMA', 2, 'POINT')} + ' €'"></small>
+                </th:block>
+              </th:block>
+            </th:block>
+            <span th:unless="${s.currentPrice != null}" class="text-muted">-</span>
           </td>
           <td>
             <div class="dropdown">
@@ -83,7 +94,7 @@
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(assets)}">
-          <td colspan="9" class="text-center text-muted">Keine Wertpapiere vorhanden.</td>
+          <td colspan="10" class="text-center text-muted">Keine Wertpapiere vorhanden.</td>
         </tr>
       </tbody>
     </table>
