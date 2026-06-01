@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.util.Collections;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -61,6 +62,18 @@ public class CoinController {
         model.addAttribute("depots", coinService.findAllDepots());
         model.addAttribute("existingNames", coinService.findAllNames());
         return "coins/form";
+    }
+
+    @GetMapping("/api/by-name")
+    @ResponseBody
+    public Map<String, Object> getByName(@RequestParam String name) {
+        return coinService.findFirstByName(name).map(c -> {
+            Map<String, Object> result = new HashMap<>();
+            result.put("metal", c.getMetal() != null ? c.getMetal().name() : null);
+            result.put("weightGrams", c.getWeightGrams());
+            result.put("assetId", c.getAsset() != null ? c.getAsset().getId() : null);
+            return result;
+        }).orElse(Collections.emptyMap());
     }
 
     @PostMapping("/save")

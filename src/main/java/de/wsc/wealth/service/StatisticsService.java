@@ -96,6 +96,7 @@ public class StatisticsService {
         Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
         Map<Long, BigDecimal> coinValueByAssetId = new HashMap<>();
         Map<Long, Set<String>> coinDepotsByAssetId = new HashMap<>();
+        Map<Long, Asset> coinAssetObjects = new HashMap<>();
         Map<CoinMetal, BigDecimal> coinValueByMetal = new EnumMap<>(CoinMetal.class);
         Map<CoinMetal, Set<String>> coinDepotsByMetal = new EnumMap<>(CoinMetal.class);
         for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
@@ -105,6 +106,7 @@ public class StatisticsService {
             if (coin.getAsset() != null) {
                 Long aid = coin.getAsset().getId();
                 coinValueByAssetId.merge(aid, val, BigDecimal::add);
+                coinAssetObjects.put(aid, coin.getAsset());
                 if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
             } else {
                 coinValueByMetal.merge(coin.getMetal(), val, BigDecimal::add);
@@ -112,15 +114,36 @@ public class StatisticsService {
             }
         }
         // Coin-Werte zu den verknüpften Wertpapier-Positionen addieren und Depot ergänzen
+        Set<Long> mergedAssetIds = new HashSet<>();
         for (WealthPosition p : positions) {
+            if (!"ASSET".equals(p.getType())) continue;
             BigDecimal extra = coinValueByAssetId.get(p.getId());
             if (extra == null) continue;
+            mergedAssetIds.add(p.getId());
             p.setValue(p.getValue() != null ? p.getValue().add(extra) : extra);
             Set<String> coinDepots = coinDepotsByAssetId.get(p.getId());
             if (coinDepots != null) {
                 String existing = p.getDepotName() != null && !p.getDepotName().isBlank() ? p.getDepotName() + ", " : "";
                 p.setDepotName(existing + String.join(", ", coinDepots));
             }
+        }
+        // Coins, deren verknüpftes Wertpapier keine eigene Depotposition hat, als eigene Position einfügen
+        for (Map.Entry<Long, BigDecimal> entry : coinValueByAssetId.entrySet()) {
+            Long assetId = entry.getKey();
+            if (mergedAssetIds.contains(assetId)) continue;
+            Asset asset = coinAssetObjects.get(assetId);
+            WealthPosition p = new WealthPosition();
+            p.setId(assetId);
+            p.setName(asset.getName());
+            p.setType("COIN");
+            p.setAssetType(asset.getType());
+            p.setAssetAllocation(asset.getAssetAllocation());
+            p.setIndexName(asset.getIndexName());
+            p.setValue(entry.getValue());
+            p.setCurrency("EUR");
+            Set<String> coinDepots = coinDepotsByAssetId.get(assetId);
+            if (coinDepots != null) p.setDepotName(String.join(", ", coinDepots));
+            positions.add(p);
         }
         // Coins ohne Wertpapier separat nach Metall anzeigen
         for (Map.Entry<CoinMetal, BigDecimal> entry : coinValueByMetal.entrySet()) {
@@ -143,6 +166,8 @@ public class StatisticsService {
                 }
             });
         }
+        positions.sort(Comparator.comparing(WealthPosition::getPercentage,
+            Comparator.nullsLast(Comparator.reverseOrder())));
         return positions;
     }
 
@@ -155,7 +180,7 @@ public class StatisticsService {
         BigDecimal total = totalValue(all);
 
         Map<String, List<WealthPosition>> grouped = all.stream()
-            .filter(p -> "ASSET".equals(p.getType()))
+            .filter(p -> "ASSET".equals(p.getType()) || "COIN".equals(p.getType()))
             .collect(Collectors.groupingBy(
                 p -> p.getIndexName() != null && !p.getIndexName().isBlank() ? p.getIndexName() : "Kein Index",
                 LinkedHashMap::new, Collectors.toList()
@@ -196,12 +221,19 @@ public class StatisticsService {
 
     private List<StatisticsGroup> buildGroups(Map<String, List<WealthPosition>> grouped, BigDecimal total) {
         return grouped.entrySet().stream().map(entry -> {
-            BigDecimal groupTotal = totalValue(entry.getValue());
+            List<WealthPosition> sorted = entry.getValue().stream()
+                .sorted(Comparator.comparing(WealthPosition::getPercentage,
+                    Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+            BigDecimal groupTotal = totalValue(sorted);
             BigDecimal pct = total.compareTo(BigDecimal.ZERO) > 0
                 ? groupTotal.multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
-            return new StatisticsGroup(entry.getKey(), entry.getValue(), groupTotal, pct);
-        }).collect(Collectors.toList());
+            return new StatisticsGroup(entry.getKey(), sorted, groupTotal, pct);
+        })
+        .sorted(Comparator.comparing(StatisticsGroup::getPercentage,
+            Comparator.nullsLast(Comparator.reverseOrder())))
+        .collect(Collectors.toList());
     }
 
     private BigDecimal totalValue(List<WealthPosition> positions) {

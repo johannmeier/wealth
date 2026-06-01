@@ -104,7 +104,7 @@ public class DepotController {
         BigDecimal coinTotal = BigDecimal.ZERO;
         for (Coin c : coins) {
             if (c.getMetal() == null || c.getWeightGrams() == null || c.getQuantity() == null) continue;
-            BigDecimal oz = c.getWeightOz().multiply(c.getQuantity());
+            BigDecimal oz = c.getWeightOz().multiply(BigDecimal.valueOf(c.getQuantity()));
             coinOzByMetal.merge(c.getMetal(), oz, BigDecimal::add);
             BigDecimal val = coinService.valueEur(c, spotPrices);
             if (val != null) {

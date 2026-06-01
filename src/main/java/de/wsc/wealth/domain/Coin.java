@@ -23,8 +23,7 @@ public class Coin {
 
     private Integer mintYear;
 
-    @Column(precision = 19, scale = 10)
-    private BigDecimal quantity;
+    private Integer quantity;
 
     @Enumerated(EnumType.STRING)
     private AssetAllocation assetAllocation;
@@ -49,8 +48,8 @@ public class Coin {
     public void setWeightGrams(BigDecimal weightGrams) { this.weightGrams = weightGrams; }
     public Integer getMintYear() { return mintYear; }
     public void setMintYear(Integer mintYear) { this.mintYear = mintYear; }
-    public BigDecimal getQuantity() { return quantity; }
-    public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public AssetAllocation getAssetAllocation() { return assetAllocation; }
     public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
     public Asset getAsset() { return asset; }
@@ -60,6 +59,6 @@ public class Coin {
 
     public BigDecimal getWeightOz() {
         if (weightGrams == null) return null;
-        return weightGrams.divide(new BigDecimal("31.1035"), 10, java.math.RoundingMode.HALF_UP);
+        return weightGrams.divide(new BigDecimal("31.1034768"), 10, java.math.RoundingMode.HALF_UP);
     }
 }

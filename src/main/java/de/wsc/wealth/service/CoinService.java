@@ -21,7 +21,7 @@ import java.util.Optional;
 @Transactional
 public class CoinService {
 
-    private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1035");
+    private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1034768");
 
     private final CoinRepository coinRepository;
     private final DepotRepository depotRepository;
@@ -47,6 +47,9 @@ public class CoinService {
 
     @Transactional(readOnly = true)
     public List<String> findAllNames() { return coinRepository.findDistinctNames(); }
+
+    @Transactional(readOnly = true)
+    public Optional<Coin> findFirstByName(String name) { return coinRepository.findFirstByName(name); }
 
     @Transactional(readOnly = true)
     public List<Coin> findByDepotId(Long depotId) {
@@ -92,15 +95,16 @@ public class CoinService {
     // - Ohne Wertpapier: Anzahl × (Gewicht / 31,1035) × Spotpreis(USD/oz) × USD→EUR
     public BigDecimal valueEur(Coin coin, Map<CoinMetal, BigDecimal> spotPricesUsd) {
         if (coin.getMetal() == null || coin.getWeightGrams() == null || coin.getQuantity() == null) return null;
+        BigDecimal qty = BigDecimal.valueOf(coin.getQuantity());
         BigDecimal oz = coin.getWeightGrams().divide(GRAMS_PER_OZ, 10, RoundingMode.HALF_UP);
         Asset asset = coin.getAsset();
         if (asset != null && asset.getCurrentPrice() != null) {
             BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
-            if (priceEur != null) return coin.getQuantity().multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
+            if (priceEur != null) return qty.multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
         }
         BigDecimal spotUsd = spotPricesUsd.get(coin.getMetal());
         if (spotUsd == null) return null;
-        BigDecimal valueUsd = coin.getQuantity().multiply(oz).multiply(spotUsd);
+        BigDecimal valueUsd = qty.multiply(oz).multiply(spotUsd);
         return exchangeRateService.toEur(valueUsd, "USD");
     }
 }

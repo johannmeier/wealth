@@ -93,7 +93,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
-  const OZ_TO_G = 31.1035;
+  const OZ_TO_G = 31.1034768;
   let currentUnit = 'g';
 
   const weightInput  = document.getElementById('weightInput');
@@ -132,6 +132,27 @@
     if (!isNaN(val)) {
       weightGrams.value = currentUnit === 'oz' ? (val * OZ_TO_G).toFixed(10) : val;
     }
+  });
+
+  // Auto-Ausfüllen bei Auswahl eines bekannten Münznamens
+  const nameInput = document.querySelector('input[list="coinNames"]');
+  const existingNames = new Set([...document.querySelectorAll('#coinNames option')].map(o => o.value));
+
+  nameInput.addEventListener('change', function () {
+    const name = this.value.trim();
+    if (!existingNames.has(name)) return;
+    fetch('/coins/api/by-name?name=' + encodeURIComponent(name))
+      .then(r => r.json())
+      .then(data => {
+        if (data.metal) document.getElementById('metal').value = data.metal;
+        if (data.weightGrams != null) {
+          const grams = parseFloat(data.weightGrams);
+          weightGrams.value = grams;
+          weightInput.value = currentUnit === 'oz' ? (grams / OZ_TO_G).toFixed(6) : grams;
+        }
+        const assetSel = document.querySelector('select[name="assetId"]');
+        if (assetSel) assetSel.value = data.assetId != null ? data.assetId : '';
+      });
   });
 })();
 </script>
