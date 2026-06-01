@@ -7,9 +7,13 @@
 </head>
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<div class="container mt-4">
+<div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+    <span th:text="${error}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
   <div class="d-flex justify-content-between align-items-center mb-3">
@@ -111,9 +115,14 @@
             <td th:text="${s.name}"></td>
             <td th:text="${s.isin ?: '-'}"></td>
             <td th:text="${s.symbol ?: '-'}"></td>
-            <td>
+            <td class="d-flex gap-2">
               <form th:action="@{/assets/{id}/restore(id=${s.id})}" method="post" class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-success">Wiederherstellen</button>
+              </form>
+              <form th:if="${deletableIds.contains(s.id)}"
+                    th:action="@{/assets/{id}/hard-delete(id=${s.id})}" method="post" class="d-inline"
+                    onsubmit="return confirm('Wertpapier endgültig löschen? Kurshistorie wird ebenfalls entfernt.')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
               </form>
             </td>
           </tr>

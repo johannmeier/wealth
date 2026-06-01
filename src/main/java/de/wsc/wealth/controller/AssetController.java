@@ -44,6 +44,7 @@ public class AssetController {
         model.addAttribute("eurPrices", eurPrices);
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
         model.addAttribute("archivedAssets", assetService.findAllArchived());
+        model.addAttribute("deletableIds", assetService.getDeletableArchivedIds());
         return "assets/list";
     }
 
@@ -79,6 +80,17 @@ public class AssetController {
     public String restore(@PathVariable Long id, RedirectAttributes ra) {
         assetService.restore(id);
         ra.addFlashAttribute("success", "Wertpapier wiederhergestellt.");
+        return "redirect:/assets";
+    }
+
+    @PostMapping("/{id}/hard-delete")
+    public String hardDelete(@PathVariable Long id, RedirectAttributes ra) {
+        if (assetService.isDeletable(id)) {
+            assetService.hardDelete(id);
+            ra.addFlashAttribute("success", "Wertpapier gelöscht.");
+        } else {
+            ra.addFlashAttribute("error", "Wertpapier kann nicht gelöscht werden (Depotbestände oder Münzen vorhanden).");
+        }
         return "redirect:/assets";
     }
 

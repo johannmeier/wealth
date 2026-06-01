@@ -19,15 +19,18 @@ public class AssetService {
     private final AssetQuantityRepository quantityRepository;
     private final DepotRepository depotRepository;
     private final PriceHistoryRepository priceHistoryRepository;
+    private final de.wsc.wealth.repository.CoinRepository coinRepository;
 
     public AssetService(AssetRepository assetRepository,
                         AssetQuantityRepository quantityRepository,
                         DepotRepository depotRepository,
-                        PriceHistoryRepository priceHistoryRepository) {
+                        PriceHistoryRepository priceHistoryRepository,
+                        de.wsc.wealth.repository.CoinRepository coinRepository) {
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
         this.depotRepository = depotRepository;
         this.priceHistoryRepository = priceHistoryRepository;
+        this.coinRepository = coinRepository;
     }
 
     @Transactional(readOnly = true)
@@ -87,6 +90,28 @@ public class AssetService {
     }
 
     public List<Asset> findAllArchived() { return assetRepository.findAllByArchivedTrueOrderByNameAsc(); }
+
+    public void hardDelete(Long id) {
+        assetRepository.findById(id).ifPresent(asset -> {
+            priceHistoryRepository.deleteByAsset(asset);
+            assetRepository.delete(asset);
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isDeletable(Long id) {
+        return assetRepository.findById(id).map(asset ->
+            !quantityRepository.existsByAsset(asset) && !coinRepository.existsByAsset(asset)
+        ).orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> getDeletableArchivedIds() {
+        return findAllArchived().stream()
+            .filter(a -> !quantityRepository.existsByAsset(a) && !coinRepository.existsByAsset(a))
+            .map(Asset::getId)
+            .collect(java.util.stream.Collectors.toSet());
+    }
 
     private Optional<Asset> findArchivedMatch(Asset asset) {
         boolean hasIsin   = asset.getIsin()   != null && !asset.getIsin().isBlank();

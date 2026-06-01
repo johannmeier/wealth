@@ -8,7 +8,7 @@
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-<div class="container mt-4">
+<div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

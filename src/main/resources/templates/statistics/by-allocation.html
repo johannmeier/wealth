@@ -7,7 +7,7 @@
 </head>
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<div class="container mt-4">
+<div class="container-fluid px-4 mt-4">
   <h3>Auflistung nach Asset Allocation</h3>
   <div class="alert alert-info">
     Gesamtvermögen: <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'"></strong>
