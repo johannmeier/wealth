@@ -16,7 +16,7 @@ import java.util.Map;
 public class AssetSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(AssetSearchService.class);
-    private static final String SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search?q={q}&quotesCount=15&newsCount=0&enableFuzzyQuery=false";
+    private static final String SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search?q={q}&quotesCount=15&newsCount=0&enableFuzzyQuery=true";
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -68,20 +68,53 @@ public class AssetSearchService {
                 r.put("category", mapCategory(quoteType));
                 results.add(r);
             }
+            if (results.isEmpty()) {
+                Map<String, String> direct = tryDirectSymbol(query);
+                if (!direct.isEmpty()) results.add(direct);
+            }
             return results;
         } catch (Exception e) {
             log.warn("Asset search failed for '{}': {}", query, e.getMessage());
-            return List.of();
+            // Fallback: try query as direct symbol
+            Map<String, String> direct = tryDirectSymbol(query);
+            return direct.isEmpty() ? List.of() : List.of(direct);
+        }
+    }
+
+    private Map<String, String> tryDirectSymbol(String symbol) {
+        try {
+            String json = restClient.get()
+                .uri("https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d", symbol)
+                .retrieve().body(String.class);
+            JsonNode result = objectMapper.readTree(json).path("chart").path("result");
+            if (!result.isArray() || result.isEmpty()) return Map.of();
+            JsonNode meta = result.get(0).path("meta");
+            String sym = meta.path("symbol").asText("");
+            if (sym.isBlank()) return Map.of();
+            String exchange = meta.path("exchangeName").asText("");
+            String currency = meta.path("currency").asText("");
+            Map<String, String> r = new HashMap<>();
+            r.put("name", meta.path("shortName").asText(sym));
+            r.put("symbol", sym);
+            r.put("exchange", exchange);
+            r.put("currency", currency.isBlank() ? currencyForExchange(exchange) : currency);
+            r.put("type", "SONSTIGE");
+            r.put("category", "BOERSENGEHANDELT");
+            return r;
+        } catch (Exception e) {
+            log.debug("Direct symbol lookup failed for '{}': {}", symbol, e.getMessage());
+            return Map.of();
         }
     }
 
     private String mapType(String quoteType) {
         return switch (quoteType) {
-            case "ETF"        -> "ETF";
-            case "MUTUALFUND" -> "AKTIENFONDS";
-            case "EQUITY"     -> "AKTIE";
-            case "CURRENCY"   -> "WAEHRUNG";
-            default           -> "SONSTIGE";
+            case "ETF"            -> "ETF";
+            case "MUTUALFUND"     -> "AKTIENFONDS";
+            case "EQUITY"         -> "AKTIE";
+            case "CURRENCY"       -> "WAEHRUNG";
+            case "CRYPTOCURRENCY" -> "KRYPTO";
+            default               -> "SONSTIGE";
         };
     }
 
@@ -103,7 +136,7 @@ public class AssetSearchService {
 
     private String mapCategory(String quoteType) {
         return switch (quoteType) {
-            case "ETF", "MUTUALFUND", "EQUITY" -> "BOERSENGEHANDELT";
+            case "ETF", "MUTUALFUND", "EQUITY", "CRYPTOCURRENCY" -> "BOERSENGEHANDELT";
             default -> "SONSTIGE";
         };
     }

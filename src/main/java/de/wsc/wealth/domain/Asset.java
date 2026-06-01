@@ -23,6 +23,7 @@ public class Asset {
     private AssetCategory category;
 
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "VARCHAR(255)")
     private AssetType type;
 
     @Enumerated(EnumType.STRING)
@@ -67,6 +68,8 @@ public class Asset {
     public void setArchived(boolean archived) { this.archived = archived; }
 
     public boolean isAutoPrice() {
-        return category == AssetCategory.BOERSENGEHANDELT || category == AssetCategory.EDELMETALL;
+        return category == AssetCategory.BOERSENGEHANDELT
+            || category == AssetCategory.EDELMETALL
+            || type == AssetType.KRYPTO;
     }
 }

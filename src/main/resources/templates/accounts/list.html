@@ -34,8 +34,8 @@
                 th:text="${a.assetAllocation.label}"></span>
         </td>
         <td class="text-end">
-          <span th:if="${latestBalances.containsKey(a.id)}"
-                th:text="${#numbers.formatDecimal(latestBalances.get(a.id), 1, 'COMMA', 2, 'POINT')} + ' ' + ${a.currency}"></span>
+          <span th:if="${latestBalances.containsKey(a.id)}" style="white-space:nowrap"
+                th:text="${#numbers.formatDecimal(latestBalances.get(a.id), 1, 'POINT', 2, 'COMMA')} + ' ' + ${a.currency}"></span>
           <span th:unless="${latestBalances.containsKey(a.id)}" class="text-muted">—</span>
         </td>
         <td>
@@ -54,7 +54,7 @@
     <tfoot th:if="${!#lists.isEmpty(accounts)}">
       <tr class="table-secondary fw-bold">
         <td colspan="4">Gesamt</td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(balanceTotal, 1, 'COMMA', 2, 'POINT')} + ' EUR'"></td>
+        <td class="text-end" th:text="${#numbers.formatDecimal(balanceTotal, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></td>
         <td></td>
       </tr>
     </tfoot>

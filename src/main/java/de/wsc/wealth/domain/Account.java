@@ -14,7 +14,6 @@ public class Account {
     @NotBlank
     private String bank;
 
-    @NotBlank
     private String accountNumber;
 
     private String description;
@@ -34,7 +33,7 @@ public class Account {
     public void setBank(String bank) { this.bank = bank; }
     public String getAccountNumber() { return accountNumber; }
     public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
-    public String getDisplayName() { return bank + " – " + accountNumber; }
+    public String getDisplayName() { return accountNumber != null && !accountNumber.isBlank() ? bank + " – " + accountNumber : bank; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public String getIban() { return iban; }

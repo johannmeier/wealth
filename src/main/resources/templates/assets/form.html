@@ -110,7 +110,7 @@
       .then(list => {
         resultsBox.innerHTML = '';
         if (!list.length) {
-          resultsBox.innerHTML = '<div class="list-group-item text-muted">Keine Treffer</div>';
+          resultsBox.innerHTML = '<div class="list-group-item text-muted">Keine Treffer – Symbol direkt eingeben (z.B. <code>4GLD.DE</code>) und erneut suchen</div>';
         } else {
           list.forEach(r => {
             const btn = document.createElement('button');

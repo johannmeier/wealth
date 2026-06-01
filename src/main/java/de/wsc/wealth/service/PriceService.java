@@ -40,7 +40,7 @@ public class PriceService {
             .build();
     }
 
-    @Scheduled(cron = "0 0 18 * * MON-FRI")
+    @Scheduled(cron = "0 0 18 * * *")
     @Transactional
     public void updatePrices() {
         List<Asset> assets = assetRepository.findByArchivedFalseAndSymbolIsNotNull().stream()

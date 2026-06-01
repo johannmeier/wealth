@@ -7,6 +7,7 @@ public enum AssetType {
     ANLEIHE("Anleihe"),
     WAEHRUNG("Währung"),
     EDELMETALL("Edelmetall"),
+    KRYPTO("Krypto"),
     SONSTIGE("Sonstige");
 
     private final String label;
