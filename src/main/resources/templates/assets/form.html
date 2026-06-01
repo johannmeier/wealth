@@ -82,7 +82,7 @@
     </div>
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary">Speichern</button>
-      <a th:href="@{/assets}" class="btn btn-outline-secondary">Abbrechen</a>
+      <a th:href="${asset.id != null} ? @{/assets(highlight=${asset.id})} : @{/assets}" class="btn btn-outline-secondary">Abbrechen</a>
     </div>
   </form>
 </div>

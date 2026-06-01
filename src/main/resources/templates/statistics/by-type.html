@@ -9,32 +9,58 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div class="container-fluid px-4 mt-4">
   <h3>Auflistung nach Wertpapierart</h3>
-  <div class="alert alert-info">
-    Gesamtvermögen: <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'"></strong>
+  <div class="alert alert-info d-flex justify-content-between align-items-center">
+    <span>Gesamtvermögen</span>
+    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'"></strong>
   </div>
-  <div th:each="group : ${groups}" class="mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <h5 th:text="${group.name}"></h5>
-      <span class="badge bg-secondary fs-6"
-            th:text="${#numbers.formatDecimal(group.totalValue, 1, 'COMMA', 2, 'POINT')} + ' € (' + ${group.percentage} + ' %)'"></span>
-    </div>
-    <table class="table table-sm table-striped">
-      <thead class="table-dark">
-        <tr><th>Name</th><th>Depot</th><th>Index</th><th class="text-end">Wert (€)</th><th class="text-end">Anteil %</th></tr>
-      </thead>
-      <tbody>
-        <tr th:each="p : ${group.positions}">
-          <td th:text="${p.name}"></td>
-          <td th:text="${p.depotName ?: '-'}"></td>
-          <td th:text="${p.indexName ?: '-'}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'COMMA', 2, 'POINT')}"></td>
-          <td class="text-end" th:text="${p.percentage} + ' %'"></td>
+
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Art</th>
+        <th class="text-end">Wert (€)</th>
+        <th class="text-end">Anteil %</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <th:block th:each="group, i : ${groups}">
+        <tr class="fw-semibold">
+          <td th:text="${group.name}"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(group.totalValue, 1, 'COMMA', 2, 'POINT')}"></td>
+          <td class="text-end" th:text="${group.percentage} + ' %'"></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary toggle-group"
+                    th:attr="data-target='group-' + ${i.index}">
+              <span th:text="${#lists.size(group.positions)}"></span> ▶
+            </button>
+          </td>
         </tr>
-      </tbody>
-    </table>
-  </div>
+        <tr th:each="p : ${group.positions}"
+            th:id="'group-' + ${i.index}"
+            class="group-detail d-none table-light">
+          <td class="ps-4" th:text="${p.name}"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'COMMA', 2, 'POINT')}"></td>
+          <td class="text-end text-muted" th:text="${p.percentage} + ' %'"></td>
+          <td class="text-muted small" th:text="${p.depotName ?: '-'}"></td>
+        </tr>
+      </th:block>
+    </tbody>
+  </table>
+
   <div th:if="${#lists.isEmpty(groups)}" class="text-muted">Keine Daten vorhanden.</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('.toggle-group').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var target = this.dataset.target;
+    var rows = document.querySelectorAll('[id="' + target + '"]');
+    var expand = rows.length > 0 && rows[0].classList.contains('d-none');
+    rows.forEach(function (r) { r.classList.toggle('d-none', !expand); });
+    this.innerHTML = rows.length + (expand ? ' ▼' : ' ▶');
+  });
+});
+</script>
 </body>
 </html>

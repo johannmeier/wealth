@@ -34,7 +34,7 @@ public class AssetController {
     }
 
     @GetMapping
-    public String list(Model model) {
+    public String list(Model model, @org.springframework.web.bind.annotation.RequestParam(required = false) Long highlight) {
         List<Asset> assets = assetService.findAll();
         Map<Long, BigDecimal> eurPrices = new java.util.HashMap<>();
         for (Asset a : assets) {
@@ -45,6 +45,7 @@ public class AssetController {
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
         model.addAttribute("archivedAssets", assetService.findAllArchived());
         model.addAttribute("deletableIds", assetService.getDeletableArchivedIds());
+        if (highlight != null) model.addAttribute("highlightId", highlight);
         return "assets/list";
     }
 
@@ -64,8 +65,9 @@ public class AssetController {
 
     @PostMapping("/save")
     public String save(@ModelAttribute Asset asset, RedirectAttributes ra) {
-        assetService.save(asset);
+        Asset saved = assetService.save(asset);
         ra.addFlashAttribute("success", "Wertpapier gespeichert.");
+        ra.addFlashAttribute("highlightId", saved.getId());
         return "redirect:/assets";
     }
 
@@ -73,6 +75,7 @@ public class AssetController {
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         assetService.delete(id);
         ra.addFlashAttribute("success", "Wertpapier archiviert.");
+        ra.addFlashAttribute("highlightId", id);
         return "redirect:/assets";
     }
 
@@ -80,6 +83,7 @@ public class AssetController {
     public String restore(@PathVariable Long id, RedirectAttributes ra) {
         assetService.restore(id);
         ra.addFlashAttribute("success", "Wertpapier wiederhergestellt.");
+        ra.addFlashAttribute("highlightId", id);
         return "redirect:/assets";
     }
 
@@ -138,6 +142,7 @@ public class AssetController {
             }
         });
         ra.addFlashAttribute("success", "Kurs aktualisiert.");
+        ra.addFlashAttribute("highlightId", id);
         return "redirect:/assets";
     }
 
