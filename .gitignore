@@ -45,3 +45,6 @@ build/
 
 ### Logs ###
 *.log
+
+### Wealth Config ###
+wealth-config.properties

@@ -35,7 +35,7 @@ public class AssetSearchService {
                 .retrieve()
                 .body(String.class);
             JsonNode meta = objectMapper.readTree(json).path("chart").path("result").get(0).path("meta");
-            return Map.of("currency", meta.path("currency").asText(""));
+            return Map.of("currency", meta.path("currency").asString(""));
         } catch (Exception e) {
             log.warn("Quote details fetch failed for '{}': {}", symbol, e.getMessage());
             return Map.of();
@@ -53,15 +53,15 @@ public class AssetSearchService {
             List<Map<String, String>> results = new ArrayList<>();
 
             for (JsonNode q : quotes) {
-                String quoteType = q.path("quoteType").asText("");
+                String quoteType = q.path("quoteType").asString("");
                 if (quoteType.isBlank() || quoteType.equals("OPTION") || quoteType.equals("FUTURE")) continue;
 
                 Map<String, String> r = new HashMap<>();
-                String exchange = q.path("exchange").asText("");
-                String currency = q.path("currency").asText("");
+                String exchange = q.path("exchange").asString("");
+                String currency = q.path("currency").asString("");
                 if (currency.isBlank()) currency = currencyForExchange(exchange);
-                r.put("name", q.path("longname").asText(q.path("shortname").asText("")));
-                r.put("symbol", q.path("symbol").asText(""));
+                r.put("name", q.path("longname").asString(q.path("shortname").asString("")));
+                r.put("symbol", q.path("symbol").asString(""));
                 r.put("exchange", exchange);
                 r.put("currency", currency);
                 r.put("type", mapType(quoteType));
@@ -87,14 +87,14 @@ public class AssetSearchService {
                 .uri("https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d", symbol)
                 .retrieve().body(String.class);
             JsonNode result = objectMapper.readTree(json).path("chart").path("result");
-            if (!result.isArray() || result.isEmpty()) return Map.of();
+            if (!result.isArray() || result.size() == 0) return Map.of();
             JsonNode meta = result.get(0).path("meta");
-            String sym = meta.path("symbol").asText("");
+            String sym = meta.path("symbol").asString("");
             if (sym.isBlank()) return Map.of();
-            String exchange = meta.path("exchangeName").asText("");
-            String currency = meta.path("currency").asText("");
+            String exchange = meta.path("exchangeName").asString("");
+            String currency = meta.path("currency").asString("");
             Map<String, String> r = new HashMap<>();
-            r.put("name", meta.path("shortName").asText(sym));
+            r.put("name", meta.path("shortName").asString(sym));
             r.put("symbol", sym);
             r.put("exchange", exchange);
             r.put("currency", currency.isBlank() ? currencyForExchange(exchange) : currency);
