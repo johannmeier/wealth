@@ -1,0 +1,63 @@
+Wealth – Release History
+========================
+
+Version 1.0.1  (2026-06-02)
+-----------------------------
+Settings & UI
+  - Settings menu in navbar: language, color scheme, display currency
+  - Language switch: German / English
+  - Color scheme: Light, Dark, System (follows OS preference)
+  - Configurable display currency: any 3-letter ISO code (EUR, USD, GBP, CHF, ...)
+    All monetary values are converted from EUR to the selected currency;
+    account balances show both display currency and native account currency
+  - Locale-aware number formatting (e.g. German decimal comma)
+  - Accessibility improvements across all pages
+
+Platform & Distribution
+  - Platform-specific data directory:
+      Windows  → %APPDATA%\Wealth\
+      macOS    → ~/Library/Application Support/Wealth/
+      Linux    → ~/.config/wealth/
+  - System tray icon with show/hide and quit actions
+  - Info page showing version, config path and database path
+  - MIT license
+
+Layout
+  - Unified widescreen table layout across all pages
+  - Fixed dashboard layout (labels left, values right)
+
+
+Version 1.0.0  (2025)
+-----------------------
+Initial release.
+
+Core tracking
+  - Securities: exchange-traded (stocks, ETFs, bonds, funds, crypto, currencies,
+    precious metals) and manual (e.g. pension plans without automatic prices)
+  - Automatic price updates via Yahoo Finance at startup and weekdays at 18:30
+  - EUR conversion for non-EUR securities using live exchange rates
+  - Asset archiving and restore (history is retained)
+  - Asset search via Yahoo Finance (name, ISIN, WKN)
+
+Accounts & Depots
+  - Bank accounts with individual currencies and date-based balance snapshots
+  - Depots (portfolios) grouping securities with date-based quantity snapshots
+  - Editable depot positions
+
+Physical Precious Metals
+  - Coin management for gold, silver and platinum
+  - Weight entered in grams; automatic troy ounce conversion
+  - Optional link to a security as EUR/oz price source
+  - Spot prices fetched live from Yahoo Finance as fallback
+  - Coins integrated into statistics and depot positions
+
+Statistics
+  - Dashboard: all positions with quantities, prices and wealth percentages
+  - By allocation (Risky / Risk-Free)
+  - By index (MSCI World, S&P 500, ...)
+  - By security type (ETF, Stock, Bond, ...)
+  - Collapsible detail rows in statistics views
+
+History
+  - Monthly price snapshots for all securities (1st of each month)
+  - Full balance and quantity history per account and depot
