@@ -1,5 +1,6 @@
 package de.wsc.wealth.controller;
 
+import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.StatisticsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,12 +21,14 @@ class DashboardControllerTest {
 
     @Mock
     private StatisticsService statisticsService;
+    @Mock
+    private AssetService assetService;
 
     private DashboardController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new DashboardController(statisticsService);
+        controller = new DashboardController(statisticsService, assetService);
     }
 
     @Test

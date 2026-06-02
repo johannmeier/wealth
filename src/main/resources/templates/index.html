@@ -40,7 +40,15 @@
     <tbody>
       <tr th:each="pos : ${positions}">
         <td th:text="${pos.name}"></td>
-        <td th:text="${pos.depotName ?: '-'}"></td>
+        <td>
+          <th:block th:if="${depotsByAsset.get(pos.id) != null and !depotsByAsset.get(pos.id).isEmpty()}">
+            <span th:each="entry, i : ${depotsByAsset.get(pos.id)}">
+              <a th:href="@{/depots/{id}/positions(id=${entry.key})}" th:text="${entry.value}"></a><span th:unless="${i.last}">, </span>
+            </span>
+          </th:block>
+          <span th:unless="${depotsByAsset.get(pos.id) != null and !depotsByAsset.get(pos.id).isEmpty()}"
+                th:text="${pos.depotName ?: '-'}"></span>
+        </td>
         <td>
           <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info" th:text="#{assetType.KONTO}">Konto</span>
           <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msg('assetType.' + pos.assetType.name())}"></span>

@@ -1,6 +1,7 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.service.ExchangeRateService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -18,11 +19,13 @@ public class CurrencyAdvice {
     }
 
     @ModelAttribute
-    public void addCurrencyAttributes(
+    public void addAttributes(
             @CookieValue(name = "wealth-currency", defaultValue = "EUR") String displayCurrency,
+            HttpServletRequest request,
             Model model) {
         BigDecimal rate = exchangeRateService.getEurToRate(displayCurrency);
         model.addAttribute("displayCurrency", displayCurrency);
         model.addAttribute("eurToDisplayRate", rate != null ? rate : BigDecimal.ONE);
+        model.addAttribute("currentUri", request.getRequestURI());
     }
 }

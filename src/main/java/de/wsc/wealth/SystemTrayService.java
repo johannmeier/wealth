@@ -48,6 +48,7 @@ public class SystemTrayService {
         });
         popup.add(exitItem);
         trayIcon.setPopupMenu(popup);
+        trayIcon.addActionListener(e -> openBrowser("http://localhost:" + serverPort + "/"));
 
         try {
             SystemTray.getSystemTray().add(trayIcon);

@@ -1,3 +1,12 @@
+.navbar .navbar-brand {
+    color: var(--bs-navbar-color);
+}
+.navbar .navbar-brand.active,
+.navbar .navbar-brand:hover,
+.navbar .navbar-brand:focus {
+    color: var(--bs-navbar-active-color);
+}
+
 .container-fluid {
     padding-left:  clamp(1rem, 5vw, 14rem) !important;
     padding-right: clamp(1rem, 5vw, 14rem) !important;

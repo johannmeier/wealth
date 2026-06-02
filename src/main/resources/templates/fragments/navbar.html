@@ -36,24 +36,35 @@
 <link rel="stylesheet" th:href="@{/css/wealth.css}"/>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Hauptnavigation">
   <div class="container-fluid">
-    <a class="navbar-brand" th:href="@{/}" th:text="#{nav.brand}">💰 Vermögen</a>
+    <a class="navbar-brand" th:href="@{/}" th:text="#{nav.brand}"
+       th:classappend="${currentUri == '/'} ? ' active' : ''">💰 Vermögen</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/assets}" th:text="#{nav.assets}">Wertpapiere</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/accounts}" th:text="#{nav.accounts}">Konten</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/depots}" th:text="#{nav.depots}">Depots</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/coins}" th:text="#{nav.coins}">Münzen</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/standing-orders}" th:text="#{nav.standing-orders}">Daueraufträge</a></li>
+      <ul class="navbar-nav me-auto" th:with="uri=${currentUri}">
+        <li class="nav-item"><a class="nav-link" th:href="@{/assets}" th:text="#{nav.assets}"
+            th:classappend="${uri.startsWith('/assets')} ? ' active' : ''">Wertpapiere</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/accounts}" th:text="#{nav.accounts}"
+            th:classappend="${uri.startsWith('/accounts')} ? ' active' : ''">Konten</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/depots}" th:text="#{nav.depots}"
+            th:classappend="${uri.startsWith('/depots')} ? ' active' : ''">Depots</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/coins}" th:text="#{nav.coins}"
+            th:classappend="${uri.startsWith('/coins')} ? ' active' : ''">Münzen</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/standing-orders}" th:text="#{nav.standing-orders}"
+            th:classappend="${uri.startsWith('/standing-orders')} ? ' active' : ''">Daueraufträge</a></li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{nav.statistics}">Statistiken</a>
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{nav.statistics}"
+             th:classappend="${uri.startsWith('/statistics')} ? ' active' : ''">Statistiken</a>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" th:href="@{/statistics/overview}" th:text="#{nav.statistics.overview}">Übersicht</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-index}" th:text="#{nav.statistics.by-index}">Nach Index</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-type}" th:text="#{nav.statistics.by-type}">Nach Wertpapierart</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}" th:text="#{nav.statistics.by-allocation}">Nach Allocation</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/overview}" th:text="#{nav.statistics.overview}"
+                   th:classappend="${uri == '/statistics/overview'} ? ' active' : ''">Übersicht</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-index}" th:text="#{nav.statistics.by-index}"
+                   th:classappend="${uri == '/statistics/by-index'} ? ' active' : ''">Nach Index</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-type}" th:text="#{nav.statistics.by-type}"
+                   th:classappend="${uri == '/statistics/by-type'} ? ' active' : ''">Nach Wertpapierart</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}" th:text="#{nav.statistics.by-allocation}"
+                   th:classappend="${uri == '/statistics/by-allocation'} ? ' active' : ''">Nach Allocation</a></li>
           </ul>
         </li>
       </ul>

@@ -68,17 +68,28 @@
                   th:text="${#numbers.formatDecimal(positionValues.get(q.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
             <span th:unless="${positionValues.containsKey(q.id)}" class="text-muted">-</span>
           </td>
-          <td class="text-nowrap">
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                    th:attr="data-qid=${q.id},
-                             data-assetid=${q.asset.id},
-                             data-date=${q.date},
-                             data-quantity=${q.quantity.toPlainString()}"
-                    onclick="startEdit(this)" th:text="#{common.edit}">Bearbeiten</button>
-            <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post" class="d-inline"
-                  th:attr="onsubmit=|return confirm('#{confirm.delete-position}')|">
-              <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
-            </form>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                      data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}" th:text="#{common.actions}">Aktionen</button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button type="button" class="dropdown-item"
+                          th:attr="data-qid=${q.id},
+                                   data-assetid=${q.asset.id},
+                                   data-date=${q.date},
+                                   data-quantity=${q.quantity.toPlainString()}"
+                          onclick="startEdit(this)" th:text="#{common.edit}">Bearbeiten</button>
+                </li>
+                <li><hr class="dropdown-divider"/></li>
+                <li>
+                  <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post"
+                        th:attr="onsubmit=|return confirm('#{confirm.delete-position}')|">
+                    <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
           </td>
         </tr>
         <tr th:each="entry : ${coinOzByMetal}">
