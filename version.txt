@@ -27,7 +27,7 @@ Layout
   - Fixed dashboard layout (labels left, values right)
 
 
-Version 1.0.0  (2025)
+Version 1.0.0  (2026-06-02)
 -----------------------
 Initial release.
 
