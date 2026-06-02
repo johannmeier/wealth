@@ -21,7 +21,7 @@
       </div>
       <div th:if="${!#lists.isEmpty(accounts)}" class="alert alert-info d-flex justify-content-between align-items-center mb-0 mt-2 fs-6 fw-normal">
         <span th:text="#{common.total}">Gesamt</span>
-        <strong th:text="${#numbers.formatDecimal(balanceTotal, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></strong>
+        <strong th:text="${#numbers.formatDecimal(balanceTotal, 1, 'DEFAULT', 2, 'DEFAULT')} + ' EUR'"></strong>
       </div>
     </caption>
     <thead class="table-dark">
@@ -49,7 +49,7 @@
         </td>
         <td class="text-end">
           <span th:if="${latestBalances.containsKey(a.id)}" style="white-space:nowrap"
-                th:text="${#numbers.formatDecimal(latestBalances.get(a.id), 1, 'POINT', 2, 'COMMA')} + ' ' + ${a.currency}"></span>
+                th:text="${#numbers.formatDecimal(latestBalances.get(a.id), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${a.currency}"></span>
           <span th:unless="${latestBalances.containsKey(a.id)}" class="text-muted">—</span>
         </td>
         <td>

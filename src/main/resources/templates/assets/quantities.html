@@ -53,7 +53,7 @@
       <tr th:each="q : ${quantities}">
         <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
         <td th:text="${q.depot.name}"></td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'POINT', 4, 'COMMA')}"></td>
+        <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'DEFAULT', 4, 'DEFAULT')}"></td>
       </tr>
       <tr th:if="${#lists.isEmpty(quantities)}">
         <td colspan="3" class="text-center text-muted" th:text="#{page.assets.quantities.empty}">Noch keine Bestände eingetragen.</td>

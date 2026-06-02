@@ -62,10 +62,10 @@
         <tr th:each="q : ${quantities}">
           <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
           <td><a th:href="@{/assets/{id}/edit(id=${q.asset.id})}" th:text="${q.asset.name}"></a></td>
-          <td class="text-end" th:text="${q.quantity.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'DEFAULT', 4, 'DEFAULT')}"></td>
           <td class="text-end">
             <span th:if="${positionValues.containsKey(q.id)}"
-                  th:text="${#numbers.formatDecimal(positionValues.get(q.id), 1, 'POINT', 2, 'COMMA')}"></span>
+                  th:text="${#numbers.formatDecimal(positionValues.get(q.id), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
             <span th:unless="${positionValues.containsKey(q.id)}" class="text-muted">-</span>
           </td>
           <td class="text-nowrap">
@@ -89,10 +89,10 @@
             </a>
           </td>
           <td class="text-end"
-              th:text="${#numbers.formatDecimal(entry.value, 1, 'POINT', 4, 'COMMA') + ' oz'}"></td>
+              th:text="${#numbers.formatDecimal(entry.value, 1, 'DEFAULT', 4, 'DEFAULT') + ' oz'}"></td>
           <td class="text-end">
             <span th:if="${coinValueByMetal.containsKey(entry.key)}"
-                  th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key), 1, 'POINT', 2, 'COMMA')}"></span>
+                  th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
             <span th:unless="${coinValueByMetal.containsKey(entry.key)}" class="text-muted">-</span>
           </td>
           <td></td>
@@ -103,7 +103,7 @@
         <tr class="table-dark fw-bold">
           <td colspan="3" th:text="#{common.total}">Gesamt</td>
           <td class="text-end"
-              th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal), 1, 'POINT', 2, 'COMMA')}"></td>
+              th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td></td>
         </tr>
       </tbody>

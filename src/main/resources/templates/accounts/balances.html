@@ -47,7 +47,7 @@
     <tbody>
       <tr th:each="b : ${balances}">
         <td th:text="${#temporals.format(b.date, 'dd.MM.yyyy')}"></td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(b.balance, 1, 'POINT', 2, 'COMMA')} + ' ' + ${account.currency}"></td>
+        <td class="text-end" th:text="${#numbers.formatDecimal(b.balance, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${account.currency}"></td>
         <td>
           <form th:action="@{/accounts/{id}/balances/{bid}/delete(id=${account.id},bid=${b.id})}" method="post"
                 th:attr="onsubmit=|return confirm('#{confirm.delete-balance}')|">

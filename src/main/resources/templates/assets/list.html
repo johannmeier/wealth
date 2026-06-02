@@ -61,15 +61,15 @@
             <th:block th:if="${s.currentPrice != null}">
               <th:block th:if="${s.currency == null or s.currency == 'EUR'}">
                 <span style="white-space:nowrap"
-                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'DEFAULT', 2, 'DEFAULT')} + ' EUR'"></span>
               </th:block>
               <th:block th:unless="${s.currency == null or s.currency == 'EUR'}">
                 <span style="white-space:nowrap"
-                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'POINT', 2, 'COMMA')} + ' ' + ${s.currency}"></span>
+                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${s.currency}"></span>
                 <th:block th:if="${eurPrices.get(s.id) != null}">
                   <br/>
                   <small class="text-muted" style="white-space:nowrap"
-                         th:text="${#numbers.formatDecimal(eurPrices.get(s.id), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></small>
+                         th:text="${#numbers.formatDecimal(eurPrices.get(s.id), 1, 'DEFAULT', 2, 'DEFAULT')} + ' EUR'"></small>
                 </th:block>
               </th:block>
             </th:block>

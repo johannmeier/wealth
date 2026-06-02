@@ -18,7 +18,7 @@
   <div class="card bg-success text-white mb-4">
     <div class="card-body d-flex justify-content-between align-items-center">
       <h5 class="card-title mb-0" th:text="#{page.index.total-wealth}">Gesamtvermögen</h5>
-      <h2 class="card-text mb-0" th:text="${#numbers.formatDecimal(totalWealth, 1, 'POINT', 2, 'COMMA')} + ' €'">0,00 €</h2>
+      <h2 class="card-text mb-0" th:text="${#numbers.formatDecimal(totalWealth, 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'">0,00 €</h2>
     </div>
   </div>
 
@@ -51,10 +51,10 @@
                 th:text="${#messages.msg('assetAllocation.' + pos.assetAllocation.name())}"></span>
         </td>
         <td style="white-space:nowrap" th:text="${pos.indexName ?: '-'}"></td>
-        <td class="text-end" th:text="${pos.quantity != null ? #numbers.formatDecimal(pos.quantity, 1, 'POINT', 4, 'COMMA') : '-'}"></td>
-        <td class="text-end" style="white-space:nowrap" th:text="${pos.price != null ? #numbers.formatDecimal(pos.price, 1, 'POINT', 2, 'COMMA') + ' €' : '-'}"></td>
-        <td class="text-end fw-bold" th:text="${pos.value != null ? #numbers.formatDecimal(pos.value, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
-        <td class="text-end" style="white-space:nowrap" th:text="${pos.percentage != null ? #numbers.formatDecimal(pos.percentage, 1, 'POINT', 2, 'COMMA') + ' %' : '-'}"></td>
+        <td class="text-end" th:text="${pos.quantity != null ? #numbers.formatDecimal(pos.quantity, 1, 'DEFAULT', 4, 'DEFAULT') : '-'}"></td>
+        <td class="text-end" style="white-space:nowrap" th:text="${pos.price != null ? #numbers.formatDecimal(pos.price, 1, 'DEFAULT', 2, 'DEFAULT') + ' €' : '-'}"></td>
+        <td class="text-end fw-bold" th:text="${pos.value != null ? #numbers.formatDecimal(pos.value, 1, 'DEFAULT', 2, 'DEFAULT') : '-'}"></td>
+        <td class="text-end" style="white-space:nowrap" th:text="${pos.percentage != null ? #numbers.formatDecimal(pos.percentage, 1, 'DEFAULT', 2, 'DEFAULT') + ' %' : '-'}"></td>
       </tr>
       <tr th:if="${#lists.isEmpty(positions)}">
         <td colspan="9" class="text-center text-muted" th:text="#{page.index.empty}">Noch keine Positionen.</td>

@@ -21,7 +21,7 @@
           class="badge fs-6 fw-normal px-3 py-2"
           th:style="${entry.key.name() == 'GOLD'} ? 'background-color:#b8860b' : (${entry.key.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#5a5a72')">
       <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>:
-      <span th:text="${#numbers.formatDecimal(entry.value, 1, 'POINT', 2, 'COMMA')}"></span> USD/oz
+      <span th:text="${#numbers.formatDecimal(entry.value, 1, 'DEFAULT', 2, 'DEFAULT')}"></span> USD/oz
     </span>
     <span th:if="${#maps.isEmpty(spotPrices)}" class="text-muted small" th:text="#{page.coins.spot-unavailable}">Spotpreise nicht verfügbar</span>
     <span th:each="entry : ${totalQtyByMetal}" class="badge fs-6 fw-normal px-3 py-2"
@@ -29,7 +29,7 @@
       <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>:
       <span th:text="${entry.value}"></span> <span th:text="#{unit.pieces}">Stück</span>
       <span th:if="${totalOzByMetal.containsKey(entry.key)}">
-        · <span th:text="${#numbers.formatDecimal(totalOzByMetal.get(entry.key), 1, 'POINT', 3, 'COMMA')}"></span> oz
+        · <span th:text="${#numbers.formatDecimal(totalOzByMetal.get(entry.key), 1, 'DEFAULT', 3, 'DEFAULT')}"></span> oz
       </span>
     </span>
   </div>
@@ -71,8 +71,8 @@
                     th:style="${first.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${first.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
                     th:text="${first.metal != null ? #messages.msg('coinMetal.' + first.metal.name()) : '-'}"></span>
             </td>
-            <td class="text-end" th:text="${first.weightGrams != null} ? ${#numbers.formatDecimal(first.weightGrams, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
-            <td class="text-end" th:text="${first.weightOz != null} ? ${#numbers.formatDecimal(first.weightOz, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
+            <td class="text-end" th:text="${first.weightGrams != null} ? ${#numbers.formatDecimal(first.weightGrams, 1, 'DEFAULT', 4, 'DEFAULT')} : '-'"></td>
+            <td class="text-end" th:text="${first.weightOz != null} ? ${#numbers.formatDecimal(first.weightOz, 1, 'DEFAULT', 4, 'DEFAULT')} : '-'"></td>
             <td th:text="${groupSize == 1} ? ${first.mintYear ?: '-'} : '-'"></td>
             <td class="text-end" th:text="${groupedQty.get(entry.key)}"></td>
             <td>
@@ -83,7 +83,7 @@
             <td th:text="${groupedDepots.get(entry.key)}"></td>
             <td class="text-end">
               <span th:if="${groupedValues.get(entry.key)?.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-                    th:text="${#numbers.formatDecimal(groupedValues.get(entry.key), 1, 'POINT', 2, 'COMMA')} + ' €'"></span>
+                    th:text="${#numbers.formatDecimal(groupedValues.get(entry.key), 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></span>
               <span th:unless="${groupedValues.get(entry.key)?.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="text-muted">-</span>
             </td>
             <td>
@@ -125,8 +125,8 @@
                     th:style="${c.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${c.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
                     th:text="${c.metal != null ? #messages.msg('coinMetal.' + c.metal.name()) : '-'}"></span>
             </td>
-            <td class="text-end" th:text="${c.weightGrams != null} ? ${#numbers.formatDecimal(c.weightGrams, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
-            <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
+            <td class="text-end" th:text="${c.weightGrams != null} ? ${#numbers.formatDecimal(c.weightGrams, 1, 'DEFAULT', 4, 'DEFAULT')} : '-'"></td>
+            <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'DEFAULT', 4, 'DEFAULT')} : '-'"></td>
             <td th:text="${c.mintYear ?: '-'}"></td>
             <td class="text-end" th:text="${c.quantity ?: '-'}"></td>
             <td>
@@ -137,7 +137,7 @@
             <td th:text="${c.depot?.name ?: '-'}"></td>
             <td class="text-end">
               <span th:if="${values.get(c.id) != null}"
-                    th:text="${#numbers.formatDecimal(values.get(c.id), 1, 'POINT', 2, 'COMMA')} + ' €'"></span>
+                    th:text="${#numbers.formatDecimal(values.get(c.id), 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></span>
               <span th:unless="${values.get(c.id) != null}" class="text-muted">-</span>
             </td>
             <td>
@@ -165,7 +165,7 @@
       <tfoot th:if="${!#maps.isEmpty(groupedCoins)}">
         <tr class="table-secondary fw-bold">
           <td colspan="8" th:text="#{common.total}">Gesamt</td>
-          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')} + ' €'"></td>
+          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(total, 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></td>
           <td></td>
         </tr>
       </tfoot>

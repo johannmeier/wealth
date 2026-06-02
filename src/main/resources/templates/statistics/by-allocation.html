@@ -12,7 +12,7 @@
   <h3 th:text="#{page.statistics.by-allocation.title}">Auflistung nach Asset Allocation</h3>
   <div class="alert alert-info d-flex justify-content-between align-items-center">
     <span th:text="#{page.statistics.total-wealth}">Gesamtvermögen</span>
-    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'POINT', 2, 'COMMA')} + ' €'"></strong>
+    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></strong>
   </div>
 
   <table class="table table-sm table-striped align-middle">
@@ -34,16 +34,16 @@
                   th:text="${#messages.msg('assetAllocation.' + group.name)}"></span>
           </td>
           <td class="text-end fw-semibold"
-              th:text="${#numbers.formatDecimal(group.totalValue, 1, 'POINT', 2, 'COMMA')}"></td>
+              th:text="${#numbers.formatDecimal(group.totalValue, 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end fw-semibold" style="white-space:nowrap"
-              th:text="${#numbers.formatDecimal(group.percentage, 1, 'POINT', 2, 'COMMA')} + ' %'"></td>
+              th:text="${#numbers.formatDecimal(group.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
         </tr>
         <tr th:each="p : ${group.positions}">
           <td th:text="${p.name}"></td>
           <td th:text="${p.assetType != null ? #messages.msg('assetType.' + p.assetType.name()) : (p.type == 'ACCOUNT' ? #messages.msg('assetType.KONTO') : '-')}"></td>
           <td th:text="${p.indexName ?: '-'}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'POINT', 2, 'COMMA')}"></td>
-          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(p.percentage, 1, 'POINT', 2, 'COMMA')} + ' %'"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
+          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(p.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
         </tr>
       </th:block>
     </tbody>
