@@ -4,6 +4,7 @@ import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AccountBalance;
 import de.wsc.wealth.domain.AssetAllocation;
 import de.wsc.wealth.service.AccountService;
+import de.wsc.wealth.service.ExchangeRateService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
@@ -12,18 +13,21 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/accounts")
 public class AccountController {
 
     private final AccountService accountService;
+    private final ExchangeRateService exchangeRateService;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, ExchangeRateService exchangeRateService) {
         this.accountService = accountService;
+        this.exchangeRateService = exchangeRateService;
     }
 
     @InitBinder("balance")
@@ -35,11 +39,23 @@ public class AccountController {
     public String list(Model model) {
         List<Account> accounts = accountService.findAll();
         Map<Long, BigDecimal> latestBalances = accountService.getLatestBalancesByAccountId();
-        BigDecimal total = latestBalances.values().stream()
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<Long, String> currencyById = accounts.stream()
+            .collect(Collectors.toMap(Account::getId, Account::getCurrency));
+
+        Map<Long, BigDecimal> latestBalancesEur = new HashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<Long, BigDecimal> entry : latestBalances.entrySet()) {
+            if (entry.getValue() == null) continue;
+            String currency = currencyById.getOrDefault(entry.getKey(), "EUR");
+            BigDecimal eurVal = exchangeRateService.toEur(entry.getValue(), currency);
+            if (eurVal != null) {
+                latestBalancesEur.put(entry.getKey(), eurVal);
+                total = total.add(eurVal);
+            }
+        }
         model.addAttribute("accounts", accounts);
         model.addAttribute("latestBalances", latestBalances);
+        model.addAttribute("latestBalancesEur", latestBalancesEur);
         model.addAttribute("balanceTotal", total);
         return "accounts/list";
     }

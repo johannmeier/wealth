@@ -56,6 +56,23 @@ public class ExchangeRateService {
         return rate != null ? price.multiply(rate).setScale(4, RoundingMode.HALF_UP) : null;
     }
 
+    public BigDecimal getEurToRate(String currency) {
+        if (currency == null || "EUR".equalsIgnoreCase(currency)) return BigDecimal.ONE;
+        String key = currency.toUpperCase();
+        if (!rateCache.containsKey(key)) {
+            try {
+                BigDecimal rate = priceService.fetchPrice(currency + "EUR=X");
+                rateCache.put(key, rate);
+            } catch (Exception e) {
+                log.warn("Failed to fetch EUR rate for {}: {}", currency, e.getMessage());
+                return null;
+            }
+        }
+        BigDecimal toEurRate = rateCache.get(key);
+        if (toEurRate == null || toEurRate.compareTo(BigDecimal.ZERO) == 0) return null;
+        return BigDecimal.ONE.divide(toEurRate, 6, RoundingMode.HALF_UP);
+    }
+
     public Map<String, BigDecimal> getRates() {
         return Collections.unmodifiableMap(rateCache);
     }

@@ -4,10 +4,10 @@
 <th:block th:fragment="navbar">
 <script>
 (function(){
-  function getCookie(name) {
+  window.getCookie = function(name) {
     var m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
     return m ? decodeURIComponent(m[1]) : null;
-  }
+  };
   function applyTheme(theme) {
     var dark = theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
@@ -24,6 +24,12 @@
     document.querySelectorAll('.wealth-theme-option').forEach(function(el) {
       el.classList.toggle('active', el.dataset.theme === theme);
     });
+  };
+  window.applyCurrency = function() {
+    var val = (document.getElementById('currencyInput').value || '').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(val)) return;
+    document.cookie = 'wealth-currency=' + val + ';path=/;max-age=' + (365*24*3600);
+    window.location.reload();
   };
 })();
 </script>
@@ -79,6 +85,18 @@
                  th:text="#{settings.theme.system}" onclick="setTheme('system');return false;">System</a>
             </li>
             <li><hr class="dropdown-divider"/></li>
+            <li><h6 class="dropdown-header" th:text="#{settings.currency}">Währung</h6></li>
+            <li>
+              <div class="px-3 py-1">
+                <div class="input-group input-group-sm">
+                  <input type="text" id="currencyInput" class="form-control" maxlength="3"
+                         style="width:5em;text-transform:uppercase" placeholder="EUR"/>
+                  <button class="btn btn-outline-secondary" type="button"
+                          onclick="applyCurrency()">OK</button>
+                </div>
+              </div>
+            </li>
+            <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
           </ul>
         </li>
@@ -91,6 +109,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // Mark active theme option
   document.querySelectorAll('.wealth-theme-option').forEach(function(el) {
     el.classList.toggle('active', el.dataset.theme === window._wealthTheme);
+  });
+
+  // Show current currency in input field
+  var currencyInput = document.getElementById('currencyInput');
+  if (currencyInput) currencyInput.value = getCookie('wealth-currency') || 'EUR';
+
+  // Submit currency input on Enter (stopPropagation prevents Bootstrap from closing the dropdown)
+  if (currencyInput) currencyInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); applyCurrency(); }
   });
 
   // German number paste handler

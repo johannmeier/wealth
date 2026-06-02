@@ -12,7 +12,7 @@
   <h3 th:text="#{page.statistics.overview.title}">Übersicht</h3>
   <div class="alert alert-info d-flex justify-content-between align-items-center">
     <span th:text="#{page.statistics.total-wealth}">Gesamtvermögen</span>
-    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></strong>
+    <strong th:text="${#numbers.formatDecimal(totalWealth.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></strong>
   </div>
 
   <table class="table table-sm table-striped table-hover align-middle">
@@ -35,7 +35,7 @@
                   th:text="${#messages.msg('assetAllocation.' + group.name)}"></span>
           </td>
           <td class="text-end fw-semibold"
-              th:text="${#numbers.formatDecimal(group.totalValue, 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
+              th:text="${#numbers.formatDecimal(group.totalValue.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end fw-semibold" style="white-space:nowrap"
               th:text="${#numbers.formatDecimal(group.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
         </tr>
@@ -48,7 +48,7 @@
           </td>
           <td th:text="${p.indexName ?: '-'}"></td>
           <td th:text="${p.depotName ?: '-'}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(p.value.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end text-muted" style="white-space:nowrap" th:text="${#numbers.formatDecimal(p.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
         </tr>
       </th:block>

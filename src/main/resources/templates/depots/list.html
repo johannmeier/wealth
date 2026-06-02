@@ -21,7 +21,7 @@
       </div>
       <div th:if="${!#lists.isEmpty(depots)}" class="alert alert-info d-flex justify-content-between align-items-center mb-0 mt-2 fs-6 fw-normal">
         <span th:text="#{common.total}">Gesamt</span>
-        <strong th:text="${#numbers.formatDecimal(depotTotal, 1, 'DEFAULT', 2, 'DEFAULT')} + ' EUR'"></strong>
+        <strong th:text="${#numbers.formatDecimal(depotTotal.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></strong>
       </div>
     </caption>
     <thead class="table-dark">
@@ -39,7 +39,7 @@
         <td class="text-end">
           <span th:with="val=${depotValues.get(d.id)}"
                 th:text="${val != null and val.compareTo(T(java.math.BigDecimal).ZERO) > 0}
-                          ? ${#numbers.formatDecimal(val, 1, 'DEFAULT', 2, 'DEFAULT')} + ' EUR'
+                          ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}
                           : '—'"></span>
         </td>
         <td>

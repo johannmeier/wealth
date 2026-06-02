@@ -83,7 +83,7 @@
             <td th:text="${groupedDepots.get(entry.key)}"></td>
             <td class="text-end">
               <span th:if="${groupedValues.get(entry.key)?.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-                    th:text="${#numbers.formatDecimal(groupedValues.get(entry.key), 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></span>
+                    th:text="${#numbers.formatDecimal(groupedValues.get(entry.key).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
               <span th:unless="${groupedValues.get(entry.key)?.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="text-muted">-</span>
             </td>
             <td>
@@ -137,7 +137,7 @@
             <td th:text="${c.depot?.name ?: '-'}"></td>
             <td class="text-end">
               <span th:if="${values.get(c.id) != null}"
-                    th:text="${#numbers.formatDecimal(values.get(c.id), 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></span>
+                    th:text="${#numbers.formatDecimal(values.get(c.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
               <span th:unless="${values.get(c.id) != null}" class="text-muted">-</span>
             </td>
             <td>
@@ -165,7 +165,7 @@
       <tfoot th:if="${!#maps.isEmpty(groupedCoins)}">
         <tr class="table-secondary fw-bold">
           <td colspan="8" th:text="#{common.total}">Gesamt</td>
-          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(total, 1, 'DEFAULT', 2, 'DEFAULT')} + ' €'"></td>
+          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(total.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></td>
           <td></td>
         </tr>
       </tfoot>
