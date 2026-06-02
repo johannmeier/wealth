@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <title>Vermögensübersicht</title>
+  <title th:text="#{page.index.title}">Vermögensübersicht</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
 </head>
 <body>
@@ -11,30 +11,30 @@
 <div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
-    <button type="button" class="btn-close" aria-label="Schließen" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
 
   <div class="table-section">
   <div class="card bg-success text-white mb-4">
     <div class="card-body d-flex justify-content-between align-items-center">
-      <h5 class="card-title mb-0">Gesamtvermögen</h5>
+      <h5 class="card-title mb-0" th:text="#{page.index.total-wealth}">Gesamtvermögen</h5>
       <h2 class="card-text mb-0" th:text="${#numbers.formatDecimal(totalWealth, 1, 'POINT', 2, 'COMMA')} + ' €'">0,00 €</h2>
     </div>
   </div>
 
   <table class="table table-striped table-hover align-middle">
-    <caption>Positionen</caption>
+    <caption th:text="#{page.index.positions}">Positionen</caption>
     <thead class="table-dark">
       <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Depot</th>
-        <th scope="col">Art</th>
-        <th scope="col">Allocation</th>
-        <th scope="col">Index</th>
-        <th scope="col" class="text-end">Anzahl</th>
-        <th scope="col" class="text-end">Kurs (€)</th>
-        <th scope="col" class="text-end">Wert (€)</th>
-        <th scope="col" class="text-end" style="white-space:nowrap">Anteil %</th>
+        <th scope="col" th:text="#{col.name}">Name</th>
+        <th scope="col" th:text="#{col.depot}">Depot</th>
+        <th scope="col" th:text="#{col.type}">Art</th>
+        <th scope="col" th:text="#{col.allocation}">Allocation</th>
+        <th scope="col" th:text="#{col.index}">Index</th>
+        <th scope="col" class="text-end" th:text="#{col.quantity}">Anzahl</th>
+        <th scope="col" class="text-end" th:text="#{col.price.eur}">Kurs (€)</th>
+        <th scope="col" class="text-end" th:text="#{col.value}">Wert (€)</th>
+        <th scope="col" class="text-end" style="white-space:nowrap" th:text="#{col.percentage}">Anteil %</th>
       </tr>
     </thead>
     <tbody>
@@ -42,13 +42,13 @@
         <td th:text="${pos.name}"></td>
         <td th:text="${pos.depotName ?: '-'}"></td>
         <td>
-          <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info">Konto</span>
-          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${pos.assetType.label}"></span>
+          <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info" th:text="#{assetType.KONTO}">Konto</span>
+          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msg('assetType.' + pos.assetType.name())}"></span>
         </td>
         <td>
           <span th:if="${pos.assetAllocation != null}"
                 th:class="${pos.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                th:text="${pos.assetAllocation.label}"></span>
+                th:text="${#messages.msg('assetAllocation.' + pos.assetAllocation.name())}"></span>
         </td>
         <td style="white-space:nowrap" th:text="${pos.indexName ?: '-'}"></td>
         <td class="text-end" th:text="${pos.quantity != null ? #numbers.formatDecimal(pos.quantity, 1, 'POINT', 4, 'COMMA') : '-'}"></td>
@@ -57,7 +57,7 @@
         <td class="text-end" style="white-space:nowrap" th:text="${pos.percentage != null ? #numbers.formatDecimal(pos.percentage, 1, 'POINT', 2, 'COMMA') + ' %' : '-'}"></td>
       </tr>
       <tr th:if="${#lists.isEmpty(positions)}">
-        <td colspan="9" class="text-center text-muted">Noch keine Positionen. Bitte Wertpapiere und Konten anlegen.</td>
+        <td colspan="9" class="text-center text-muted" th:text="#{page.index.empty}">Noch keine Positionen.</td>
       </tr>
     </tbody>
   </table>

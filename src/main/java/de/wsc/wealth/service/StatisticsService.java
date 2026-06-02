@@ -182,7 +182,7 @@ public class StatisticsService {
         Map<String, List<WealthPosition>> grouped = all.stream()
             .filter(p -> "ASSET".equals(p.getType()) || "COIN".equals(p.getType()))
             .collect(Collectors.groupingBy(
-                p -> p.getIndexName() != null && !p.getIndexName().isBlank() ? p.getIndexName() : "Kein Index",
+                p -> p.getIndexName() != null && !p.getIndexName().isBlank() ? p.getIndexName() : "KEIN_INDEX",
                 LinkedHashMap::new, Collectors.toList()
             ));
 
@@ -198,8 +198,8 @@ public class StatisticsService {
 
         Map<String, List<WealthPosition>> grouped = all.stream()
             .collect(Collectors.groupingBy(
-                p -> "ACCOUNT".equals(p.getType()) ? "Konto"
-                    : (p.getAssetType() != null ? p.getAssetType().getLabel() : "Sonstige"),
+                p -> "ACCOUNT".equals(p.getType()) ? "KONTO"
+                    : (p.getAssetType() != null ? p.getAssetType().name() : "SONSTIGE"),
                 LinkedHashMap::new, Collectors.toList()
             ));
 
@@ -212,7 +212,7 @@ public class StatisticsService {
 
         Map<String, List<WealthPosition>> grouped = all.stream()
             .collect(Collectors.groupingBy(
-                p -> p.getAssetAllocation() != null ? p.getAssetAllocation().getLabel() : "Nicht klassifiziert",
+                p -> p.getAssetAllocation() != null ? p.getAssetAllocation().name() : "NICHT_KLASSIFIZIERT",
                 LinkedHashMap::new, Collectors.toList()
             ));
 

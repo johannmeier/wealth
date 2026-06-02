@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <title>Salden</title>
+  <title th:text="#{page.accounts.balances.title}">Salden</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
 </head>
 <body>
@@ -10,35 +10,37 @@
 <div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
-    <button type="button" class="btn-close" aria-label="Schließen" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
   <div class="table-section">
-  <h3>Salden: <span th:text="${account.displayName}"></span></h3>
+  <h3><span th:text="#{page.accounts.balances.title}">Salden</span>: <span th:text="${account.displayName}"></span></h3>
 
   <div class="card mb-4" style="max-width:400px">
-    <div class="card-header">Neuer Saldo</div>
+    <div class="card-header" th:text="#{page.accounts.balances.new}">Neuer Saldo</div>
     <div class="card-body">
       <form th:action="@{/accounts/{id}/balances/save(id=${account.id})}" method="post">
         <div class="mb-3">
-          <label class="form-label" for="bal-date">Datum</label>
+          <label class="form-label" for="bal-date" th:text="#{col.date}">Datum</label>
           <input type="date" id="bal-date" name="date" class="form-control"
                  th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
         </div>
         <div class="mb-3">
-          <label class="form-label" for="bal-balance">Saldo (<span th:text="${account.currency}"></span>)</label>
+          <label class="form-label" for="bal-balance">
+            <span th:text="#{col.balance}">Saldo</span> (<span th:text="${account.currency}"></span>)
+          </label>
           <input type="number" id="bal-balance" name="balance" class="form-control" step="0.01" required/>
         </div>
-        <button type="submit" class="btn btn-primary">Speichern</button>
+        <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
       </form>
     </div>
   </div>
 
   <table class="table table-striped align-middle">
-    <caption>Saldenhistorie</caption>
+    <caption th:text="#{page.accounts.balances.history}">Saldenhistorie</caption>
     <thead class="table-dark">
       <tr>
-        <th scope="col">Datum</th>
-        <th scope="col" class="text-end">Saldo</th>
+        <th scope="col" th:text="#{col.date}">Datum</th>
+        <th scope="col" class="text-end" th:text="#{col.balance}">Saldo</th>
         <th scope="col"></th>
       </tr>
     </thead>
@@ -48,17 +50,17 @@
         <td class="text-end" th:text="${#numbers.formatDecimal(b.balance, 1, 'POINT', 2, 'COMMA')} + ' ' + ${account.currency}"></td>
         <td>
           <form th:action="@{/accounts/{id}/balances/{bid}/delete(id=${account.id},bid=${b.id})}" method="post"
-                onsubmit="return confirm('Saldo wirklich löschen?')">
-            <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
+                th:attr="onsubmit=|return confirm('#{confirm.delete-balance}')|">
+            <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
           </form>
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(balances)}">
-        <td colspan="3" class="text-center text-muted">Noch keine Salden eingetragen.</td>
+        <td colspan="3" class="text-center text-muted" th:text="#{page.accounts.balances.empty}">Noch keine Salden eingetragen.</td>
       </tr>
     </tbody>
   </table>
-  <a th:href="@{/accounts}" class="btn btn-outline-secondary mt-2">Zurück</a>
+  <a th:href="@{/accounts}" class="btn btn-outline-secondary mt-2" th:text="#{common.back}">Zurück</a>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

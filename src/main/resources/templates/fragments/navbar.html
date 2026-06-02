@@ -6,29 +6,37 @@
 <link rel="stylesheet" th:href="@{/css/wealth.css}"/>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Hauptnavigation">
   <div class="container-fluid">
-    <a class="navbar-brand" th:href="@{/}">💰 Vermögen</a>
+    <a class="navbar-brand" th:href="@{/}" th:text="#{nav.brand}">💰 Vermögen</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/assets}">Wertpapiere</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/accounts}">Konten</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/depots}">Depots</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/coins}">Münzen</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/standing-orders}">Daueraufträge</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/assets}" th:text="#{nav.assets}">Wertpapiere</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/accounts}" th:text="#{nav.accounts}">Konten</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/depots}" th:text="#{nav.depots}">Depots</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/coins}" th:text="#{nav.coins}">Münzen</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/standing-orders}" th:text="#{nav.standing-orders}">Daueraufträge</a></li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Statistiken</a>
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{nav.statistics}">Statistiken</a>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" th:href="@{/statistics/overview}">Übersicht</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-index}">Nach Index</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-type}">Nach Wertpapierart</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}">Nach Allocation</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/overview}" th:text="#{nav.statistics.overview}">Übersicht</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-index}" th:text="#{nav.statistics.by-index}">Nach Index</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-type}" th:text="#{nav.statistics.by-type}">Nach Wertpapierart</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}" th:text="#{nav.statistics.by-allocation}">Nach Allocation</a></li>
           </ul>
         </li>
       </ul>
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/info}">Info</a></li>
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+        <li class="nav-item">
+          <a class="nav-link py-0 px-1" th:href="@{''(lang='de')}"
+             th:classappend="${#locale.language == 'de'} ? 'fw-bold' : 'text-secondary'">DE</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link py-0 px-1" th:href="@{''(lang='en')}"
+             th:classappend="${#locale.language == 'en'} ? 'fw-bold' : 'text-secondary'">EN</a>
+        </li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
       </ul>
     </div>
   </div>
@@ -38,7 +46,6 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('input[type="number"]').forEach(function (el) {
     el.addEventListener('paste', function (e) {
       var raw = (e.clipboardData || window.clipboardData).getData('text').trim();
-      // Deutsches Format mit Tausenderpunkt: "2.977,15" → "2977,15", "1.234.567" → "1234567"
       if (/^\d{1,3}(\.\d{3})+(,\d*)?$/.test(raw)) {
         e.preventDefault();
         el.value = raw.replace(/\./g, '').replace(',', '.');

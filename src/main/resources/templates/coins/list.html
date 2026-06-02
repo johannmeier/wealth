@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <title>Münzen</title>
+  <title th:text="#{page.coins.title}">Münzen</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
 </head>
 <body>
@@ -10,7 +10,7 @@
 <div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
-    <button type="button" class="btn-close" aria-label="Schließen" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
 
   <div class="table-section">
@@ -20,14 +20,14 @@
     <span th:each="entry : ${spotPrices}"
           class="badge fs-6 fw-normal px-3 py-2"
           th:style="${entry.key.name() == 'GOLD'} ? 'background-color:#b8860b' : (${entry.key.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#5a5a72')">
-      <span th:text="${entry.key.label}"></span>:
+      <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>:
       <span th:text="${#numbers.formatDecimal(entry.value, 1, 'POINT', 2, 'COMMA')}"></span> USD/oz
     </span>
-    <span th:if="${#maps.isEmpty(spotPrices)}" class="text-muted small">Spotpreise nicht verfügbar</span>
+    <span th:if="${#maps.isEmpty(spotPrices)}" class="text-muted small" th:text="#{page.coins.spot-unavailable}">Spotpreise nicht verfügbar</span>
     <span th:each="entry : ${totalQtyByMetal}" class="badge fs-6 fw-normal px-3 py-2"
           th:style="${entry.key.name() == 'GOLD'} ? 'background-color:#b8860b' : (${entry.key.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#5a5a72')">
-      <span th:text="${entry.key.label}"></span>:
-      <span th:text="${entry.value}"></span> Stück
+      <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>:
+      <span th:text="${entry.value}"></span> <span th:text="#{unit.pieces}">Stück</span>
       <span th:if="${totalOzByMetal.containsKey(entry.key)}">
         · <span th:text="${#numbers.formatDecimal(totalOzByMetal.get(entry.key), 1, 'POINT', 3, 'COMMA')}"></span> oz
       </span>
@@ -38,25 +38,25 @@
     <table class="table table-hover align-middle">
       <caption>
         <div class="d-flex justify-content-between align-items-center">
-          <span>Münzen und Edelmetalle</span>
+          <span th:text="#{page.coins.title}">Münzen und Edelmetalle</span>
           <div class="d-flex gap-2">
-            <button id="toggleAll" class="btn btn-outline-secondary btn-sm">Alle aufklappen</button>
-            <a th:href="@{/coins/new}" class="btn btn-primary btn-sm">+ Neu</a>
+            <button id="toggleAll" class="btn btn-outline-secondary btn-sm" th:text="#{common.expand-all}">Alle aufklappen</button>
+            <a th:href="@{/coins/new}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ Neu</a>
           </div>
         </div>
       </caption>
       <thead class="table-dark">
         <tr>
-          <th scope="col">Name</th>
-          <th scope="col">Metall</th>
-          <th scope="col" class="text-end">Gewicht (g)</th>
-          <th scope="col" class="text-end">Gewicht (oz)</th>
-          <th scope="col">Prägejahr</th>
-          <th scope="col" class="text-end">Anzahl</th>
-          <th scope="col">Preisquelle</th>
-          <th scope="col">Depot</th>
-          <th scope="col" class="text-end">Wert (EUR)</th>
-          <th scope="col">Aktionen</th>
+          <th scope="col" th:text="#{col.name}">Name</th>
+          <th scope="col" th:text="#{col.metal}">Metall</th>
+          <th scope="col" class="text-end" th:text="#{col.weight-g}">Gewicht (g)</th>
+          <th scope="col" class="text-end" th:text="#{col.weight-oz}">Gewicht (oz)</th>
+          <th scope="col" th:text="#{col.mint-year}">Prägejahr</th>
+          <th scope="col" class="text-end" th:text="#{col.quantity}">Anzahl</th>
+          <th scope="col" th:text="#{col.price-source}">Preisquelle</th>
+          <th scope="col" th:text="#{col.depot}">Depot</th>
+          <th scope="col" class="text-end" th:text="#{col.value.eur}">Wert (EUR)</th>
+          <th scope="col" th:text="#{common.actions}">Aktionen</th>
         </tr>
       </thead>
       <tbody>
@@ -69,7 +69,7 @@
             <td>
               <span class="badge"
                     th:style="${first.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${first.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
-                    th:text="${first.metal?.label ?: '-'}"></span>
+                    th:text="${first.metal != null ? #messages.msg('coinMetal.' + first.metal.name()) : '-'}"></span>
             </td>
             <td class="text-end" th:text="${first.weightGrams != null} ? ${#numbers.formatDecimal(first.weightGrams, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
             <td class="text-end" th:text="${first.weightOz != null} ? ${#numbers.formatDecimal(first.weightOz, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
@@ -90,14 +90,15 @@
               <!-- Einzelne Münze: Aktionen direkt anzeigen -->
               <th:block th:if="${groupSize == 1}">
                 <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aktionen</button>
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                          th:text="#{common.actions}">Aktionen</button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${first.id})}">Bearbeiten</a></li>
+                    <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${first.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                     <li><hr class="dropdown-divider"/></li>
                     <li>
                       <form th:action="@{/coins/{id}/delete(id=${first.id})}" method="post"
-                            onsubmit="return confirm('Münze wirklich löschen?')">
-                        <button type="submit" class="dropdown-item text-danger">Löschen</button>
+                            th:attr="onsubmit=|return confirm('#{confirm.delete-coin}')|">
+                        <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
                       </form>
                     </li>
                   </ul>
@@ -122,7 +123,7 @@
             <td>
               <span class="badge"
                     th:style="${c.metal?.name() == 'GOLD'} ? 'background-color:#b8860b' : (${c.metal?.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#6c757d')"
-                    th:text="${c.metal?.label ?: '-'}"></span>
+                    th:text="${c.metal != null ? #messages.msg('coinMetal.' + c.metal.name()) : '-'}"></span>
             </td>
             <td class="text-end" th:text="${c.weightGrams != null} ? ${#numbers.formatDecimal(c.weightGrams, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
             <td class="text-end" th:text="${c.weightOz != null} ? ${#numbers.formatDecimal(c.weightOz, 1, 'POINT', 4, 'COMMA')} : '-'"></td>
@@ -141,14 +142,15 @@
             </td>
             <td>
               <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aktionen</button>
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        th:text="#{common.actions}">Aktionen</button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}">Bearbeiten</a></li>
+                  <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                   <li><hr class="dropdown-divider"/></li>
                   <li>
                     <form th:action="@{/coins/{id}/delete(id=${c.id})}" method="post"
-                          onsubmit="return confirm('Münze wirklich löschen?')">
-                      <button type="submit" class="dropdown-item text-danger">Löschen</button>
+                          th:attr="onsubmit=|return confirm('#{confirm.delete-coin}')|">
+                      <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
                     </form>
                   </li>
                 </ul>
@@ -157,12 +159,12 @@
           </tr>
         </th:block>
         <tr th:if="${#maps.isEmpty(groupedCoins)}">
-          <td colspan="10" class="text-center text-muted">Keine Münzen vorhanden.</td>
+          <td colspan="10" class="text-center text-muted" th:text="#{page.coins.empty}">Keine Münzen vorhanden.</td>
         </tr>
       </tbody>
       <tfoot th:if="${!#maps.isEmpty(groupedCoins)}">
         <tr class="table-secondary fw-bold">
-          <td colspan="8">Gesamt</td>
+          <td colspan="8" th:text="#{common.total}">Gesamt</td>
           <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(total, 1, 'POINT', 2, 'COMMA')} + ' €'"></td>
           <td></td>
         </tr>
@@ -172,8 +174,10 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script th:inline="javascript">
 (function () {
+  var labelExpandAll  = /*[[#{common.expand-all}]]*/ 'Alle aufklappen';
+  var labelCollapseAll = /*[[#{common.collapse-all}]]*/ 'Alle zuklappen';
   function setGroupExpanded(group, expand) {
     var rows = document.querySelectorAll('tr.coin-detail[data-group="' + CSS.escape(group) + '"]');
     rows.forEach(function (r) { r.classList.toggle('d-none', !expand); });
@@ -198,7 +202,7 @@
       document.querySelectorAll('.toggle-group').forEach(function (btn) {
         setGroupExpanded(btn.dataset.group, anyHidden);
       });
-      toggleAllBtn.textContent = anyHidden ? 'Alle zuklappen' : 'Alle aufklappen';
+      toggleAllBtn.textContent = anyHidden ? labelCollapseAll : labelExpandAll;
     });
   }
 })();
