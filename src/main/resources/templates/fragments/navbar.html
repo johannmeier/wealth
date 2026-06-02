@@ -2,7 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <th:block th:fragment="navbar">
-<script>(function(){var mq=window.matchMedia('(prefers-color-scheme: dark)');document.documentElement.setAttribute('data-bs-theme',mq.matches?'dark':'light');mq.addEventListener('change',function(e){document.documentElement.setAttribute('data-bs-theme',e.matches?'dark':'light');});})();</script>
+<script>
+(function(){
+  function getCookie(name) {
+    var m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function applyTheme(theme) {
+    var dark = theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+  }
+  window._wealthTheme = getCookie('wealth-theme') || 'system';
+  applyTheme(window._wealthTheme);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+    if ((getCookie('wealth-theme') || 'system') === 'system') applyTheme('system');
+  });
+  window.setTheme = function(theme) {
+    document.cookie = 'wealth-theme=' + theme + ';path=/;max-age=' + (365*24*3600);
+    window._wealthTheme = theme;
+    applyTheme(theme);
+    document.querySelectorAll('.wealth-theme-option').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.theme === theme);
+    });
+  };
+})();
+</script>
 <link rel="stylesheet" th:href="@{/css/wealth.css}"/>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Hauptnavigation">
   <div class="container-fluid">
@@ -27,22 +51,49 @@
           </ul>
         </li>
       </ul>
-      <ul class="navbar-nav ms-auto align-items-center gap-2">
-        <li class="nav-item">
-          <a class="nav-link py-0 px-1" th:href="@{''(lang='de')}"
-             th:classappend="${#locale.language == 'de'} ? 'fw-bold' : 'text-secondary'">DE</a>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{settings.title}">Einstellungen</a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header" th:text="#{settings.language}">Sprache</h6></li>
+            <li>
+              <a class="dropdown-item wealth-lang-option" th:href="@{''(lang='de')}"
+                 th:classappend="${#locale.language == 'de'} ? ' active' : ''">Deutsch</a>
+            </li>
+            <li>
+              <a class="dropdown-item wealth-lang-option" th:href="@{''(lang='en')}"
+                 th:classappend="${#locale.language == 'en'} ? ' active' : ''">English</a>
+            </li>
+            <li><hr class="dropdown-divider"/></li>
+            <li><h6 class="dropdown-header" th:text="#{settings.theme}">Farbschema</h6></li>
+            <li>
+              <a class="dropdown-item wealth-theme-option" href="#" data-theme="light"
+                 th:text="#{settings.theme.light}" onclick="setTheme('light');return false;">Hell</a>
+            </li>
+            <li>
+              <a class="dropdown-item wealth-theme-option" href="#" data-theme="dark"
+                 th:text="#{settings.theme.dark}" onclick="setTheme('dark');return false;">Dunkel</a>
+            </li>
+            <li>
+              <a class="dropdown-item wealth-theme-option" href="#" data-theme="system"
+                 th:text="#{settings.theme.system}" onclick="setTheme('system');return false;">System</a>
+            </li>
+            <li><hr class="dropdown-divider"/></li>
+            <li><a class="dropdown-item" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
+          </ul>
         </li>
-        <li class="nav-item">
-          <a class="nav-link py-0 px-1" th:href="@{''(lang='en')}"
-             th:classappend="${#locale.language == 'en'} ? 'fw-bold' : 'text-secondary'">EN</a>
-        </li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
       </ul>
     </div>
   </div>
 </nav>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Mark active theme option
+  document.querySelectorAll('.wealth-theme-option').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.theme === window._wealthTheme);
+  });
+
+  // German number paste handler
   document.querySelectorAll('input[type="number"]').forEach(function (el) {
     el.addEventListener('paste', function (e) {
       var raw = (e.clipboardData || window.clipboardData).getData('text').trim();
