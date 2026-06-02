@@ -27,6 +27,14 @@ caption > div:first-child > span:first-child {
     font-weight: 500;
 }
 
+[data-bs-theme="dark"] caption {
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .coin-row-gold   { background-color: rgba(184, 134,  11, 0.25) !important; }
+[data-bs-theme="dark"] .coin-row-silber { background-color: rgba(112, 128, 144, 0.25) !important; }
+[data-bs-theme="dark"] .coin-row-platin { background-color: rgba(180, 180, 195, 0.30) !important; }
+
 .table-section {
     width: fit-content;
     margin: 0 auto;
