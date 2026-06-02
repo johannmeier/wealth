@@ -10,32 +10,33 @@
 <div class="container-fluid px-4 mt-4">
   <h3>Kurshistorie: <span th:text="${asset.name}"></span></h3>
 
-  <div class="table-responsive mt-3">
-    <table class="table table-striped align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Datum</th>
-          <th class="text-end">Kurs</th>
-          <th>Währung</th>
-          <th class="text-end">Kurs (EUR)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="h : ${priceHistory}">
-          <td th:text="${#temporals.format(h.date, 'dd.MM.yyyy')}"></td>
-          <td class="text-end" th:text="${h.price.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
-          <td th:text="${h.currency}"></td>
-          <td class="text-end">
-            <span th:if="${historyEurPrices.get(h.id) != null}"
-                  th:text="${historyEurPrices.get(h.id).stripTrailingZeros().toPlainString().replace('.', ',')}"></span>
-            <span th:unless="${historyEurPrices.get(h.id) != null}" class="text-muted">—</span>
-          </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(priceHistory)}">
-          <td colspan="4" class="text-center text-muted">Noch keine Kurshistorie vorhanden.</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="table-section mt-3">
+  <table class="table table-striped align-middle">
+    <caption>Kurshistorie</caption>
+    <thead class="table-dark">
+      <tr>
+        <th scope="col">Datum</th>
+        <th scope="col" class="text-end">Kurs</th>
+        <th scope="col">Währung</th>
+        <th scope="col" class="text-end">Kurs (EUR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="h : ${priceHistory}">
+        <td th:text="${#temporals.format(h.date, 'dd.MM.yyyy')}"></td>
+        <td class="text-end" th:text="${h.price.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
+        <td th:text="${h.currency}"></td>
+        <td class="text-end">
+          <span th:if="${historyEurPrices.get(h.id) != null}"
+                th:text="${historyEurPrices.get(h.id).stripTrailingZeros().toPlainString().replace('.', ',')}"></span>
+          <span th:unless="${historyEurPrices.get(h.id) != null}" class="text-muted">—</span>
+        </td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(priceHistory)}">
+        <td colspan="4" class="text-center text-muted">Noch keine Kurshistorie vorhanden.</td>
+      </tr>
+    </tbody>
+  </table>
   </div>
   <a th:href="@{/assets}" class="btn btn-outline-secondary">Zurück</a>
 </div>

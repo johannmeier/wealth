@@ -16,13 +16,14 @@
   </div>
 
   <table class="table table-sm table-striped align-middle">
+    <caption class="visually-hidden">Auflistung nach Asset Allocation</caption>
     <thead class="table-dark">
       <tr>
-        <th>Name</th>
-        <th>Art</th>
-        <th>Index</th>
-        <th class="text-end">Wert (€)</th>
-        <th class="text-end">Anteil %</th>
+        <th scope="col">Name</th>
+        <th scope="col">Art</th>
+        <th scope="col">Index</th>
+        <th scope="col" class="text-end">Wert (€)</th>
+        <th scope="col" class="text-end" style="white-space:nowrap">Anteil %</th>
       </tr>
     </thead>
     <tbody>
@@ -34,7 +35,7 @@
           </td>
           <td class="text-end fw-semibold"
               th:text="${#numbers.formatDecimal(group.totalValue, 1, 'COMMA', 2, 'POINT')}"></td>
-          <td class="text-end fw-semibold"
+          <td class="text-end fw-semibold" style="white-space:nowrap"
               th:text="${group.percentage} + ' %'"></td>
         </tr>
         <tr th:each="p : ${group.positions}">
@@ -42,7 +43,7 @@
           <td th:text="${p.assetType?.label ?: (p.type == 'ACCOUNT' ? 'Konto' : '-')}"></td>
           <td th:text="${p.indexName ?: '-'}"></td>
           <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'COMMA', 2, 'POINT')}"></td>
-          <td class="text-end" th:text="${p.percentage} + ' %'"></td>
+          <td class="text-end" style="white-space:nowrap" th:text="${p.percentage} + ' %'"></td>
         </tr>
       </th:block>
     </tbody>

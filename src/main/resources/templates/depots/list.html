@@ -10,16 +10,23 @@
 <div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close" aria-label="Schließen" data-bs-dismiss="alert"></button>
   </div>
   <div class="table-section">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Depots</h3>
-    <a th:href="@{/depots/new}" class="btn btn-primary">+ Neu</a>
-  </div>
   <table class="table table-striped table-hover align-middle">
+    <caption>
+      <div class="d-flex justify-content-between align-items-center">
+        <span>Depots</span>
+        <a th:href="@{/depots/new}" class="btn btn-primary btn-sm">+ Neu</a>
+      </div>
+    </caption>
     <thead class="table-dark">
-      <tr><th>Name</th><th>Beschreibung</th><th class="text-end">Aktueller Wert</th><th>Aktionen</th></tr>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Beschreibung</th>
+        <th scope="col" class="text-end">Aktueller Wert</th>
+        <th scope="col">Aktionen</th>
+      </tr>
     </thead>
     <tbody>
       <tr th:each="d : ${depots}">
@@ -33,7 +40,8 @@
         </td>
         <td>
           <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aktionen</button>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-label="Aktionen">Aktionen</button>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" th:href="@{/depots/{id}/edit(id=${d.id})}">Bearbeiten</a></li>
               <li><a class="dropdown-item" th:href="@{/depots/{id}/positions(id=${d.id})}">Positionen</a></li>

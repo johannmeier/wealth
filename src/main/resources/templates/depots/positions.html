@@ -10,7 +10,7 @@
 <div class="container-fluid px-4 mt-4">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close" aria-label="Schließen" data-bs-dismiss="alert"></button>
   </div>
   <h3>Positionen: <span th:text="${depot.name}"></span></h3>
 
@@ -20,7 +20,7 @@
       <form th:action="@{/depots/{id}/positions/save(id=${depot.id})}" method="post">
         <input type="hidden" name="quantityId" id="quantityId" value=""/>
         <div class="mb-3">
-          <label class="form-label">Wertpapier</label>
+          <label class="form-label" for="assetId">Wertpapier</label>
           <select name="assetId" id="assetId" class="form-select" required>
             <option value="">-- wählen --</option>
             <option th:each="a : ${assets}" th:value="${a.id}"
@@ -28,12 +28,12 @@
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label">Datum</label>
+          <label class="form-label" for="date">Datum</label>
           <input type="date" name="date" id="date" class="form-control"
                  th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
         </div>
         <div class="mb-3">
-          <label class="form-label">Anzahl</label>
+          <label class="form-label" for="quantity">Anzahl</label>
           <input type="number" name="quantity" id="quantity" class="form-control" step="any" required/>
         </div>
         <div class="d-flex gap-2">
@@ -45,16 +45,16 @@
     </div>
   </div>
 
-  <h5>Positionen</h5>
   <div class="table-responsive">
     <table class="table table-striped align-middle">
+      <caption>Positionen</caption>
       <thead class="table-dark">
         <tr>
-          <th>Datum</th>
-          <th>Bezeichnung</th>
-          <th class="text-end">Menge</th>
-          <th class="text-end">Wert (€)</th>
-          <th></th>
+          <th scope="col">Datum</th>
+          <th scope="col">Bezeichnung</th>
+          <th scope="col" class="text-end">Menge</th>
+          <th scope="col" class="text-end">Wert (€)</th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
