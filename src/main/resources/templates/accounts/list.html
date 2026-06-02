@@ -19,6 +19,10 @@
         <span>Konten</span>
         <a th:href="@{/accounts/new}" class="btn btn-primary btn-sm">+ Neu</a>
       </div>
+      <div th:if="${!#lists.isEmpty(accounts)}" class="alert alert-info d-flex justify-content-between align-items-center mb-0 mt-2">
+        <span>Gesamt</span>
+        <strong th:text="${#numbers.formatDecimal(balanceTotal, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></strong>
+      </div>
     </caption>
     <thead class="table-dark">
       <tr>
@@ -70,13 +74,6 @@
         <td colspan="6" class="text-center text-muted">Keine Konten vorhanden.</td>
       </tr>
     </tbody>
-    <tfoot th:if="${!#lists.isEmpty(accounts)}">
-      <tr class="table-secondary fw-bold">
-        <td colspan="4">Gesamt</td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(balanceTotal, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></td>
-        <td></td>
-      </tr>
-    </tfoot>
   </table>
   </div>
 </div>

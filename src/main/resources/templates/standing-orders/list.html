@@ -35,7 +35,7 @@
       <tr th:each="o : ${orders}">
         <td th:text="${o.asset.name}"></td>
         <td th:text="${o.depot.name}"></td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(o.amount, 1, 'COMMA', 2, 'POINT')}"></td>
+        <td class="text-end" th:text="${#numbers.formatDecimal(o.amount, 1, 'POINT', 2, 'COMMA')}"></td>
         <td th:text="${o.interval?.label ?: '-'}"></td>
         <td th:text="${o.nextDate != null ? #temporals.format(o.nextDate, 'dd.MM.yyyy') : '-'}"></td>
         <td><span th:class="${o.active} ? 'badge bg-success' : 'badge bg-secondary'"

@@ -14,10 +14,17 @@
 caption {
     caption-side: top;
     text-align: left;
-    font-size: 1.75rem;
-    font-weight: 500;
     padding-bottom: 0.5rem;
     color: #212529;
+}
+
+.coin-row-gold  { background-color: rgba(184, 134,  11, 0.12) !important; }
+.coin-row-silber { background-color: rgba(112, 128, 144, 0.12) !important; }
+.coin-row-platin { background-color: rgba(180, 180, 195, 0.15) !important; }
+
+caption > div:first-child > span:first-child {
+    font-size: 1.75rem;
+    font-weight: 500;
 }
 
 .table-section {

@@ -45,7 +45,7 @@
           <td th:text="${s.symbol ?: '-'}"></td>
           <td th:text="${s.category?.label ?: '-'}"></td>
           <td th:text="${s.type?.label ?: '-'}"></td>
-          <td th:text="${s.indexName ?: '-'}"></td>
+          <td style="white-space:nowrap" th:text="${s.indexName ?: '-'}"></td>
           <td>
             <span th:if="${s.assetAllocation != null}"
                   th:class="${s.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
@@ -61,15 +61,15 @@
             <th:block th:if="${s.currentPrice != null}">
               <th:block th:if="${s.currency == null or s.currency == 'EUR'}">
                 <span style="white-space:nowrap"
-                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT')} + ' €'"></span>
+                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
               </th:block>
               <th:block th:unless="${s.currency == null or s.currency == 'EUR'}">
                 <span style="white-space:nowrap"
-                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'COMMA', 2, 'POINT')} + ' ' + ${s.currency}"></span>
+                      th:text="${#numbers.formatDecimal(s.currentPrice, 1, 'POINT', 2, 'COMMA')} + ' ' + ${s.currency}"></span>
                 <th:block th:if="${eurPrices.get(s.id) != null}">
                   <br/>
                   <small class="text-muted" style="white-space:nowrap"
-                         th:text="${#numbers.formatDecimal(eurPrices.get(s.id), 1, 'COMMA', 2, 'POINT')} + ' €'"></small>
+                         th:text="${#numbers.formatDecimal(eurPrices.get(s.id), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></small>
                 </th:block>
               </th:block>
             </th:block>

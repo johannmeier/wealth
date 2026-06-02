@@ -19,6 +19,10 @@
         <span>Depots</span>
         <a th:href="@{/depots/new}" class="btn btn-primary btn-sm">+ Neu</a>
       </div>
+      <div th:if="${!#lists.isEmpty(depots)}" class="alert alert-info d-flex justify-content-between align-items-center mb-0 mt-2">
+        <span>Gesamt</span>
+        <strong th:text="${#numbers.formatDecimal(depotTotal, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></strong>
+      </div>
     </caption>
     <thead class="table-dark">
       <tr>
@@ -35,7 +39,7 @@
         <td class="text-end">
           <span th:with="val=${depotValues.get(d.id)}"
                 th:text="${val != null and val.compareTo(T(java.math.BigDecimal).ZERO) > 0}
-                          ? ${#numbers.formatDecimal(val, 1, 'COMMA', 2, 'POINT')} + ' EUR'
+                          ? ${#numbers.formatDecimal(val, 1, 'POINT', 2, 'COMMA')} + ' EUR'
                           : '—'"></span>
         </td>
         <td>
@@ -60,13 +64,6 @@
         <td colspan="4" class="text-center text-muted">Keine Depots vorhanden.</td>
       </tr>
     </tbody>
-    <tfoot th:if="${!#lists.isEmpty(depots)}">
-      <tr class="table-secondary fw-bold">
-        <td colspan="2">Gesamt</td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(depotTotal, 1, 'COMMA', 2, 'POINT')} + ' EUR'"></td>
-        <td></td>
-      </tr>
-    </tfoot>
   </table>
   </div>
 </div>

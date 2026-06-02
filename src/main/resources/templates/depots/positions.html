@@ -12,6 +12,7 @@
     <span th:text="${success}"></span>
     <button type="button" class="btn-close" aria-label="Schließen" data-bs-dismiss="alert"></button>
   </div>
+  <div class="table-section">
   <h3>Positionen: <span th:text="${depot.name}"></span></h3>
 
   <div class="card mb-4" style="max-width:500px">
@@ -64,7 +65,7 @@
           <td class="text-end" th:text="${q.quantity.stripTrailingZeros().toPlainString().replace('.', ',')}"></td>
           <td class="text-end">
             <span th:if="${positionValues.containsKey(q.id)}"
-                  th:text="${#numbers.formatDecimal(positionValues.get(q.id), 1, 'COMMA', 2, 'POINT')}"></span>
+                  th:text="${#numbers.formatDecimal(positionValues.get(q.id), 1, 'POINT', 2, 'COMMA')}"></span>
             <span th:unless="${positionValues.containsKey(q.id)}" class="text-muted">-</span>
           </td>
           <td class="text-nowrap">
@@ -88,10 +89,10 @@
             </a>
           </td>
           <td class="text-end"
-              th:text="${#numbers.formatDecimal(entry.value, 1, 'COMMA', 4, 'POINT') + ' oz'}"></td>
+              th:text="${#numbers.formatDecimal(entry.value, 1, 'POINT', 4, 'COMMA') + ' oz'}"></td>
           <td class="text-end">
             <span th:if="${coinValueByMetal.containsKey(entry.key)}"
-                  th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key), 1, 'COMMA', 2, 'POINT')}"></span>
+                  th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key), 1, 'POINT', 2, 'COMMA')}"></span>
             <span th:unless="${coinValueByMetal.containsKey(entry.key)}" class="text-muted">-</span>
           </td>
           <td></td>
@@ -102,14 +103,15 @@
         <tr class="table-dark fw-bold">
           <td colspan="3">Gesamt</td>
           <td class="text-end"
-              th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal), 1, 'COMMA', 2, 'POINT')}"></td>
+              th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal), 1, 'POINT', 2, 'COMMA')}"></td>
           <td></td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <a th:href="@{/depots}" class="btn btn-outline-secondary">Zurück</a>
+  <a th:href="@{/depots}" class="btn btn-outline-secondary mt-2">Zurück</a>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -12,10 +12,10 @@
   <h3>Auflistung nach Wertpapierart</h3>
   <div class="alert alert-info d-flex justify-content-between align-items-center">
     <span>Gesamtvermögen</span>
-    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'"></strong>
+    <strong th:text="${#numbers.formatDecimal(totalWealth, 1, 'POINT', 2, 'COMMA')} + ' €'"></strong>
   </div>
 
-  <table class="table table-striped table-hover align-middle">
+  <table class="table table-hover align-middle">
     <caption class="visually-hidden">Auflistung nach Wertpapierart</caption>
     <thead class="table-dark">
       <tr>
@@ -27,10 +27,10 @@
     </thead>
     <tbody>
       <th:block th:each="group, i : ${groups}">
-        <tr class="fw-semibold">
+        <tr class="fw-semibold" th:classappend="${i.odd} ? 'table-light' : ''">
           <td th:text="${group.name}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(group.totalValue, 1, 'COMMA', 2, 'POINT')}"></td>
-          <td class="text-end" style="white-space:nowrap" th:text="${group.percentage} + ' %'"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(group.totalValue, 1, 'POINT', 2, 'COMMA')}"></td>
+          <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(group.percentage, 1, 'POINT', 2, 'COMMA')} + ' %'"></td>
           <td class="text-end">
             <button class="btn btn-sm btn-outline-secondary toggle-group"
                     th:attr="data-target='group-' + ${i.index}">
@@ -42,8 +42,8 @@
             th:id="'group-' + ${i.index}"
             class="group-detail d-none table-light">
           <td class="ps-4" th:text="${p.name}"></td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'COMMA', 2, 'POINT')}"></td>
-          <td class="text-end text-muted" style="white-space:nowrap" th:text="${p.percentage} + ' %'"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(p.value, 1, 'POINT', 2, 'COMMA')}"></td>
+          <td class="text-end text-muted" style="white-space:nowrap" th:text="${#numbers.formatDecimal(p.percentage, 1, 'POINT', 2, 'COMMA')} + ' %'"></td>
           <td class="text-muted small" th:text="${p.depotName ?: '-'}"></td>
         </tr>
       </th:block>
