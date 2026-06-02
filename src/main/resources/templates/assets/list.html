@@ -16,6 +16,7 @@
     <span th:text="${error}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
+  <div class="table-section">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Wertpapiere</h3>
     <div class="d-flex gap-2">
@@ -103,7 +104,8 @@
       </tbody>
     </table>
   </div>
-  <div th:if="${!#lists.isEmpty(archivedAssets)}" class="mt-5">
+  </div>
+  <div th:if="${!#lists.isEmpty(archivedAssets)}" class="table-section mt-5">
     <h5 class="text-muted">Archiviert</h5>
     <div class="table-responsive">
       <table class="table table-sm align-middle text-muted">

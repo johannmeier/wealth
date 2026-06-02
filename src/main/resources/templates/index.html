@@ -14,14 +14,11 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
 
-  <div class="row mb-4">
-    <div class="col">
-      <div class="card bg-success text-white">
-        <div class="card-body">
-          <h5 class="card-title">Gesamtvermögen</h5>
-          <h2 class="card-text" th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'">0,00 €</h2>
-        </div>
-      </div>
+  <div class="table-section">
+  <div class="card bg-success text-white mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Gesamtvermögen</h5>
+      <h2 class="card-text" th:text="${#numbers.formatDecimal(totalWealth, 1, 'COMMA', 2, 'POINT')} + ' €'">0,00 €</h2>
     </div>
   </div>
 
@@ -63,6 +60,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
 </div>
 

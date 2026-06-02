@@ -8,6 +8,7 @@
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <div class="container-fluid px-4 mt-4">
+  <div class="table-section">
   <h3>Auflistung nach Wertpapierart</h3>
   <div class="alert alert-info d-flex justify-content-between align-items-center">
     <span>Gesamtvermögen</span>
@@ -49,6 +50,7 @@
   </table>
 
   <div th:if="${#lists.isEmpty(groups)}" class="text-muted">Keine Daten vorhanden.</div>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>

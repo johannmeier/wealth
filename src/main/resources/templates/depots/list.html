@@ -12,6 +12,7 @@
     <span th:text="${success}"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
+  <div class="table-section">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Depots</h3>
     <a th:href="@{/depots/new}" class="btn btn-primary">+ Neu</a>
@@ -31,12 +32,20 @@
                           : '—'"></span>
         </td>
         <td>
-          <a th:href="@{/depots/{id}/edit(id=${d.id})}" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
-          <a th:href="@{/depots/{id}/positions(id=${d.id})}" class="btn btn-sm btn-outline-info">Positionen</a>
-          <form th:action="@{/depots/{id}/delete(id=${d.id})}" method="post" class="d-inline"
-                onsubmit="return confirm('Wirklich löschen?')">
-            <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
-          </form>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aktionen</button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" th:href="@{/depots/{id}/edit(id=${d.id})}">Bearbeiten</a></li>
+              <li><a class="dropdown-item" th:href="@{/depots/{id}/positions(id=${d.id})}">Positionen</a></li>
+              <li><hr class="dropdown-divider"/></li>
+              <li>
+                <form th:action="@{/depots/{id}/delete(id=${d.id})}" method="post"
+                      onsubmit="return confirm('Wirklich löschen?')">
+                  <button type="submit" class="dropdown-item text-danger">Löschen</button>
+                </form>
+              </li>
+            </ul>
+          </div>
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(depots)}">
@@ -51,6 +60,7 @@
       </tr>
     </tfoot>
   </table>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
