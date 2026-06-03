@@ -16,7 +16,10 @@ public class AccountBalance {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
+    @Column(nullable = false)
     private LocalDate date;
+
+    @Column(nullable = false, precision = 19, scale = 10)
     private BigDecimal balance;
 
     public AccountBalance() {}

@@ -21,7 +21,6 @@ public class StatisticsService {
 
     private final AssetRepository assetRepository;
     private final AccountRepository accountRepository;
-    private final DepotRepository depotRepository;
     private final AssetQuantityRepository quantityRepository;
     private final AccountBalanceRepository balanceRepository;
     private final PriceHistoryRepository priceHistoryRepository;
@@ -32,7 +31,6 @@ public class StatisticsService {
 
     public StatisticsService(AssetRepository assetRepository,
                              AccountRepository accountRepository,
-                             DepotRepository depotRepository,
                              AssetQuantityRepository quantityRepository,
                              AccountBalanceRepository balanceRepository,
                              PriceHistoryRepository priceHistoryRepository,
@@ -42,7 +40,6 @@ public class StatisticsService {
                              CoinService coinService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
-        this.depotRepository = depotRepository;
         this.quantityRepository = quantityRepository;
         this.balanceRepository = balanceRepository;
         this.priceHistoryRepository = priceHistoryRepository;
@@ -54,7 +51,23 @@ public class StatisticsService {
 
     public List<WealthPosition> getAllPositions() {
         List<WealthPosition> positions = new ArrayList<>();
-        List<Depot> depots = depotRepository.findAllByOrderByNameAsc();
+
+        // Bulk-load all quantities and balances to avoid N+1 queries
+        Map<Long, Map<Long, AssetQuantity>> latestQtyByAssetDepot = new HashMap<>();
+        for (AssetQuantity q : quantityRepository.findAllWithAssetAndDepot()) {
+            if (q.getDate() == null || q.getQuantity() == null) continue;
+            latestQtyByAssetDepot
+                .computeIfAbsent(q.getAsset().getId(), k -> new HashMap<>())
+                .merge(q.getDepot().getId(), q, (a, b) ->
+                    b.getDate().isAfter(a.getDate()) ? b : a);
+        }
+
+        Map<Long, AccountBalance> latestBalByAccount = new HashMap<>();
+        for (AccountBalance b : balanceRepository.findAllWithAccount()) {
+            if (b.getDate() == null) continue;
+            latestBalByAccount.merge(b.getAccount().getId(), b, (a, c) ->
+                c.getDate().isAfter(a.getDate()) ? c : a);
+        }
 
         for (Asset asset : assetRepository.findAllByArchivedFalseOrderByNameAsc()) {
             BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
@@ -62,14 +75,13 @@ public class StatisticsService {
             BigDecimal totalValue = BigDecimal.ZERO;
             List<String> assetDepots = new ArrayList<>();
 
-            for (Depot depot : depots) {
-                var latest = quantityRepository.findFirstByAssetAndDepotOrderByDateDesc(asset, depot);
-                if (latest.isPresent() && latest.get().getQuantity() != null) {
-                    BigDecimal qty = latest.get().getQuantity();
-                    totalQuantity = totalQuantity.add(qty);
-                    totalValue = totalValue.add(computeValue(qty, priceEur));
-                    assetDepots.add(depot.getName());
-                }
+            Map<Long, AssetQuantity> byDepot = latestQtyByAssetDepot.getOrDefault(asset.getId(), Map.of());
+            for (AssetQuantity latest : byDepot.values()) {
+                BigDecimal qty = latest.getQuantity();
+                if (qty.compareTo(BigDecimal.ZERO) <= 0) continue;
+                totalQuantity = totalQuantity.add(qty);
+                totalValue = totalValue.add(computeValue(qty, priceEur));
+                assetDepots.add(latest.getDepot().getName());
             }
 
             if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
@@ -90,16 +102,16 @@ public class StatisticsService {
         }
 
         for (Account account : accountRepository.findAllByOrderByBankAscAccountNumberAsc()) {
-            balanceRepository.findFirstByAccountOrderByDateDesc(account).ifPresent(ab -> {
-                WealthPosition p = new WealthPosition();
-                p.setId(account.getId());
-                p.setName(account.getDisplayName());
-                p.setType("ACCOUNT");
-                p.setAssetAllocation(account.getAssetAllocation());
-                p.setValue(ab.getBalance());
-                p.setCurrency(account.getCurrency());
-                positions.add(p);
-            });
+            AccountBalance latest = latestBalByAccount.get(account.getId());
+            if (latest == null) continue;
+            WealthPosition p = new WealthPosition();
+            p.setId(account.getId());
+            p.setName(account.getDisplayName());
+            p.setType("ACCOUNT");
+            p.setAssetAllocation(account.getAssetAllocation());
+            p.setValue(latest.getBalance());
+            p.setCurrency(account.getCurrency());
+            positions.add(p);
         }
 
         Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
