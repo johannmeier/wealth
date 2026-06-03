@@ -93,6 +93,9 @@ public class AssetService {
 
     public void hardDelete(Long id) {
         assetRepository.findById(id).ifPresent(asset -> {
+            if (quantityRepository.existsByAsset(asset) || coinRepository.existsByAsset(asset)) {
+                throw new IllegalStateException("Asset hat noch verknüpfte Bestände oder Münzen und kann nicht gelöscht werden.");
+            }
             priceHistoryRepository.deleteByAsset(asset);
             assetRepository.delete(asset);
         });
