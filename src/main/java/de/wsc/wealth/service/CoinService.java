@@ -124,6 +124,17 @@ public class CoinService {
     @Transactional(readOnly = true)
     public List<Asset> findAllAssets() { return assetRepository.findAllByArchivedFalseOrderByNameAsc(); }
 
+    @Transactional(readOnly = true)
+    public Map<String, Long> getMetalToAssetId() {
+        return coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc().stream()
+            .filter(c -> c.getMetal() != null && c.getAsset() != null)
+            .collect(java.util.stream.Collectors.toMap(
+                c -> c.getMetal().name(),
+                c -> c.getAsset().getId(),
+                (a, b) -> a
+            ));
+    }
+
     public void delete(Long id) { coinRepository.deleteById(id); }
 
     @Transactional(readOnly = true)

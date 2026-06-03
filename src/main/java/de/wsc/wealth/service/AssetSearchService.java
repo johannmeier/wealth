@@ -66,6 +66,8 @@ public class AssetSearchService {
                 r.put("currency", currency);
                 r.put("type", mapType(quoteType));
                 r.put("category", mapCategory(quoteType));
+                String isin = q.path("isin").asString("");
+                if (!isin.isBlank()) r.put("isin", isin);
                 results.add(r);
             }
             if (results.isEmpty()) {

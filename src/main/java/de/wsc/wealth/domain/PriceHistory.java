@@ -1,6 +1,7 @@
 package de.wsc.wealth.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -21,6 +22,8 @@ public class PriceHistory {
     @Column(precision = 19, scale = 10)
     private BigDecimal price;
     private String currency;
+    @ColumnDefault("false")
+    private boolean monthly;
 
     public PriceHistory() {}
 
@@ -34,4 +37,6 @@ public class PriceHistory {
     public void setPrice(BigDecimal price) { this.price = price; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+    public boolean isMonthly() { return monthly; }
+    public void setMonthly(boolean monthly) { this.monthly = monthly; }
 }

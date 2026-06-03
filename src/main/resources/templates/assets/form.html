@@ -125,7 +125,7 @@
               '<span><strong>' + esc(r.name) + '</strong>' +
               ' <small class="text-muted">' + esc(r.symbol) + ' &middot; ' + esc(r.exchange) + '</small></span>' +
               '<span class="badge bg-secondary ms-2">' + esc(r.type) + '</span>';
-            btn.addEventListener('click', () => fill(r, q));
+            btn.addEventListener('click', () => fill(r));
             resultsBox.appendChild(btn);
           });
         }
@@ -137,15 +137,13 @@
       });
   }
 
-  function fill(r, searchQuery) {
+  function fill(r) {
     set('name',     r.name);
     set('symbol',   r.symbol);
     set('currency', r.currency || 'EUR');
     selectOption('category', r.category);
     selectOption('type',     r.type);
-    if (/^[A-Z]{2}[A-Z0-9]{10}$/i.test(searchQuery.trim())) {
-      set('isin', searchQuery.trim().toUpperCase());
-    }
+    if (r.isin) set('isin', r.isin);
     hide();
     searchInput.value = r.name;
     clearBtn.style.display = 'inline-block';

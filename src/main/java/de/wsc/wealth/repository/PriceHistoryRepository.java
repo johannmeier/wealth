@@ -12,4 +12,5 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
 
     @Query("SELECT p FROM PriceHistory p JOIN FETCH p.asset")
     List<PriceHistory> findAllWithAsset();
+
 }

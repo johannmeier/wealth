@@ -23,7 +23,10 @@
     </thead>
     <tbody>
       <tr th:each="h : ${priceHistory}">
-        <td th:text="${#temporals.format(h.date, 'dd.MM.yyyy')}"></td>
+        <td>
+          <span th:text="${#temporals.format(h.date, 'dd.MM.yyyy')}"></span>
+          <span th:if="${h.monthly}" class="badge bg-secondary ms-1" th:text="#{page.assets.price-history.monthly}">monatlich</span>
+        </td>
         <td class="text-end" th:text="${#numbers.formatDecimal(h.price, 1, 'DEFAULT', 4, 'DEFAULT')}"></td>
         <td th:text="${h.currency}"></td>
         <td class="text-end">

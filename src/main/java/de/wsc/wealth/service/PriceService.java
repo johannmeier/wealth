@@ -65,14 +65,6 @@ public class PriceService {
             asset.setCurrentPrice(price);
             asset.setLastPriceUpdate(LocalDateTime.now());
             assetRepository.save(asset);
-
-            PriceHistory entry = new PriceHistory();
-            entry.setAsset(asset);
-            entry.setDate(LocalDate.now());
-            entry.setPrice(price);
-            entry.setCurrency(asset.getCurrency());
-            priceHistoryRepository.save(entry);
-
             log.debug("Updated price for {}: {}", asset.getName(), price);
         } catch (Exception e) {
             log.warn("Failed to update price for {}: {}", asset.getName(), e.getMessage());
@@ -134,6 +126,7 @@ public class PriceService {
                     h.setDate(month);
                     h.setPrice(price);
                     h.setCurrency(asset.getCurrency());
+                    h.setMonthly(true);
                     priceHistoryRepository.save(h);
                     log.info("Backfilled price history for {} at {}", asset.getName(), month);
                 } catch (Exception e) {
@@ -155,6 +148,7 @@ public class PriceService {
                 h.setDate(today);
                 h.setPrice(s.getCurrentPrice());
                 h.setCurrency(s.getCurrency());
+                h.setMonthly(true);
                 priceHistoryRepository.save(h);
             });
         log.info("Saved monthly price history for {}", today);
