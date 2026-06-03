@@ -34,10 +34,6 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Group coins by name and metal for a clear overview
 - Assign coins to depots
 
-### Standing Orders
-- Record recurring investment orders for securities
-- Intervals: monthly, quarterly, semi-annual, annual
-
 ### Statistics
 Four current-value views, each showing total wealth and individual position percentages:
 

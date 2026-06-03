@@ -51,9 +51,7 @@
             th:classappend="${uri.startsWith('/depots')} ? ' active' : ''">Depots</a></li>
         <li class="nav-item"><a class="nav-link" th:href="@{/coins}" th:text="#{nav.coins}"
             th:classappend="${uri.startsWith('/coins')} ? ' active' : ''">Münzen</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/standing-orders}" th:text="#{nav.standing-orders}"
-            th:classappend="${uri.startsWith('/standing-orders')} ? ' active' : ''">Daueraufträge</a></li>
-        <li class="nav-item dropdown">
+<li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{nav.statistics}"
              th:classappend="${uri.startsWith('/statistics')} ? ' active' : ''">Statistiken</a>
           <ul class="dropdown-menu">
