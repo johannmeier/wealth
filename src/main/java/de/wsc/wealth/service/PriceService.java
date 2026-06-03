@@ -76,9 +76,11 @@ public class PriceService {
             .uri(YAHOO_URL, symbol)
             .retrieve()
             .body(String.class);
-        JsonNode root = objectMapper.readTree(json);
-        JsonNode meta = root.path("chart").path("result").get(0).path("meta");
-        return meta.path("regularMarketPrice").decimalValue();
+        JsonNode result = objectMapper.readTree(json).path("chart").path("result");
+        if (!result.isArray() || result.isEmpty()) {
+            throw new IllegalStateException("Kein Ergebnis von Yahoo Finance für Symbol: " + symbol);
+        }
+        return result.get(0).path("meta").path("regularMarketPrice").decimalValue();
     }
 
     // Returns the first available closing price on or after the given date (up to 7 days ahead,
@@ -90,8 +92,11 @@ public class PriceService {
             .uri(YAHOO_HISTORY_URL, symbol, p1, p2)
             .retrieve()
             .body(String.class);
-        JsonNode closes = objectMapper.readTree(json)
-            .path("chart").path("result").get(0)
+        JsonNode result = objectMapper.readTree(json).path("chart").path("result");
+        if (!result.isArray() || result.isEmpty()) {
+            return null;
+        }
+        JsonNode closes = result.get(0)
             .path("indicators").path("quote").get(0)
             .path("close");
         for (JsonNode c : closes) {
