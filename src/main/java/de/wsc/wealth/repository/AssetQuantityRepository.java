@@ -4,6 +4,7 @@ import de.wsc.wealth.domain.Asset;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.domain.AssetQuantity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,7 @@ public interface AssetQuantityRepository extends JpaRepository<AssetQuantity, Lo
     Optional<AssetQuantity> findFirstByAssetAndDepotOrderByDateDesc(Asset asset, Depot depot);
     void deleteByAsset(Asset asset);
     boolean existsByAsset(Asset asset);
+
+    @Query("SELECT q FROM AssetQuantity q JOIN FETCH q.asset JOIN FETCH q.depot")
+    List<AssetQuantity> findAllWithAssetAndDepot();
 }

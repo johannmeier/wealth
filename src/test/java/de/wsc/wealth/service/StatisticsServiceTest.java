@@ -25,8 +25,10 @@ class StatisticsServiceTest {
     @Mock private DepotRepository depotRepository;
     @Mock private AssetQuantityRepository quantityRepository;
     @Mock private AccountBalanceRepository balanceRepository;
+    @Mock private PriceHistoryRepository priceHistoryRepository;
     @Mock private ExchangeRateService exchangeRateService;
     @Mock private CoinRepository coinRepository;
+    @Mock private CoinQuantityRepository coinQuantityRepository;
     @Mock private CoinService coinService;
 
     private StatisticsService statisticsService;
@@ -35,7 +37,8 @@ class StatisticsServiceTest {
     void setUp() {
         statisticsService = new StatisticsService(assetRepository, accountRepository,
                 depotRepository, quantityRepository, balanceRepository,
-                exchangeRateService, coinRepository, coinService);
+                priceHistoryRepository, exchangeRateService, coinRepository,
+                coinQuantityRepository, coinService);
     }
 
     @Test

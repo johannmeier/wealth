@@ -4,6 +4,7 @@ import de.wsc.wealth.domain.Asset;
 import de.wsc.wealth.domain.Coin;
 import de.wsc.wealth.domain.CoinMetal;
 import de.wsc.wealth.repository.AssetRepository;
+import de.wsc.wealth.repository.CoinQuantityRepository;
 import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 class CoinServiceTest {
 
     @Mock private CoinRepository coinRepository;
+    @Mock private CoinQuantityRepository coinQuantityRepository;
     @Mock private DepotRepository depotRepository;
     @Mock private AssetRepository assetRepository;
     @Mock private PriceService priceService;
@@ -37,8 +39,8 @@ class CoinServiceTest {
 
     @BeforeEach
     void setUp() {
-        coinService = new CoinService(coinRepository, depotRepository, assetRepository,
-                priceService, exchangeRateService);
+        coinService = new CoinService(coinRepository, coinQuantityRepository, depotRepository,
+                assetRepository, priceService, exchangeRateService);
     }
 
     @Test

@@ -94,6 +94,7 @@
                           th:text="#{common.actions}">Aktionen</button>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${first.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
+                    <li><a class="dropdown-item" th:href="@{/coins/{id}/quantities(id=${first.id})}" th:text="#{page.coins.quantities.title}">Mengenhistorie</a></li>
                     <li><hr class="dropdown-divider"/></li>
                     <li>
                       <form th:action="@{/coins/{id}/delete(id=${first.id})}" method="post"
@@ -146,6 +147,7 @@
                         th:text="#{common.actions}">Aktionen</button>
                 <ul class="dropdown-menu dropdown-menu-end">
                   <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
+                  <li><a class="dropdown-item" th:href="@{/coins/{id}/quantities(id=${c.id})}" th:text="#{page.coins.quantities.title}">Mengenhistorie</a></li>
                   <li><hr class="dropdown-divider"/></li>
                   <li>
                     <form th:action="@{/coins/{id}/delete(id=${c.id})}" method="post"

@@ -1,14 +1,17 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
+import de.wsc.wealth.dto.MonthlyWealth;
 import de.wsc.wealth.dto.StatisticsGroup;
 import de.wsc.wealth.dto.WealthPosition;
 import de.wsc.wealth.repository.*;
+import java.util.TreeMap;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,8 +24,10 @@ public class StatisticsService {
     private final DepotRepository depotRepository;
     private final AssetQuantityRepository quantityRepository;
     private final AccountBalanceRepository balanceRepository;
+    private final PriceHistoryRepository priceHistoryRepository;
     private final ExchangeRateService exchangeRateService;
     private final CoinRepository coinRepository;
+    private final CoinQuantityRepository coinQuantityRepository;
     private final CoinService coinService;
 
     public StatisticsService(AssetRepository assetRepository,
@@ -30,16 +35,20 @@ public class StatisticsService {
                              DepotRepository depotRepository,
                              AssetQuantityRepository quantityRepository,
                              AccountBalanceRepository balanceRepository,
+                             PriceHistoryRepository priceHistoryRepository,
                              ExchangeRateService exchangeRateService,
                              CoinRepository coinRepository,
+                             CoinQuantityRepository coinQuantityRepository,
                              CoinService coinService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.depotRepository = depotRepository;
         this.quantityRepository = quantityRepository;
         this.balanceRepository = balanceRepository;
+        this.priceHistoryRepository = priceHistoryRepository;
         this.exchangeRateService = exchangeRateService;
         this.coinRepository = coinRepository;
+        this.coinQuantityRepository = coinQuantityRepository;
         this.coinService = coinService;
     }
 
@@ -173,6 +182,143 @@ public class StatisticsService {
 
     public BigDecimal getTotalWealth() {
         return totalValue(getAllPositions());
+    }
+
+    public List<MonthlyWealth> getWealthHistory() {
+        List<AssetQuantity> allQuantities = quantityRepository.findAllWithAssetAndDepot();
+        List<PriceHistory> allPrices = priceHistoryRepository.findAllWithAsset();
+        List<AccountBalance> allBalances = balanceRepository.findAllWithAccount();
+        List<Coin> allCoins = coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc();
+        List<CoinQuantity> allCoinQuantities = coinQuantityRepository.findAllWithCoin();
+
+        // (assetId)_(depotId) -> date -> quantity
+        Map<String, TreeMap<LocalDate, BigDecimal>> quantityMap = new HashMap<>();
+        // assetId -> date -> PriceHistory
+        Map<Long, TreeMap<LocalDate, PriceHistory>> priceMap = new HashMap<>();
+        // accountId -> date -> balance
+        Map<Long, TreeMap<LocalDate, BigDecimal>> balanceMap = new HashMap<>();
+        // coinId -> date -> quantity
+        Map<Long, TreeMap<LocalDate, Integer>> coinQtyMap = new HashMap<>();
+
+        LocalDate minDate = null;
+        for (AssetQuantity q : allQuantities) {
+            String key = q.getAsset().getId() + "_" + q.getDepot().getId();
+            quantityMap.computeIfAbsent(key, k -> new TreeMap<>()).put(q.getDate(), q.getQuantity());
+            if (minDate == null || q.getDate().isBefore(minDate)) minDate = q.getDate();
+        }
+        for (PriceHistory p : allPrices) {
+            priceMap.computeIfAbsent(p.getAsset().getId(), k -> new TreeMap<>()).put(p.getDate(), p);
+        }
+        for (AccountBalance b : allBalances) {
+            balanceMap.computeIfAbsent(b.getAccount().getId(), k -> new TreeMap<>()).put(b.getDate(), b.getBalance());
+            if (minDate == null || b.getDate().isBefore(minDate)) minDate = b.getDate();
+        }
+        for (CoinQuantity cq : allCoinQuantities) {
+            coinQtyMap.computeIfAbsent(cq.getCoin().getId(), k -> new TreeMap<>()).put(cq.getDate(), cq.getQuantity());
+            if (minDate == null || cq.getDate().isBefore(minDate)) minDate = cq.getDate();
+        }
+
+        if (minDate == null) return Collections.emptyList();
+
+        Map<Long, Asset> assetById = assetRepository.findAll().stream()
+            .collect(Collectors.toMap(Asset::getId, a -> a));
+        Map<Long, Account> accountById = accountRepository.findAll().stream()
+            .collect(Collectors.toMap(Account::getId, a -> a));
+        Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
+
+        LocalDate firstMonth = minDate.withDayOfMonth(1);
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+
+        List<MonthlyWealth> result = new ArrayList<>();
+        for (LocalDate month = firstMonth; !month.isAfter(currentMonth); month = month.plusMonths(1)) {
+            LocalDate valuationDate = month.equals(currentMonth)
+                ? LocalDate.now()
+                : month.withDayOfMonth(month.lengthOfMonth());
+
+            BigDecimal assetsValue = BigDecimal.ZERO;
+            BigDecimal accountsValue = BigDecimal.ZERO;
+            BigDecimal coinsValue = BigDecimal.ZERO;
+
+            for (Map.Entry<String, TreeMap<LocalDate, BigDecimal>> entry : quantityMap.entrySet()) {
+                Map.Entry<LocalDate, BigDecimal> qtEntry = entry.getValue().floorEntry(valuationDate);
+                if (qtEntry == null) continue;
+                BigDecimal qty = qtEntry.getValue();
+                if (qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+                Long assetId = Long.parseLong(entry.getKey().split("_")[0]);
+                Asset asset = assetById.get(assetId);
+                if (asset == null) continue;
+
+                BigDecimal priceEur = null;
+                TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(assetId);
+                if (prMap != null) {
+                    Map.Entry<LocalDate, PriceHistory> prEntry = prMap.floorEntry(valuationDate);
+                    if (prEntry != null) {
+                        PriceHistory ph = prEntry.getValue();
+                        priceEur = exchangeRateService.toEur(ph.getPrice(), ph.getCurrency());
+                    }
+                }
+                if (priceEur == null) {
+                    priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
+                }
+                if (priceEur == null) continue;
+
+                assetsValue = assetsValue.add(qty.multiply(priceEur).setScale(2, RoundingMode.HALF_UP));
+            }
+
+            for (Map.Entry<Long, TreeMap<LocalDate, BigDecimal>> entry : balanceMap.entrySet()) {
+                Map.Entry<LocalDate, BigDecimal> balEntry = entry.getValue().floorEntry(valuationDate);
+                if (balEntry == null || balEntry.getValue() == null) continue;
+                Account account = accountById.get(entry.getKey());
+                if (account == null) continue;
+                BigDecimal balEur = exchangeRateService.toEur(balEntry.getValue(), account.getCurrency());
+                if (balEur != null) accountsValue = accountsValue.add(balEur);
+            }
+
+            for (Coin coin : allCoins) {
+                if (coin.getMetal() == null || coin.getWeightGrams() == null) continue;
+                int qty;
+                TreeMap<LocalDate, Integer> cqMap = coinQtyMap.get(coin.getId());
+                if (cqMap != null && !cqMap.isEmpty()) {
+                    Map.Entry<LocalDate, Integer> cqEntry = cqMap.floorEntry(valuationDate);
+                    qty = cqEntry != null ? cqEntry.getValue() : 0;
+                } else {
+                    qty = coin.getQuantity() != null ? coin.getQuantity() : 0;
+                }
+                if (qty <= 0) continue;
+                BigDecimal oz = coin.getWeightOz();
+                if (oz == null) continue;
+                BigDecimal val;
+                if (coin.getAsset() != null) {
+                    BigDecimal priceEur = null;
+                    TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(coin.getAsset().getId());
+                    if (prMap != null) {
+                        Map.Entry<LocalDate, PriceHistory> prEntry = prMap.floorEntry(valuationDate);
+                        if (prEntry != null) {
+                            PriceHistory ph = prEntry.getValue();
+                            priceEur = exchangeRateService.toEur(ph.getPrice(), ph.getCurrency());
+                        }
+                    }
+                    if (priceEur == null) {
+                        priceEur = exchangeRateService.toEur(coin.getAsset().getCurrentPrice(), coin.getAsset().getCurrency());
+                    }
+                    if (priceEur == null) continue;
+                    val = BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
+                } else {
+                    BigDecimal spotUsd = spotPrices.get(coin.getMetal());
+                    if (spotUsd == null) continue;
+                    BigDecimal priceEur = exchangeRateService.toEur(spotUsd, "USD");
+                    if (priceEur == null) continue;
+                    val = BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
+                }
+                coinsValue = coinsValue.add(val);
+            }
+
+            result.add(new MonthlyWealth(month, assetsValue, accountsValue, coinsValue));
+        }
+
+        Collections.reverse(result);
+        return result;
     }
 
     public List<StatisticsGroup> getStatsByIndex() {

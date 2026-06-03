@@ -43,4 +43,10 @@ public class StatisticsController {
         model.addAttribute("totalWealth", statisticsService.getTotalWealth());
         return "statistics/by-allocation";
     }
+
+    @GetMapping("/history")
+    public String history(Model model) {
+        model.addAttribute("history", statisticsService.getWealthHistory());
+        return "statistics/history";
+    }
 }

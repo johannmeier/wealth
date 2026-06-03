@@ -8,8 +8,8 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Track exchange-traded securities (stocks, ETFs, bonds, funds, crypto, currencies)
 - Record precious metal securities (e.g. gold ETCs with ISIN)
 - Track other assets without automatic price updates (e.g. pension plans, employer contributions)
-- Automatic price updates via Yahoo Finance at startup and daily on weekdays at 18:30
-- Record date-based quantity snapshots (e.g. when you buy or sell)
+- Automatic price updates via Yahoo Finance at startup and daily on weekdays at 18:00
+- Record date-based quantity snapshots per security and depot (e.g. when you buy or sell)
 - Assign index name (e.g. MSCI World, S&P 500)
 - Assign security type: Stock, Equity Fund, ETF, Bond, Currency, Precious Metal, Crypto, Other
 - Assign asset allocation: Risky or Risk-Free
@@ -28,6 +28,7 @@ A personal wealth tracking application to manage and monitor your entire financi
 ### Physical Coins & Precious Metals
 - Track physical gold, silver and platinum coins separately from securities
 - Enter weight in grams per coin — the app converts to troy ounces automatically
+- Record date-based quantity history per coin (e.g. when you buy or sell physical coins)
 - Optionally link a coin to a security to use that security's price as the EUR/oz rate
 - Without a linked security, spot prices are fetched live from Yahoo Finance
 - Group coins by name and metal for a clear overview
@@ -38,7 +39,7 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Intervals: monthly, quarterly, semi-annual, annual
 
 ### Statistics
-Four views, each showing total wealth and individual position percentages:
+Four current-value views, each showing total wealth and individual position percentages:
 
 | View | Groups positions by |
 |------|---------------------|
@@ -47,8 +48,11 @@ Four views, each showing total wealth and individual position percentages:
 | By Security Type | ETF, Stock, Bond, Account, … |
 | By Allocation | Same as overview, with collapsible detail rows |
 
+### Wealth History
+Monthly chart and table showing how total wealth developed over time, broken down into securities, accounts and coins. Values are calculated using recorded historical prices and quantities for each month-end date.
+
 ### Price History
-The price of each security on the 1st of every month is saved automatically, enabling historical wealth queries (e.g. "What was my total in January 2022?").
+The price of each security on the 1st of every month is saved automatically. The price history is also viewable per security.
 
 ### Currency Conversion
 All values are stored and calculated in EUR internally. Exchange rates for non-EUR securities are fetched automatically from Yahoo Finance. The display currency can be set freely — see [Settings](#settings) below.

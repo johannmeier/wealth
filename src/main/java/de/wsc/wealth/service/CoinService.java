@@ -3,8 +3,10 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.Asset;
 import de.wsc.wealth.domain.Coin;
 import de.wsc.wealth.domain.CoinMetal;
+import de.wsc.wealth.domain.CoinQuantity;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.repository.AssetRepository;
+import de.wsc.wealth.repository.CoinQuantityRepository;
 import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -24,15 +27,19 @@ public class CoinService {
     private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1034768");
 
     private final CoinRepository coinRepository;
+    private final CoinQuantityRepository coinQuantityRepository;
     private final DepotRepository depotRepository;
     private final AssetRepository assetRepository;
     private final PriceService priceService;
     private final ExchangeRateService exchangeRateService;
 
-    public CoinService(CoinRepository coinRepository, DepotRepository depotRepository,
+    public CoinService(CoinRepository coinRepository,
+                       CoinQuantityRepository coinQuantityRepository,
+                       DepotRepository depotRepository,
                        AssetRepository assetRepository,
                        PriceService priceService, ExchangeRateService exchangeRateService) {
         this.coinRepository = coinRepository;
+        this.coinQuantityRepository = coinQuantityRepository;
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
         this.priceService = priceService;
@@ -68,7 +75,50 @@ public class CoinService {
         Depot depot = depotRepository.findById(depotId).orElseThrow();
         coin.setDepot(depot);
         coin.setAsset(assetId != null ? assetRepository.findById(assetId).orElse(null) : null);
-        return coinRepository.save(coin);
+        Coin saved = coinRepository.save(coin);
+        if (saved.getQuantity() != null) {
+            Optional<CoinQuantity> latest = coinQuantityRepository.findFirstByCoinOrderByDateDesc(saved);
+            boolean changed = latest.isEmpty() || !latest.get().getQuantity().equals(saved.getQuantity());
+            if (changed) {
+                CoinQuantity cq = new CoinQuantity();
+                cq.setCoin(saved);
+                cq.setDate(LocalDate.now());
+                cq.setQuantity(saved.getQuantity());
+                coinQuantityRepository.save(cq);
+            }
+        }
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CoinQuantity> findQuantities(Long coinId) {
+        Coin coin = coinRepository.findById(coinId).orElseThrow();
+        return coinQuantityRepository.findByCoinOrderByDateDesc(coin);
+    }
+
+    public void saveQuantity(Long coinId, LocalDate date, Integer quantity) {
+        Coin coin = coinRepository.findById(coinId).orElseThrow();
+        CoinQuantity cq = new CoinQuantity();
+        cq.setCoin(coin);
+        cq.setDate(date);
+        cq.setQuantity(quantity);
+        coinQuantityRepository.save(cq);
+        coinQuantityRepository.findFirstByCoinOrderByDateDesc(coin).ifPresent(latest ->
+            coinRepository.findById(coinId).ifPresent(c -> {
+                c.setQuantity(latest.getQuantity());
+                coinRepository.save(c);
+            })
+        );
+    }
+
+    public void deleteQuantity(Long id) {
+        coinQuantityRepository.findById(id).ifPresent(cq -> {
+            coinQuantityRepository.deleteById(id);
+            Optional<CoinQuantity> newLatest = coinQuantityRepository.findFirstByCoinOrderByDateDesc(cq.getCoin());
+            Coin coin = cq.getCoin();
+            coin.setQuantity(newLatest.map(CoinQuantity::getQuantity).orElse(0));
+            coinRepository.save(coin);
+        });
     }
 
     @Transactional(readOnly = true)
