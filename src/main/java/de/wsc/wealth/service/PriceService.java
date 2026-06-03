@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,7 @@ public class PriceService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(1)
     @Scheduled(cron = "0 0 18 * * *")
     @Transactional
     public void updatePrices() {
@@ -103,6 +105,7 @@ public class PriceService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(2)
     @Transactional
     public void backfillMissingMonthlyHistory() {
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
@@ -140,17 +143,26 @@ public class PriceService {
     @Transactional
     public void saveMonthlyHistory() {
         LocalDate today = LocalDate.now();
-        assetRepository.findAll().stream()
-            .filter(s -> s.getCurrentPrice() != null)
-            .forEach(s -> {
-                PriceHistory h = new PriceHistory();
-                h.setAsset(s);
-                h.setDate(today);
-                h.setPrice(s.getCurrentPrice());
-                h.setCurrency(s.getCurrency());
-                h.setMonthly(true);
-                priceHistoryRepository.save(h);
-            });
+        for (Asset asset : assetRepository.findAll()) {
+            if (asset.getCurrentPrice() == null) continue;
+            if (priceHistoryRepository.existsByAssetAndDate(asset, today)) continue;
+            BigDecimal price = asset.getCurrentPrice();
+            if (asset.isAutoPrice() && asset.getSymbol() != null && !asset.getSymbol().isBlank()) {
+                try {
+                    BigDecimal fetched = fetchHistoricalPrice(asset.getSymbol(), today);
+                    if (fetched != null) price = fetched;
+                } catch (Exception e) {
+                    log.warn("Could not fetch monthly price for {}, using currentPrice: {}", asset.getName(), e.getMessage());
+                }
+            }
+            PriceHistory h = new PriceHistory();
+            h.setAsset(asset);
+            h.setDate(today);
+            h.setPrice(price);
+            h.setCurrency(asset.getCurrency());
+            h.setMonthly(true);
+            priceHistoryRepository.save(h);
+        }
         log.info("Saved monthly price history for {}", today);
     }
 }
