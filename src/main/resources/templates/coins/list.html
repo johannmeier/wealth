@@ -63,8 +63,7 @@
         <th:block th:each="entry, i : ${groupedCoins}" th:with="first=${entry.value.get(0)}, groupSize=${#lists.size(entry.value)}">
           <!-- Aggregierte Zeile -->
           <tr class="coin-summary fw-semibold"
-              th:classappend="${first.metal?.name() == 'GOLD'} ? 'coin-row-gold' : (${first.metal?.name() == 'SILBER'} ? 'coin-row-silber' : 'coin-row-platin')"
-              th:classappend="${i.odd} ? ' coin-row-odd' : ''">
+              th:classappend="(${first.metal?.name() == 'GOLD'} ? 'coin-row-gold' : (${first.metal?.name() == 'SILBER'} ? 'coin-row-silber' : 'coin-row-platin')) + (${i.odd} ? ' coin-row-odd' : '')">
             <td th:text="${first.name}"></td>
             <td>
               <span class="badge"
