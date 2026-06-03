@@ -64,7 +64,7 @@
           <!-- Aggregierte Zeile -->
           <tr class="coin-summary fw-semibold"
               th:classappend="${first.metal?.name() == 'GOLD'} ? 'coin-row-gold' : (${first.metal?.name() == 'SILBER'} ? 'coin-row-silber' : 'coin-row-platin')"
-              th:style="${i.odd} ? 'filter: brightness(0.95)' : ''">
+              th:classappend="${i.odd} ? ' coin-row-odd' : ''">
             <td th:text="${first.name}"></td>
             <td>
               <span class="badge"
