@@ -27,7 +27,7 @@
     </thead>
     <tbody>
       <th:block th:each="group, i : ${groups}">
-        <tr class="fw-semibold" th:classappend="${i.odd} ? 'table-light' : ''">
+        <tr class="fw-semibold" th:classappend="${i.odd} ? 'stat-row-alt' : ''">
           <td th:text="${#messages.msgOrNull('assetType.' + group.name) ?: group.name}"></td>
           <td class="text-end" th:text="${#numbers.formatDecimal(group.totalValue.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(group.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
@@ -40,7 +40,7 @@
         </tr>
         <tr th:each="p : ${group.positions}"
             th:id="'group-' + ${i.index}"
-            class="group-detail d-none table-light">
+            class="group-detail d-none stat-row-alt">
           <td class="ps-4" th:text="${p.name}"></td>
           <td class="text-end" th:text="${#numbers.formatDecimal(p.value.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end text-muted" style="white-space:nowrap" th:text="${#numbers.formatDecimal(p.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
