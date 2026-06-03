@@ -20,9 +20,10 @@ public class AssetQuantity {
     @JoinColumn(name = "depot_id", nullable = false)
     private Depot depot;
 
+    @Column(nullable = false)
     private LocalDate date;
 
-    @Column(precision = 19, scale = 10)
+    @Column(nullable = false, precision = 19, scale = 10)
     private BigDecimal quantity;
 
     public AssetQuantity() {}

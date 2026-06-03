@@ -10,9 +10,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -22,7 +22,6 @@ class StatisticsServiceTest {
 
     @Mock private AssetRepository assetRepository;
     @Mock private AccountRepository accountRepository;
-    @Mock private DepotRepository depotRepository;
     @Mock private AssetQuantityRepository quantityRepository;
     @Mock private AccountBalanceRepository balanceRepository;
     @Mock private PriceHistoryRepository priceHistoryRepository;
@@ -36,7 +35,7 @@ class StatisticsServiceTest {
     @BeforeEach
     void setUp() {
         statisticsService = new StatisticsService(assetRepository, accountRepository,
-                depotRepository, quantityRepository, balanceRepository,
+                quantityRepository, balanceRepository,
                 priceHistoryRepository, exchangeRateService, coinRepository,
                 coinQuantityRepository, coinService);
     }
@@ -60,10 +59,9 @@ class StatisticsServiceTest {
         AssetQuantity qty = quantity(asset, depot, new BigDecimal("5"));
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset));
-        when(depotRepository.findAllByOrderByNameAsc()).thenReturn(List.of(depot));
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of(qty));
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
-        when(quantityRepository.findFirstByAssetAndDepotOrderByDateDesc(asset, depot))
-                .thenReturn(Optional.of(qty));
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
@@ -86,9 +84,9 @@ class StatisticsServiceTest {
         AccountBalance balance = balance(account, new BigDecimal("1000.00"));
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of());
-        when(depotRepository.findAllByOrderByNameAsc()).thenReturn(List.of());
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of(account));
-        when(balanceRepository.findFirstByAccountOrderByDateDesc(account)).thenReturn(Optional.of(balance));
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
 
@@ -110,11 +108,9 @@ class StatisticsServiceTest {
         AccountBalance balance = balance(account, new BigDecimal("500.00")); // 500 EUR
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset));
-        when(depotRepository.findAllByOrderByNameAsc()).thenReturn(List.of(depot));
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of(qty));
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of(account));
-        when(quantityRepository.findFirstByAssetAndDepotOrderByDateDesc(asset, depot))
-                .thenReturn(Optional.of(qty));
-        when(balanceRepository.findFirstByAccountOrderByDateDesc(account)).thenReturn(Optional.of(balance));
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
@@ -133,13 +129,11 @@ class StatisticsServiceTest {
     @Test
     void getAllPositions_assetWithNoQuantity_isExcluded() {
         Asset asset = asset(1L, "ETF", new BigDecimal("100.00"), "EUR");
-        Depot depot = depot(1L, "Main");
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset));
-        when(depotRepository.findAllByOrderByNameAsc()).thenReturn(List.of(depot));
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
-        when(quantityRepository.findFirstByAssetAndDepotOrderByDateDesc(asset, depot))
-                .thenReturn(Optional.empty());
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
@@ -152,8 +146,9 @@ class StatisticsServiceTest {
 
     private void stubEmpty() {
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of());
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
-        when(depotRepository.findAllByOrderByNameAsc()).thenReturn(List.of());
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
     }
@@ -179,6 +174,7 @@ class StatisticsServiceTest {
         q.setAsset(asset);
         q.setDepot(depot);
         q.setQuantity(qty);
+        q.setDate(LocalDate.of(2025, 1, 1));
         return q;
     }
 
@@ -195,6 +191,7 @@ class StatisticsServiceTest {
         AccountBalance b = new AccountBalance();
         b.setAccount(account);
         b.setBalance(amount);
+        b.setDate(LocalDate.of(2025, 1, 1));
         return b;
     }
 }

@@ -15,8 +15,10 @@ public class CoinQuantity {
     @JoinColumn(name = "coin_id", nullable = false)
     private Coin coin;
 
+    @Column(nullable = false)
     private LocalDate date;
 
+    @Column(nullable = false)
     private Integer quantity;
 
     public CoinQuantity() {}

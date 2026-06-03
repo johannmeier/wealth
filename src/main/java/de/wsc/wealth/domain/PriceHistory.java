@@ -17,9 +17,10 @@ public class PriceHistory {
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
+    @Column(nullable = false)
     private LocalDate date;
 
-    @Column(precision = 19, scale = 10)
+    @Column(nullable = false, precision = 19, scale = 10)
     private BigDecimal price;
     private String currency;
     @ColumnDefault("false")
