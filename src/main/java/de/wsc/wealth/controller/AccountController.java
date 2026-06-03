@@ -5,10 +5,12 @@ import de.wsc.wealth.domain.AccountBalance;
 import de.wsc.wealth.domain.AssetAllocation;
 import de.wsc.wealth.service.AccountService;
 import de.wsc.wealth.service.ExchangeRateService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -69,7 +71,8 @@ public class AccountController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        accountService.findById(id).ifPresent(a -> model.addAttribute("account", a));
+        model.addAttribute("account", accountService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         model.addAttribute("allocations", AssetAllocation.values());
         return "accounts/form";
     }
@@ -90,7 +93,8 @@ public class AccountController {
 
     @GetMapping("/{id}/balances")
     public String balances(@PathVariable Long id, Model model) {
-        accountService.findById(id).ifPresent(a -> model.addAttribute("account", a));
+        model.addAttribute("account", accountService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         model.addAttribute("balances", accountService.getBalances(id));
         model.addAttribute("newBalance", new AccountBalance());
         return "accounts/balances";

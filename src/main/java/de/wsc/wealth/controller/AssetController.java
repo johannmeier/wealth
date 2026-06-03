@@ -5,9 +5,11 @@ import de.wsc.wealth.service.AssetSearchService;
 import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.ExchangeRateService;
 import de.wsc.wealth.service.PriceService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -58,7 +60,8 @@ public class AssetController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        assetService.findById(id).ifPresent(s -> model.addAttribute("asset", s));
+        model.addAttribute("asset", assetService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         addEnums(model);
         return "assets/form";
     }
@@ -100,7 +103,8 @@ public class AssetController {
 
     @GetMapping("/{id}/quantities")
     public String quantities(@PathVariable Long id, Model model) {
-        assetService.findById(id).ifPresent(s -> model.addAttribute("asset", s));
+        model.addAttribute("asset", assetService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         model.addAttribute("quantities", assetService.getQuantities(id));
         model.addAttribute("depots", assetService.findAllDepots());
         model.addAttribute("newQuantity", new AssetQuantity());
@@ -123,7 +127,8 @@ public class AssetController {
 
     @GetMapping("/{id}/price-history")
     public String priceHistory(@PathVariable Long id, Model model) {
-        assetService.findById(id).ifPresent(s -> model.addAttribute("asset", s));
+        model.addAttribute("asset", assetService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         List<PriceHistory> history = assetService.getPriceHistory(id);
         Map<Long, BigDecimal> historyEurPrices = new java.util.HashMap<>();
         for (PriceHistory h : history) {

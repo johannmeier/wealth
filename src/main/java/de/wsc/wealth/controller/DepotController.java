@@ -7,10 +7,12 @@ import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.service.CoinService;
 import de.wsc.wealth.service.DepotService;
 import de.wsc.wealth.service.ExchangeRateService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -58,7 +60,8 @@ public class DepotController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        depotService.findById(id).ifPresent(d -> model.addAttribute("depot", d));
+        model.addAttribute("depot", depotService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         return "depots/form";
     }
 
@@ -78,7 +81,8 @@ public class DepotController {
 
     @GetMapping("/{id}/positions")
     public String positions(@PathVariable Long id, Model model) {
-        depotService.findById(id).ifPresent(d -> model.addAttribute("depot", d));
+        model.addAttribute("depot", depotService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         List<AssetQuantity> quantities = depotService.getQuantities(id);
         model.addAttribute("quantities", quantities);
         model.addAttribute("assets", depotService.findAllAssets());

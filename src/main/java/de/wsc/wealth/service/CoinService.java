@@ -135,7 +135,13 @@ public class CoinService {
             ));
     }
 
-    public void delete(Long id) { coinRepository.deleteById(id); }
+    public void delete(Long id) {
+        coinRepository.findById(id).ifPresent(coin -> {
+            coinQuantityRepository.findByCoinOrderByDateDesc(coin)
+                .forEach(cq -> coinQuantityRepository.deleteById(cq.getId()));
+            coinRepository.deleteById(id);
+        });
+    }
 
     @Transactional(readOnly = true)
     public List<Depot> findAllDepots() { return depotRepository.findAllByOrderByNameAsc(); }
