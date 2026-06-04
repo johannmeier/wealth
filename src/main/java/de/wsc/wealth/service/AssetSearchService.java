@@ -147,7 +147,8 @@ public class AssetSearchService {
         String combined = ((name != null ? name : "") + " " + (symbol != null ? symbol : "")).toUpperCase();
         boolean isBond = combined.contains("BOND") || combined.contains("ANLEIHE") || combined.contains("RENTEN")
                 || combined.contains("FIXED INCOME") || combined.contains("TREASUR")
-                || combined.contains("AGGREGATE") || combined.contains("SOVEREIGN") || combined.contains("GILT");
+                || combined.contains("AGGREGATE") || combined.contains("SOVEREIGN") || combined.contains("GILT")
+                || combined.contains("OVERNIGHT") || combined.contains("MONEY MARKET") || combined.contains("GELDMARKT");
         if (isBond && baseCurrency.equals(currency)) return "RISIKOFREI";
         return "RISIKOBEHAFTET";
     }
