@@ -1,6 +1,45 @@
 Wealth – Release History
 ========================
 
+Version 1.0.3  (2026-06-04)
+-----------------------------
+Korrektheit
+  - Fremdwährungs-Konten werden jetzt korrekt in EUR umgerechnet bevor
+    sie in die Gesamtvermögens- und Statistikberechnung einfließen
+  - Historische Vermögensentwicklung: Edelmetall-Münzen ohne verknüpftes
+    Wertpapier verwenden jetzt historische Kursdaten statt des aktuellen
+    Spot-Preises
+
+Performance
+  - Jede Statistik-Seite rief getAllPositions() doppelt auf (inkl. 6
+    Yahoo-Finance-Requests statt 3); jetzt einmalige Berechnung pro Request
+  - N+1-Queries in AccountService, DepotService und AssetService durch
+    Bulk-Queries ersetzt
+
+Datenkonsistenz
+  - Kurshistorie: Upsert-Logik — pro Wertpapier und Tag wird nur noch ein
+    Eintrag angelegt (bei mehreren Aktualisierungen am selben Tag wird der
+    bestehende Eintrag aktualisiert statt ein neuer angelegt)
+  - Depotbestand und Münzbestand: dieselbe Upsert-Logik pro Datum
+  - Tägliche Kursabfrage (18:00 Scheduler, Manuell-Button) schreibt jetzt
+    ebenfalls einen Histories-Eintrag
+  - 674 doppelte Kurshistorie-Einträge aus der Datenbank entfernt
+
+Robustheit
+  - fetchPrice() wirft jetzt eine Exception wenn Yahoo Finance keinen
+    gültigen Kurs liefert (verhindert das Speichern von 0 als Kurs)
+  - updatePrices() hält die Datenbank-Verbindung nicht mehr während der
+    externen HTTP-Aufrufe offen
+  - Fehlgeschlagene Spot-Preis-Abfragen werden jetzt geloggt
+
+Sicherheit
+  - H2-Datenbankkonsole deaktiviert (war ohne Authentifizierung erreichbar)
+
+Build
+  - Maven Compiler-Plugin explizit auf Java 21 konfiguriert (behebt
+    IntelliJ-Fehler "JVM target 5")
+
+
 Version 1.0.2  (2026-06-03)
 -----------------------------
 History & Data Quality
