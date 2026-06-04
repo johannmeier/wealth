@@ -83,9 +83,14 @@ public class CoinService {
             Optional<CoinQuantity> latest = coinQuantityRepository.findFirstByCoinOrderByDateDesc(saved);
             boolean changed = latest.isEmpty() || !latest.get().getQuantity().equals(saved.getQuantity());
             if (changed) {
-                CoinQuantity cq = new CoinQuantity();
-                cq.setCoin(saved);
-                cq.setDate(LocalDate.now());
+                LocalDate today = LocalDate.now();
+                CoinQuantity cq = coinQuantityRepository.findByCoinAndDate(saved, today)
+                    .orElseGet(() -> {
+                        CoinQuantity q = new CoinQuantity();
+                        q.setCoin(saved);
+                        q.setDate(today);
+                        return q;
+                    });
                 cq.setQuantity(saved.getQuantity());
                 coinQuantityRepository.save(cq);
             }
@@ -101,9 +106,13 @@ public class CoinService {
 
     public void saveQuantity(Long coinId, LocalDate date, Integer quantity) {
         Coin coin = coinRepository.findById(coinId).orElseThrow();
-        CoinQuantity cq = new CoinQuantity();
-        cq.setCoin(coin);
-        cq.setDate(date);
+        CoinQuantity cq = coinQuantityRepository.findByCoinAndDate(coin, date)
+            .orElseGet(() -> {
+                CoinQuantity q = new CoinQuantity();
+                q.setCoin(coin);
+                q.setDate(date);
+                return q;
+            });
         cq.setQuantity(quantity);
         coinQuantityRepository.save(cq);
         coinQuantityRepository.findFirstByCoinOrderByDateDesc(coin).ifPresent(latest -> {
