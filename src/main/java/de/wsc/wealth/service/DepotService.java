@@ -94,8 +94,6 @@ public class DepotService {
 
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getCurrentValueByDepotId() {
-        var spotPrices = coinService.fetchSpotPricesUsd();
-
         // Bulk-load: latest quantity per depot+asset
         Map<Long, Map<Long, AssetQuantity>> latestQtyByDepotAsset = new java.util.HashMap<>();
         for (AssetQuantity q : quantityRepository.findAllWithAssetAndDepot()) {
@@ -110,7 +108,7 @@ public class DepotService {
         Map<Long, BigDecimal> coinValueByDepotId = new java.util.HashMap<>();
         for (de.wsc.wealth.domain.Coin c : coinRepository.findAllWithDepot()) {
             if (c.getDepot() == null) continue;
-            BigDecimal val = coinService.valueEur(c, spotPrices);
+            BigDecimal val = coinService.valueEur(c);
             if (val != null) coinValueByDepotId.merge(c.getDepot().getId(), val, BigDecimal::add);
         }
 

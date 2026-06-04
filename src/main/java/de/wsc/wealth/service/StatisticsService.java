@@ -116,25 +116,18 @@ public class StatisticsService {
             positions.add(p);
         }
 
-        Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
         Map<Long, BigDecimal> coinValueByAssetId = new HashMap<>();
         Map<Long, Set<String>> coinDepotsByAssetId = new HashMap<>();
         Map<Long, Asset> coinAssetObjects = new HashMap<>();
-        Map<CoinMetal, BigDecimal> coinValueByMetal = new EnumMap<>(CoinMetal.class);
-        Map<CoinMetal, Set<String>> coinDepotsByMetal = new EnumMap<>(CoinMetal.class);
         for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
-            BigDecimal val = coinService.valueEur(coin, spotPrices);
+            if (coin.getAsset() == null) continue;
+            BigDecimal val = coinService.valueEur(coin);
             if (val == null) continue;
+            Long aid = coin.getAsset().getId();
+            coinValueByAssetId.merge(aid, val, BigDecimal::add);
+            coinAssetObjects.put(aid, coin.getAsset());
             String depotName = coin.getDepot() != null ? coin.getDepot().getName() : null;
-            if (coin.getAsset() != null) {
-                Long aid = coin.getAsset().getId();
-                coinValueByAssetId.merge(aid, val, BigDecimal::add);
-                coinAssetObjects.put(aid, coin.getAsset());
-                if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
-            } else {
-                coinValueByMetal.merge(coin.getMetal(), val, BigDecimal::add);
-                if (depotName != null) coinDepotsByMetal.computeIfAbsent(coin.getMetal(), k -> new LinkedHashSet<>()).add(depotName);
-            }
+            if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
         }
         // Coin-Werte zu den verknüpften Wertpapier-Positionen addieren und Depot ergänzen
         Set<Long> mergedAssetIds = new HashSet<>();
@@ -165,17 +158,6 @@ public class StatisticsService {
             p.setValue(entry.getValue());
             p.setCurrency("EUR");
             Set<String> coinDepots = coinDepotsByAssetId.get(assetId);
-            if (coinDepots != null) p.setDepotName(String.join(", ", coinDepots));
-            positions.add(p);
-        }
-        // Coins ohne Wertpapier separat nach Metall anzeigen
-        for (Map.Entry<CoinMetal, BigDecimal> entry : coinValueByMetal.entrySet()) {
-            WealthPosition p = new WealthPosition();
-            p.setName(entry.getKey().getLabel() + " (physisch)");
-            p.setType("COIN");
-            p.setValue(entry.getValue());
-            p.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
-            Set<String> coinDepots = coinDepotsByMetal.get(entry.getKey());
             if (coinDepots != null) p.setDepotName(String.join(", ", coinDepots));
             positions.add(p);
         }
@@ -238,20 +220,6 @@ public class StatisticsService {
             .collect(Collectors.toMap(Asset::getId, a -> a));
         Map<Long, Account> accountById = accountRepository.findAll().stream()
             .collect(Collectors.toMap(Account::getId, a -> a));
-        Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
-
-        // For coins without a linked asset, resolve historical prices via an asset
-        // whose symbol matches the metal's Yahoo ticker (e.g. GC=F for gold).
-        Map<CoinMetal, TreeMap<LocalDate, PriceHistory>> metalPriceMap = new EnumMap<>(CoinMetal.class);
-        for (CoinMetal metal : CoinMetal.values()) {
-            assetById.values().stream()
-                .filter(a -> metal.getYahooSymbol().equalsIgnoreCase(a.getSymbol()))
-                .findFirst()
-                .ifPresent(a -> {
-                    TreeMap<LocalDate, PriceHistory> pm = priceMap.get(a.getId());
-                    if (pm != null) metalPriceMap.put(metal, pm);
-                });
-        }
 
         LocalDate firstMonth = minDate.withDayOfMonth(1);
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
@@ -303,7 +271,7 @@ public class StatisticsService {
             }
 
             for (Coin coin : allCoins) {
-                if (coin.getMetal() == null || coin.getWeightGrams() == null) continue;
+                if (coin.getAsset() == null || coin.getMetal() == null || coin.getWeightGrams() == null) continue;
                 int qty;
                 TreeMap<LocalDate, Integer> cqMap = coinQtyMap.get(coin.getId());
                 if (cqMap != null && !cqMap.isEmpty()) {
@@ -315,41 +283,22 @@ public class StatisticsService {
                 if (qty <= 0) continue;
                 BigDecimal oz = coin.getWeightOz();
                 if (oz == null) continue;
-                BigDecimal val;
-                if (coin.getAsset() != null) {
-                    BigDecimal priceEur = null;
-                    TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(coin.getAsset().getId());
-                    if (prMap != null) {
-                        Map.Entry<LocalDate, PriceHistory> prEntry = prMap.floorEntry(valuationDate);
-                        if (prEntry != null) {
-                            PriceHistory ph = prEntry.getValue();
-                            priceEur = exchangeRateService.toEur(ph.getPrice(), ph.getCurrency());
-                        }
+
+                BigDecimal priceEur = null;
+                TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(coin.getAsset().getId());
+                if (prMap != null) {
+                    Map.Entry<LocalDate, PriceHistory> prEntry = prMap.floorEntry(valuationDate);
+                    if (prEntry != null) {
+                        PriceHistory ph = prEntry.getValue();
+                        priceEur = exchangeRateService.toEur(ph.getPrice(), ph.getCurrency());
                     }
-                    if (priceEur == null) {
-                        priceEur = exchangeRateService.toEur(coin.getAsset().getCurrentPrice(), coin.getAsset().getCurrency());
-                    }
-                    if (priceEur == null) continue;
-                    val = BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
-                } else {
-                    BigDecimal priceEur = null;
-                    TreeMap<LocalDate, PriceHistory> mPrMap = metalPriceMap.get(coin.getMetal());
-                    if (mPrMap != null) {
-                        Map.Entry<LocalDate, PriceHistory> prEntry = mPrMap.floorEntry(valuationDate);
-                        if (prEntry != null) {
-                            PriceHistory ph = prEntry.getValue();
-                            priceEur = exchangeRateService.toEur(ph.getPrice(), ph.getCurrency());
-                        }
-                    }
-                    if (priceEur == null) {
-                        BigDecimal spotUsd = spotPrices.get(coin.getMetal());
-                        if (spotUsd == null) continue;
-                        priceEur = exchangeRateService.toEur(spotUsd, "USD");
-                    }
-                    if (priceEur == null) continue;
-                    val = BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
                 }
-                coinsValue = coinsValue.add(val);
+                if (priceEur == null) {
+                    priceEur = exchangeRateService.toEur(coin.getAsset().getCurrentPrice(), coin.getAsset().getCurrency());
+                }
+                if (priceEur == null) continue;
+                coinsValue = coinsValue.add(
+                    BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP));
             }
 
             result.add(new MonthlyWealth(month, assetsValue, accountsValue, coinsValue));
