@@ -150,7 +150,10 @@
     if (r.symbol) {
       fetch('/assets/quote-details?symbol=' + encodeURIComponent(r.symbol))
         .then(res => res.json())
-        .then(d => { if (d.currency) set('currency', d.currency); })
+        .then(d => {
+          if (d.currency) set('currency', d.currency);
+          if (d.isin) set('isin', d.isin);
+        })
         .catch(() => {});
     }
   }
