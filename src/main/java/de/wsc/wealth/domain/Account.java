@@ -1,7 +1,6 @@
 package de.wsc.wealth.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "account")
@@ -11,8 +10,9 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    private String bank;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id")
+    private Bank bank;
 
     private String accountNumber;
 
@@ -29,11 +29,14 @@ public class Account {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getBank() { return bank; }
-    public void setBank(String bank) { this.bank = bank; }
+    public Bank getBank() { return bank; }
+    public void setBank(Bank bank) { this.bank = bank; }
     public String getAccountNumber() { return accountNumber; }
     public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
-    public String getDisplayName() { return accountNumber != null && !accountNumber.isBlank() ? bank + " – " + accountNumber : bank; }
+    public String getDisplayName() {
+        String bankName = bank != null ? bank.getName() : "";
+        return accountNumber != null && !accountNumber.isBlank() ? bankName + " – " + accountNumber : bankName;
+    }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public String getIban() { return iban; }

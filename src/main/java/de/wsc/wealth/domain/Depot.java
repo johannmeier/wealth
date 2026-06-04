@@ -16,6 +16,10 @@ public class Depot {
 
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id")
+    private Bank bank;
+
     public Depot() {}
 
     public Long getId() { return id; }
@@ -24,4 +28,6 @@ public class Depot {
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public Bank getBank() { return bank; }
+    public void setBank(Bank bank) { this.bank = bank; }
 }
