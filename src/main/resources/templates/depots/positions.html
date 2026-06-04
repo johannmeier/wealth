@@ -25,7 +25,7 @@
           <select name="assetId" id="assetId" class="form-select" required>
             <option value="" th:text="#{form.select}">-- wählen --</option>
             <option th:each="a : ${assets}" th:value="${a.id}"
-                    th:text="${a.name + (a.symbol != null ? ' (' + a.symbol + ')' : '')}"></option>
+                    th:text="${a.name + (a.symbol != null ? ' (' + a.symbol + ')' : '') + (a.isin != null and !a.isin.isEmpty() ? ' · ' + a.isin : '')}"></option>
           </select>
         </div>
         <div class="mb-3">
