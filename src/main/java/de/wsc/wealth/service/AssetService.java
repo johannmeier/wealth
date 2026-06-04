@@ -71,9 +71,14 @@ public class AssetService {
         Asset saved = assetRepository.save(asset);
 
         if (recordPrice) {
-            PriceHistory entry = new PriceHistory();
-            entry.setAsset(saved);
-            entry.setDate(LocalDate.now());
+            LocalDate today = LocalDate.now();
+            PriceHistory entry = priceHistoryRepository.findByAssetAndDate(saved, today)
+                .orElseGet(() -> {
+                    PriceHistory h = new PriceHistory();
+                    h.setAsset(saved);
+                    h.setDate(today);
+                    return h;
+                });
             entry.setPrice(newPrice);
             entry.setCurrency(saved.getCurrency());
             priceHistoryRepository.save(entry);
