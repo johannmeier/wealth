@@ -68,6 +68,8 @@ public class AssetSearchService {
                 r.put("category", mapCategory(quoteType));
                 String isin = q.path("isin").asString("");
                 if (!isin.isBlank()) r.put("isin", isin);
+                String dp = mapDistributionPolicy(r.get("name"), r.get("symbol"));
+                if (dp != null) r.put("distributionPolicy", dp);
                 results.add(r);
             }
             if (results.isEmpty()) {
@@ -102,6 +104,8 @@ public class AssetSearchService {
             r.put("currency", currency.isBlank() ? currencyForExchange(exchange) : currency);
             r.put("type", "SONSTIGE");
             r.put("category", "BOERSENGEHANDELT");
+            String dp = mapDistributionPolicy(r.get("name"), r.get("symbol"));
+            if (dp != null) r.put("distributionPolicy", dp);
             return r;
         } catch (Exception e) {
             log.debug("Direct symbol lookup failed for '{}': {}", symbol, e.getMessage());
@@ -134,6 +138,13 @@ public class AssetSearchService {
             case "SAO"                                                     -> "BRL";
             default                                                        -> "USD";
         };
+    }
+
+    private String mapDistributionPolicy(String name, String symbol) {
+        String combined = ((name != null ? name : "") + " " + (symbol != null ? symbol : "")).toUpperCase();
+        if (combined.contains("ACC") || combined.contains("ACCUMUL") || combined.contains("THESAUR")) return "THESAURIEREND";
+        if (combined.contains("DIST") || combined.contains("INCOME") || combined.contains("AUSSCH")) return "AUSSCHUETTEND";
+        return null;
     }
 
     private String mapCategory(String quoteType) {
