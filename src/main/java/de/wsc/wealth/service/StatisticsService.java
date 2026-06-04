@@ -104,13 +104,15 @@ public class StatisticsService {
         for (Account account : accountRepository.findAllByOrderByBankAscAccountNumberAsc()) {
             AccountBalance latest = latestBalByAccount.get(account.getId());
             if (latest == null) continue;
+            BigDecimal balEur = exchangeRateService.toEur(latest.getBalance(), account.getCurrency());
+            if (balEur == null) continue;
             WealthPosition p = new WealthPosition();
             p.setId(account.getId());
             p.setName(account.getDisplayName());
             p.setType("ACCOUNT");
             p.setAssetAllocation(account.getAssetAllocation());
-            p.setValue(latest.getBalance());
-            p.setCurrency(account.getCurrency());
+            p.setValue(balEur);
+            p.setCurrency("EUR");
             positions.add(p);
         }
 
@@ -238,6 +240,19 @@ public class StatisticsService {
             .collect(Collectors.toMap(Account::getId, a -> a));
         Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
 
+        // For coins without a linked asset, resolve historical prices via an asset
+        // whose symbol matches the metal's Yahoo ticker (e.g. GC=F for gold).
+        Map<CoinMetal, TreeMap<LocalDate, PriceHistory>> metalPriceMap = new EnumMap<>(CoinMetal.class);
+        for (CoinMetal metal : CoinMetal.values()) {
+            assetById.values().stream()
+                .filter(a -> metal.getYahooSymbol().equalsIgnoreCase(a.getSymbol()))
+                .findFirst()
+                .ifPresent(a -> {
+                    TreeMap<LocalDate, PriceHistory> pm = priceMap.get(a.getId());
+                    if (pm != null) metalPriceMap.put(metal, pm);
+                });
+        }
+
         LocalDate firstMonth = minDate.withDayOfMonth(1);
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
 
@@ -317,9 +332,20 @@ public class StatisticsService {
                     if (priceEur == null) continue;
                     val = BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
                 } else {
-                    BigDecimal spotUsd = spotPrices.get(coin.getMetal());
-                    if (spotUsd == null) continue;
-                    BigDecimal priceEur = exchangeRateService.toEur(spotUsd, "USD");
+                    BigDecimal priceEur = null;
+                    TreeMap<LocalDate, PriceHistory> mPrMap = metalPriceMap.get(coin.getMetal());
+                    if (mPrMap != null) {
+                        Map.Entry<LocalDate, PriceHistory> prEntry = mPrMap.floorEntry(valuationDate);
+                        if (prEntry != null) {
+                            PriceHistory ph = prEntry.getValue();
+                            priceEur = exchangeRateService.toEur(ph.getPrice(), ph.getCurrency());
+                        }
+                    }
+                    if (priceEur == null) {
+                        BigDecimal spotUsd = spotPrices.get(coin.getMetal());
+                        if (spotUsd == null) continue;
+                        priceEur = exchangeRateService.toEur(spotUsd, "USD");
+                    }
                     if (priceEur == null) continue;
                     val = BigDecimal.valueOf(qty).multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
                 }
