@@ -177,5 +177,6 @@ public class AssetController {
         model.addAttribute("categories", AssetCategory.values());
         model.addAttribute("types", AssetType.values());
         model.addAttribute("allocations", AssetAllocation.values());
+        model.addAttribute("distributionPolicies", de.wsc.wealth.domain.DistributionPolicy.values());
     }
 }

@@ -33,7 +33,7 @@
       <thead class="table-dark">
         <tr>
           <th scope="col" th:text="#{col.name}">Name</th><th scope="col" th:text="#{col.isin}">ISIN</th><th scope="col" th:text="#{col.symbol}">Symbol</th><th scope="col" th:text="#{col.category}">Kategorie</th>
-          <th scope="col" th:text="#{col.type}">Art</th><th scope="col" th:text="#{col.index}">Index</th><th scope="col" th:text="#{col.allocation}">Allocation</th>
+          <th scope="col" th:text="#{col.type}">Art</th><th scope="col" th:text="#{col.distribution-policy}">Ausschüttung</th><th scope="col" th:text="#{col.index}">Index</th><th scope="col" th:text="#{col.allocation}">Allocation</th>
           <th scope="col" th:text="#{col.depots}">Depots</th>
           <th scope="col" class="text-end" th:text="#{col.price}">Kurs</th><th scope="col" th:text="#{common.actions}">Aktionen</th>
         </tr>
@@ -45,6 +45,12 @@
           <td th:text="${s.symbol ?: '-'}"></td>
           <td th:text="${s.category != null ? #messages.msg('assetCategory.' + s.category.name()) : '-'}"></td>
           <td th:text="${s.type != null ? #messages.msg('assetType.' + s.type.name()) : '-'}"></td>
+          <td>
+            <span th:if="${s.distributionPolicy != null}"
+                  th:class="${s.distributionPolicy.name() == 'AUSSCHUETTEND'} ? 'badge bg-info text-dark' : 'badge bg-secondary'"
+                  th:text="${#messages.msg('distributionPolicy.' + s.distributionPolicy.name())}"></span>
+            <span th:if="${s.distributionPolicy == null}" class="text-muted">-</span>
+          </td>
           <td style="white-space:nowrap" th:text="${s.indexName ?: '-'}"></td>
           <td>
             <span th:if="${s.assetAllocation != null}"

@@ -68,6 +68,16 @@
         </select>
       </div>
       <div class="col mb-3">
+        <label class="form-label" th:text="#{col.distribution-policy}">Ausschüttung</label>
+        <select th:field="*{distributionPolicy}" class="form-select">
+          <option value="" th:text="#{form.select}">-- wählen --</option>
+          <option th:each="d : ${distributionPolicies}" th:value="${d}"
+                  th:text="${#messages.msg('distributionPolicy.' + d.name())}"></option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col mb-3">
         <label class="form-label" th:text="#{form.index-label}">Index</label>
         <input type="text" th:field="*{indexName}" class="form-control"/>
       </div>
