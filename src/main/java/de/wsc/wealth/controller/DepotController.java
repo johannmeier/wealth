@@ -4,6 +4,7 @@ import de.wsc.wealth.domain.AssetQuantity;
 import de.wsc.wealth.domain.Coin;
 import de.wsc.wealth.domain.CoinMetal;
 import de.wsc.wealth.domain.Depot;
+import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.CoinService;
 import de.wsc.wealth.service.DepotService;
 import de.wsc.wealth.service.ExchangeRateService;
@@ -27,12 +28,14 @@ import java.util.Map;
 public class DepotController {
 
     private final DepotService depotService;
+    private final BankService bankService;
     private final ExchangeRateService exchangeRateService;
     private final CoinService coinService;
 
-    public DepotController(DepotService depotService, ExchangeRateService exchangeRateService,
-                           CoinService coinService) {
+    public DepotController(DepotService depotService, BankService bankService,
+                           ExchangeRateService exchangeRateService, CoinService coinService) {
         this.depotService = depotService;
+        this.bankService = bankService;
         this.exchangeRateService = exchangeRateService;
         this.coinService = coinService;
     }
@@ -55,6 +58,7 @@ public class DepotController {
     @GetMapping("/new")
     public String newForm(Model model) {
         model.addAttribute("depot", new Depot());
+        model.addAttribute("banks", bankService.findAll());
         return "depots/form";
     }
 
@@ -62,11 +66,15 @@ public class DepotController {
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("depot", depotService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("banks", bankService.findAll());
         return "depots/form";
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Depot depot, RedirectAttributes ra) {
+    public String save(@ModelAttribute Depot depot,
+                       @RequestParam(required = false) Long bankId,
+                       RedirectAttributes ra) {
+        depot.setBank(bankId != null ? bankService.findById(bankId).orElse(null) : null);
         depotService.save(depot);
         ra.addFlashAttribute("success", "Depot gespeichert.");
         return "redirect:/depots";

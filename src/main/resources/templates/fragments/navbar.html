@@ -45,6 +45,8 @@
       <ul class="navbar-nav me-auto" th:with="uri=${currentUri}">
         <li class="nav-item"><a class="nav-link" th:href="@{/assets}" th:text="#{nav.assets}"
             th:classappend="${uri.startsWith('/assets')} ? ' active' : ''">Wertpapiere</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/banks}" th:text="#{nav.banks}"
+            th:classappend="${uri.startsWith('/banks')} ? ' active' : ''">Banken</a></li>
         <li class="nav-item"><a class="nav-link" th:href="@{/accounts}" th:text="#{nav.accounts}"
             th:classappend="${uri.startsWith('/accounts')} ? ' active' : ''">Konten</a></li>
         <li class="nav-item"><a class="nav-link" th:href="@{/depots}" th:text="#{nav.depots}"

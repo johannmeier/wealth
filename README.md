@@ -13,17 +13,35 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Assign index name (e.g. MSCI World, S&P 500)
 - Assign security type: Stock, Equity Fund, ETF, Bond, Currency, Precious Metal, Crypto, Other
 - Assign asset allocation: Risky or Risk-Free
+- Assign distribution policy: Distributing or Accumulating
 - Archive securities to hide them without losing history
+
+**Security search (create form):**
+- Search by name, ISIN or WKN — results are fetched live from Yahoo Finance
+- ISIN is shown in the search results and auto-filled into the form
+- Security type, asset allocation and distribution policy are pre-filled automatically:
+  - Bond-related keywords (Bond, Anleihe, Aggregate, Overnight, Money Market, …) with matching base currency → Risk-Free
+  - "Acc" / "Accumul" → Accumulating; "Dist" / "Income" → Distributing
+
+### Banks
+- Manage banks as a central entity that groups accounts and depots
+- View combined total (accounts + depots) per bank
+- Expand each bank row to see its accounts and depots with individual values
+- Assign or remove accounts and depots from the bank detail page
+- Deleting a bank is blocked while accounts or depots are still assigned to it
 
 ### Accounts
 - Track bank accounts with individual currencies
+- Optionally assign an account to a bank
 - Record date-based balance snapshots
 - Balances are displayed in your configured display currency with the native account currency shown below for reference
 
 ### Depots (Portfolios)
 - Group securities into depots
+- Optionally assign a depot to a bank
 - View current holding value per depot
 - Record date-based quantity entries per security and depot
+- ISIN is shown next to the security name in the position form and table
 
 ### Physical Coins & Precious Metals
 - Track physical gold, silver and platinum coins separately from securities

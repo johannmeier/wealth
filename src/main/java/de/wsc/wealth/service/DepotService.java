@@ -48,6 +48,12 @@ public class DepotService {
     public List<Depot> findAll() { return depotRepository.findAllByOrderByNameAsc(); }
 
     @Transactional(readOnly = true)
+    public List<Depot> findByBankId(Long bankId) { return depotRepository.findByBankIdOrderByNameAsc(bankId); }
+
+    @Transactional(readOnly = true)
+    public List<Depot> findWithoutBank() { return depotRepository.findByBankIsNullOrderByNameAsc(); }
+
+    @Transactional(readOnly = true)
     public Optional<Depot> findById(Long id) { return depotRepository.findById(id); }
 
     public Depot save(Depot depot) { return depotRepository.save(depot); }

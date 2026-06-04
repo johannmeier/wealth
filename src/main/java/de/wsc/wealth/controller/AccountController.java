@@ -4,6 +4,7 @@ import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AccountBalance;
 import de.wsc.wealth.domain.AssetAllocation;
 import de.wsc.wealth.service.AccountService;
+import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.ExchangeRateService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -25,10 +26,13 @@ import java.util.stream.Collectors;
 public class AccountController {
 
     private final AccountService accountService;
+    private final BankService bankService;
     private final ExchangeRateService exchangeRateService;
 
-    public AccountController(AccountService accountService, ExchangeRateService exchangeRateService) {
+    public AccountController(AccountService accountService, BankService bankService,
+                             ExchangeRateService exchangeRateService) {
         this.accountService = accountService;
+        this.bankService = bankService;
         this.exchangeRateService = exchangeRateService;
     }
 
@@ -66,6 +70,7 @@ public class AccountController {
     public String newForm(Model model) {
         model.addAttribute("account", new Account());
         model.addAttribute("allocations", AssetAllocation.values());
+        model.addAttribute("banks", bankService.findAll());
         return "accounts/form";
     }
 
@@ -74,11 +79,15 @@ public class AccountController {
         model.addAttribute("account", accountService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         model.addAttribute("allocations", AssetAllocation.values());
+        model.addAttribute("banks", bankService.findAll());
         return "accounts/form";
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Account account, RedirectAttributes ra) {
+    public String save(@ModelAttribute Account account,
+                       @RequestParam(required = false) Long bankId,
+                       RedirectAttributes ra) {
+        account.setBank(bankId != null ? bankService.findById(bankId).orElse(null) : null);
         accountService.save(account);
         ra.addFlashAttribute("success", "Konto gespeichert.");
         return "redirect:/accounts";

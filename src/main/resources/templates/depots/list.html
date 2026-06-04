@@ -26,6 +26,7 @@
     </caption>
     <thead class="table-dark">
       <tr>
+        <th scope="col" th:text="#{col.bank}">Bank</th>
         <th scope="col" th:text="#{col.name}">Name</th>
         <th scope="col" th:text="#{col.description}">Beschreibung</th>
         <th scope="col" class="text-end" th:text="#{col.value.eur}">Aktueller Wert</th>
@@ -34,6 +35,7 @@
     </thead>
     <tbody>
       <tr th:each="d : ${depots}">
+        <td th:text="${d.bank?.name ?: '-'}"></td>
         <td th:text="${d.name}"></td>
         <td th:text="${d.description ?: '-'}"></td>
         <td class="text-end">
@@ -61,7 +63,7 @@
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(depots)}">
-        <td colspan="4" class="text-center text-muted" th:text="#{page.depots.empty}">Keine Depots vorhanden.</td>
+        <td colspan="5" class="text-center text-muted" th:text="#{page.depots.empty}">Keine Depots vorhanden.</td>
       </tr>
     </tbody>
   </table>

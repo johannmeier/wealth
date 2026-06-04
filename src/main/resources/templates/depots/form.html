@@ -16,6 +16,14 @@
       <input type="text" th:field="*{name}" class="form-control" required/>
     </div>
     <div class="mb-3">
+      <label class="form-label" th:text="#{col.bank}">Bank</label>
+      <select name="bankId" class="form-select">
+        <option value="" th:text="#{form.select}">-- wählen --</option>
+        <option th:each="b : ${banks}" th:value="${b.id}" th:text="${b.name}"
+                th:selected="${depot.bank != null and depot.bank.id == b.id}"></option>
+      </select>
+    </div>
+    <div class="mb-3">
       <label class="form-label" th:text="#{col.description}">Beschreibung</label>
       <input type="text" th:field="*{description}" class="form-control"/>
     </div>

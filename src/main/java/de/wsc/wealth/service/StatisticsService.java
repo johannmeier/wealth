@@ -101,7 +101,7 @@ public class StatisticsService {
             }
         }
 
-        for (Account account : accountRepository.findAllByOrderByBankAscAccountNumberAsc()) {
+        for (Account account : accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()) {
             AccountBalance latest = latestBalByAccount.get(account.getId());
             if (latest == null) continue;
             BigDecimal balEur = exchangeRateService.toEur(latest.getBalance(), account.getCurrency());

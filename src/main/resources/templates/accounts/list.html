@@ -37,7 +37,7 @@
     <tbody>
       <tr th:each="a : ${accounts}">
         <td>
-          <div th:text="${a.bank}"></div>
+          <div th:text="${a.bank != null ? a.bank.name : a.legacyBankName}"></div>
           <small th:if="${a.description}" class="text-muted" th:text="${a.description}"></small>
         </td>
         <td th:text="${a.accountNumber}"></td>
