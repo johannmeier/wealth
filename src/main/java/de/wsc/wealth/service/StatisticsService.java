@@ -184,8 +184,27 @@ public class StatisticsService {
         List<AssetQuantity> allQuantities = quantityRepository.findAllWithAssetAndDepot();
         List<PriceHistory> allPrices = priceHistoryRepository.findAllWithAsset();
         List<AccountBalance> allBalances = balanceRepository.findAllWithAccount();
-        List<Coin> allCoins = coinRepository.findAllWithAsset();
         List<CoinQuantity> allCoinQuantities = coinQuantityRepository.findAllWithCoin();
+
+        // coinId -> assetId (pure ID mapping, no entity proxies)
+        Map<Long, Long> coinToAssetId = new HashMap<>();
+        for (Object[] row : coinRepository.findCoinIdToAssetId()) {
+            coinToAssetId.put((Long) row[0], (Long) row[1]);
+        }
+        // coinId -> current quantity (from Coin entity)
+        Map<Long, Integer> coinCurrentQty = new HashMap<>();
+        for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
+            if (coin.getQuantity() != null && coin.getQuantity() > 0
+                    && coinToAssetId.containsKey(coin.getId())) {
+                coinCurrentQty.put(coin.getId(), coin.getQuantity());
+            }
+        }
+        // coinId -> weightOz
+        Map<Long, BigDecimal> coinWeightOz = new HashMap<>();
+        for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
+            BigDecimal oz = coin.getWeightOz();
+            if (oz != null) coinWeightOz.put(coin.getId(), oz);
+        }
 
         // (assetId)_(depotId) -> date -> quantity
         Map<String, TreeMap<LocalDate, BigDecimal>> quantityMap = new HashMap<>();
@@ -212,6 +231,10 @@ public class StatisticsService {
         for (CoinQuantity cq : allCoinQuantities) {
             coinQtyMap.computeIfAbsent(cq.getCoin().getId(), k -> new TreeMap<>()).put(cq.getDate(), cq.getQuantity());
             if (minDate == null || cq.getDate().isBefore(minDate)) minDate = cq.getDate();
+        }
+        // Ensure coins with no CoinQuantity history are included from their acquisition date
+        if (!coinCurrentQty.isEmpty() && minDate == null) {
+            minDate = LocalDate.now();
         }
 
         if (minDate == null) return Collections.emptyList();
@@ -270,22 +293,28 @@ public class StatisticsService {
                 if (balEur != null) accountsValue = accountsValue.add(balEur);
             }
 
-            for (Coin coin : allCoins) {
-                if (coin.getAsset() == null || coin.getMetal() == null || coin.getWeightGrams() == null) continue;
+            for (Map.Entry<Long, Long> entry : coinToAssetId.entrySet()) {
+                Long coinId = entry.getKey();
+                Long assetId = entry.getValue();
+
+                // Quantity: prefer historical record, fall back to current quantity
                 int qty;
-                TreeMap<LocalDate, Integer> cqMap = coinQtyMap.get(coin.getId());
+                TreeMap<LocalDate, Integer> cqMap = coinQtyMap.get(coinId);
                 if (cqMap != null && !cqMap.isEmpty()) {
                     Map.Entry<LocalDate, Integer> cqEntry = cqMap.floorEntry(valuationDate);
-                    qty = cqEntry != null ? cqEntry.getValue() : 0;
+                    qty = cqEntry != null ? cqEntry.getValue()
+                                         : coinCurrentQty.getOrDefault(coinId, 0);
                 } else {
-                    qty = coin.getQuantity() != null ? coin.getQuantity() : 0;
+                    qty = coinCurrentQty.getOrDefault(coinId, 0);
                 }
                 if (qty <= 0) continue;
-                BigDecimal oz = coin.getWeightOz();
+
+                BigDecimal oz = coinWeightOz.get(coinId);
                 if (oz == null) continue;
 
+                // Price: prefer historical price history, fall back to current asset price
                 BigDecimal priceEur = null;
-                TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(coin.getAsset().getId());
+                TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(assetId);
                 if (prMap != null) {
                     Map.Entry<LocalDate, PriceHistory> prEntry = prMap.floorEntry(valuationDate);
                     if (prEntry != null) {
@@ -294,7 +323,7 @@ public class StatisticsService {
                     }
                 }
                 if (priceEur == null) {
-                    Asset coinAsset = assetById.get(coin.getAsset().getId());
+                    Asset coinAsset = assetById.get(assetId);
                     if (coinAsset != null) {
                         priceEur = exchangeRateService.toEur(coinAsset.getCurrentPrice(), coinAsset.getCurrency());
                     }
