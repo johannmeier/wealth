@@ -25,7 +25,7 @@
           <select name="assetId" id="assetId" class="form-select" required>
             <option value="" th:text="#{form.select}">-- wählen --</option>
             <option th:each="a : ${assets}" th:value="${a.id}"
-                    th:text="${a.name + (a.symbol != null ? ' (' + a.symbol + ')' : '')}"></option>
+                    th:text="${a.name + (a.isin != null and !a.isin.isEmpty() ? ' · ' + a.isin : '') + (a.symbol != null ? ' (' + a.symbol + ')' : '')}"></option>
           </select>
         </div>
         <div class="mb-3">
@@ -61,7 +61,12 @@
       <tbody>
         <tr th:each="q : ${quantities}">
           <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
-          <td><a th:href="@{/assets/{id}/edit(id=${q.asset.id})}" th:text="${q.asset.name}"></a></td>
+          <td>
+            <a th:href="@{/assets/{id}/edit(id=${q.asset.id})}" th:text="${q.asset.name}"></a>
+            <br th:if="${q.asset.isin != null and !q.asset.isin.isEmpty()}"/>
+            <small th:if="${q.asset.isin != null and !q.asset.isin.isEmpty()}"
+                   class="text-muted" th:text="${q.asset.isin}"></small>
+          </td>
           <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'DEFAULT', 4, 'DEFAULT')}"></td>
           <td class="text-end">
             <span th:if="${positionValues.containsKey(q.id)}"

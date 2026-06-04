@@ -68,6 +68,16 @@
         </select>
       </div>
       <div class="col mb-3">
+        <label class="form-label" th:text="#{col.distribution-policy}">Ausschüttung</label>
+        <select th:field="*{distributionPolicy}" class="form-select">
+          <option value="" th:text="#{form.select}">-- wählen --</option>
+          <option th:each="d : ${distributionPolicies}" th:value="${d}"
+                  th:text="${#messages.msg('distributionPolicy.' + d.name())}"></option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col mb-3">
         <label class="form-label" th:text="#{form.index-label}">Index</label>
         <input type="text" th:field="*{indexName}" class="form-control"/>
       </div>
@@ -123,7 +133,8 @@
             btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
             btn.innerHTML =
               '<span><strong>' + esc(r.name) + '</strong>' +
-              ' <small class="text-muted">' + esc(r.symbol) + ' &middot; ' + esc(r.exchange) + '</small></span>' +
+              ' <small class="text-muted">' + esc(r.symbol) + ' &middot; ' + esc(r.exchange) +
+              (r.isin ? ' &middot; ' + esc(r.isin) : '') + '</small></span>' +
               '<span class="badge bg-secondary ms-2">' + esc(r.type) + '</span>';
             btn.addEventListener('click', () => fill(r));
             resultsBox.appendChild(btn);
@@ -141,8 +152,10 @@
     set('name',     r.name);
     set('symbol',   r.symbol);
     set('currency', r.currency || 'EUR');
-    selectOption('category', r.category);
-    selectOption('type',     r.type);
+    selectOption('category',           r.category);
+    selectOption('type',               r.type);
+    selectOption('assetAllocation',    r.assetAllocation);
+    selectOption('distributionPolicy', r.distributionPolicy);
     // If search query itself is an ISIN, use it; otherwise use result's ISIN if present
     const query = searchInput.value.trim();
     const isin = r.isin || (/^[A-Z]{2}[A-Z0-9]{10}$/i.test(query) ? query.toUpperCase() : '');

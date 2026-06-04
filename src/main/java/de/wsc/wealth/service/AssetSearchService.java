@@ -42,7 +42,7 @@ public class AssetSearchService {
         }
     }
 
-    public List<Map<String, String>> search(String query) {
+    public List<Map<String, String>> search(String query, String baseCurrency) {
         try {
             String json = restClient.get()
                 .uri(SEARCH_URL, query)
@@ -66,24 +66,27 @@ public class AssetSearchService {
                 r.put("currency", currency);
                 r.put("type", mapType(quoteType));
                 r.put("category", mapCategory(quoteType));
+                r.put("assetAllocation", mapAssetAllocation(r.get("name"), r.get("symbol"), quoteType, r.get("currency"), baseCurrency));
                 String isin = q.path("isin").asString("");
                 if (!isin.isBlank()) r.put("isin", isin);
+                String dp = mapDistributionPolicy(r.get("name"), r.get("symbol"));
+                if (dp != null) r.put("distributionPolicy", dp);
                 results.add(r);
             }
             if (results.isEmpty()) {
-                Map<String, String> direct = tryDirectSymbol(query);
+                Map<String, String> direct = tryDirectSymbol(query, baseCurrency);
                 if (!direct.isEmpty()) results.add(direct);
             }
             return results;
         } catch (Exception e) {
             log.warn("Asset search failed for '{}': {}", query, e.getMessage());
             // Fallback: try query as direct symbol
-            Map<String, String> direct = tryDirectSymbol(query);
+            Map<String, String> direct = tryDirectSymbol(query, baseCurrency);
             return direct.isEmpty() ? List.of() : List.of(direct);
         }
     }
 
-    private Map<String, String> tryDirectSymbol(String symbol) {
+    private Map<String, String> tryDirectSymbol(String symbol, String baseCurrency) {
         try {
             String json = restClient.get()
                 .uri("https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d", symbol)
@@ -102,6 +105,9 @@ public class AssetSearchService {
             r.put("currency", currency.isBlank() ? currencyForExchange(exchange) : currency);
             r.put("type", "SONSTIGE");
             r.put("category", "BOERSENGEHANDELT");
+            r.put("assetAllocation", mapAssetAllocation(r.get("name"), r.get("symbol"), "", r.get("currency"), baseCurrency));
+            String dp = mapDistributionPolicy(r.get("name"), r.get("symbol"));
+            if (dp != null) r.put("distributionPolicy", dp);
             return r;
         } catch (Exception e) {
             log.debug("Direct symbol lookup failed for '{}': {}", symbol, e.getMessage());
@@ -134,6 +140,24 @@ public class AssetSearchService {
             case "SAO"                                                     -> "BRL";
             default                                                        -> "USD";
         };
+    }
+
+    private String mapAssetAllocation(String name, String symbol, String quoteType, String currency, String baseCurrency) {
+        if ("EQUITY".equals(quoteType) || "CRYPTOCURRENCY".equals(quoteType)) return "RISIKOBEHAFTET";
+        String combined = ((name != null ? name : "") + " " + (symbol != null ? symbol : "")).toUpperCase();
+        boolean isBond = combined.contains("BOND") || combined.contains("ANLEIHE") || combined.contains("RENTEN")
+                || combined.contains("FIXED INCOME") || combined.contains("TREASUR")
+                || combined.contains("AGGREGATE") || combined.contains("SOVEREIGN") || combined.contains("GILT")
+                || combined.contains("OVERNIGHT") || combined.contains("MONEY MARKET") || combined.contains("GELDMARKT");
+        if (isBond && baseCurrency.equals(currency)) return "RISIKOFREI";
+        return "RISIKOBEHAFTET";
+    }
+
+    private String mapDistributionPolicy(String name, String symbol) {
+        String combined = ((name != null ? name : "") + " " + (symbol != null ? symbol : "")).toUpperCase();
+        if (combined.contains("ACC") || combined.contains("ACCUMUL") || combined.contains("THESAUR")) return "THESAURIEREND";
+        if (combined.contains("DIST") || combined.contains("INCOME") || combined.contains("AUSSCH")) return "AUSSCHUETTEND";
+        return null;
     }
 
     private String mapCategory(String quoteType) {

@@ -29,6 +29,9 @@ public class Asset {
     @Enumerated(EnumType.STRING)
     private AssetAllocation assetAllocation;
 
+    @Enumerated(EnumType.STRING)
+    private DistributionPolicy distributionPolicy;
+
     private String indexName;
     private String currency = "EUR";
     @org.hibernate.annotations.ColumnDefault("false")
@@ -55,6 +58,8 @@ public class Asset {
     public void setType(AssetType type) { this.type = type; }
     public AssetAllocation getAssetAllocation() { return assetAllocation; }
     public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
+    public DistributionPolicy getDistributionPolicy() { return distributionPolicy; }
+    public void setDistributionPolicy(DistributionPolicy distributionPolicy) { this.distributionPolicy = distributionPolicy; }
     public String getIndexName() { return indexName; }
     public void setIndexName(String indexName) { this.indexName = indexName; }
     public String getCurrency() { return currency; }
