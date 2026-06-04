@@ -66,6 +66,19 @@ public class PriceService {
             asset.setCurrentPrice(price);
             asset.setLastPriceUpdate(LocalDateTime.now());
             assetRepository.save(asset);
+
+            LocalDate today = LocalDate.now();
+            PriceHistory entry = priceHistoryRepository.findByAssetAndDate(asset, today)
+                .orElseGet(() -> {
+                    PriceHistory h = new PriceHistory();
+                    h.setAsset(asset);
+                    h.setDate(today);
+                    return h;
+                });
+            entry.setPrice(price);
+            entry.setCurrency(asset.getCurrency());
+            priceHistoryRepository.save(entry);
+
             log.debug("Updated price for {}: {}", asset.getName(), price);
         } catch (Exception e) {
             log.warn("Failed to update price for {}: {}", asset.getName(), e.getMessage());
