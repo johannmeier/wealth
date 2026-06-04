@@ -14,6 +14,9 @@ public class Account {
     @JoinColumn(name = "bank_id")
     private Bank bank;
 
+    @Column(name = "bank", insertable = false, updatable = false)
+    private String legacyBankName;
+
     private String accountNumber;
 
     private String description;
@@ -33,8 +36,11 @@ public class Account {
     public void setBank(Bank bank) { this.bank = bank; }
     public String getAccountNumber() { return accountNumber; }
     public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+    public String getLegacyBankName() { return legacyBankName; }
+
     public String getDisplayName() {
-        String bankName = bank != null ? bank.getName() : "";
+        String bankName = bank != null ? bank.getName()
+                        : (legacyBankName != null && !legacyBankName.isBlank() ? legacyBankName : "");
         String acct = accountNumber != null && !accountNumber.isBlank() ? accountNumber : "";
         if (!bankName.isBlank() && !acct.isBlank()) return bankName + " – " + acct;
         if (!bankName.isBlank()) return bankName;
