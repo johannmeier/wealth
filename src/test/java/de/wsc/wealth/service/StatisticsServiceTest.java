@@ -177,10 +177,11 @@ class StatisticsServiceTest {
         return q;
     }
 
-    private Account account(Long id, String bank, String currency) {
+    private Account account(Long id, String bankName, String currency) {
         Account a = new Account();
         a.setId(id);
-        a.setBank(bank);
+        Bank b = new Bank(); b.setName(bankName);
+        a.setBank(b);
         a.setAccountNumber("000");
         a.setCurrency(currency);
         return a;

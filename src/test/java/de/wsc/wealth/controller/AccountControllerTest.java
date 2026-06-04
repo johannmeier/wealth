@@ -2,7 +2,9 @@ package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AssetAllocation;
+import de.wsc.wealth.domain.Bank;
 import de.wsc.wealth.service.AccountService;
+import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.ExchangeRateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,13 +28,14 @@ import static org.mockito.Mockito.*;
 class AccountControllerTest {
 
     @Mock private AccountService accountService;
+    @Mock private BankService bankService;
     @Mock private ExchangeRateService exchangeRateService;
 
     private AccountController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AccountController(accountService, exchangeRateService);
+        controller = new AccountController(accountService, bankService, exchangeRateService);
     }
 
     @Test
@@ -116,7 +119,7 @@ class AccountControllerTest {
         Account account = account(1L, "My Bank", "EUR");
         when(accountService.save(any())).thenReturn(account);
 
-        String result = controller.save(account, new RedirectAttributesModelMap());
+        String result = controller.save(account, null, new RedirectAttributesModelMap());
 
         assertThat(result).isEqualTo("redirect:/accounts");
         verify(accountService).save(account);
@@ -131,10 +134,11 @@ class AccountControllerTest {
     }
 
     // helper
-    private Account account(Long id, String bank, String currency) {
+    private Account account(Long id, String bankName, String currency) {
         Account a = new Account();
         a.setId(id);
-        a.setBank(bank);
+        Bank b = new Bank(); b.setName(bankName);
+        a.setBank(b);
         a.setAccountNumber("000");
         a.setCurrency(currency);
         a.setAssetAllocation(AssetAllocation.RISIKOFREI);
