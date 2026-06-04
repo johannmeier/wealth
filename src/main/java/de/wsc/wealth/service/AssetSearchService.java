@@ -29,40 +29,17 @@ public class AssetSearchService {
     }
 
     public Map<String, String> getQuoteDetails(String symbol) {
-        Map<String, String> result = new HashMap<>();
         try {
             String json = restClient.get()
                 .uri("https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d", symbol)
                 .retrieve()
                 .body(String.class);
             JsonNode meta = objectMapper.readTree(json).path("chart").path("result").get(0).path("meta");
-            String currency = meta.path("currency").asString("");
-            if (!currency.isBlank()) result.put("currency", currency);
+            return Map.of("currency", meta.path("currency").asString(""));
         } catch (Exception e) {
             log.warn("Quote details fetch failed for '{}': {}", symbol, e.getMessage());
+            return Map.of();
         }
-
-        String isin = fetchIsin(symbol);
-        if (!isin.isBlank()) result.put("isin", isin);
-
-        return result;
-    }
-
-    private String fetchIsin(String symbol) {
-        try {
-            String json = restClient.get()
-                .uri("https://query1.finance.yahoo.com/v11/finance/quoteSummary/{symbol}?modules=assetProfile", symbol)
-                .retrieve()
-                .body(String.class);
-            JsonNode results = objectMapper.readTree(json).path("quoteSummary").path("result");
-            if (results.isArray() && !results.isEmpty()) {
-                String isin = results.get(0).path("assetProfile").path("isin").asString("");
-                if (!isin.isBlank()) return isin;
-            }
-        } catch (Exception e) {
-            log.debug("ISIN lookup via quoteSummary failed for '{}': {}", symbol, e.getMessage());
-        }
-        return "";
     }
 
     public List<Map<String, String>> search(String query) {

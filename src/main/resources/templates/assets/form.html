@@ -143,6 +143,7 @@
     set('currency', r.currency || 'EUR');
     selectOption('category', r.category);
     selectOption('type',     r.type);
+    const hadIsin = !!r.isin;
     if (r.isin) set('isin', r.isin);
     hide();
     searchInput.value = r.name;
@@ -150,11 +151,12 @@
     if (r.symbol) {
       fetch('/assets/quote-details?symbol=' + encodeURIComponent(r.symbol))
         .then(res => res.json())
-        .then(d => {
-          if (d.currency) set('currency', d.currency);
-          if (d.isin) set('isin', d.isin);
-        })
+        .then(d => { if (d.currency) set('currency', d.currency); })
         .catch(() => {});
+    }
+    if (!hadIsin) {
+      const isinEl = document.getElementById('isin');
+      if (isinEl) isinEl.focus();
     }
   }
 
