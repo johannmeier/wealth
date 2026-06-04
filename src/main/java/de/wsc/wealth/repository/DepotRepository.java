@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface DepotRepository extends JpaRepository<Depot, Long> {
     List<Depot> findAllByOrderByNameAsc();
+    List<Depot> findByBankIdOrderByNameAsc(Long bankId);
+    List<Depot> findByBankIsNullOrderByNameAsc();
 }

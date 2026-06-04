@@ -60,7 +60,7 @@ class StatisticsServiceTest {
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset));
         when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of(qty));
-        when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of());
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
@@ -84,7 +84,7 @@ class StatisticsServiceTest {
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of());
         when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
-        when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of(account));
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of(account));
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(exchangeRateService.toEur(new BigDecimal("1000.00"), "EUR"))
@@ -109,7 +109,7 @@ class StatisticsServiceTest {
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset));
         when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of(qty));
-        when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of(account));
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of(account));
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
@@ -133,7 +133,7 @@ class StatisticsServiceTest {
 
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset));
         when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
-        when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of());
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
@@ -147,7 +147,7 @@ class StatisticsServiceTest {
     private void stubEmpty() {
         when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of());
         when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
-        when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of());
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
     }

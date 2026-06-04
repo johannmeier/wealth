@@ -38,6 +38,7 @@
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}" th:text="#{common.actions}">Aktionen</button>
             <ul class="dropdown-menu">
+              <li><a class="dropdown-item" th:href="@{/banks/{id}(id=${b.id})}" th:text="#{page.banks.detail}">Konten &amp; Depots</a></li>
               <li><a class="dropdown-item" th:href="@{/banks/{id}/edit(id=${b.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
               <li><hr class="dropdown-divider"/></li>
               <li>

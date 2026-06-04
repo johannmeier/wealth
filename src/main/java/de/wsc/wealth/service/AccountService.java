@@ -26,7 +26,11 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<Account> findAll() { return accountRepository.findAllByOrderByBankAscAccountNumberAsc(); }
+    public List<Account> findAll() { return accountRepository.findAllByOrderByBankNameAscAccountNumberAsc(); }
+
+    public List<Account> findByBankId(Long bankId) { return accountRepository.findByBankIdOrderByAccountNumberAsc(bankId); }
+
+    public List<Account> findWithoutBank() { return accountRepository.findByBankIsNullOrderByAccountNumberAsc(); }
 
     @Transactional(readOnly = true)
     public Optional<Account> findById(Long id) { return accountRepository.findById(id); }
