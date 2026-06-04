@@ -143,7 +143,10 @@
     set('currency', r.currency || 'EUR');
     selectOption('category', r.category);
     selectOption('type',     r.type);
-    if (r.isin) set('isin', r.isin);
+    // If search query itself is an ISIN, use it; otherwise use result's ISIN if present
+    const query = searchInput.value.trim();
+    const isin = r.isin || (/^[A-Z]{2}[A-Z0-9]{10}$/i.test(query) ? query.toUpperCase() : '');
+    if (isin) set('isin', isin);
     hide();
     searchInput.value = r.name;
     clearBtn.style.display = 'inline-block';
@@ -152,6 +155,10 @@
         .then(res => res.json())
         .then(d => { if (d.currency) set('currency', d.currency); })
         .catch(() => {});
+    }
+    if (!isin) {
+      const isinEl = document.getElementById('isin');
+      if (isinEl) isinEl.focus();
     }
   }
 
