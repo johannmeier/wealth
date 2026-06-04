@@ -11,12 +11,16 @@ import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,8 @@ public class CoinService {
 
     private static final Logger log = LoggerFactory.getLogger(CoinService.class);
     private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1034768");
+
+    private volatile Map<CoinMetal, BigDecimal> spotPriceCache = Collections.emptyMap();
 
     private final CoinRepository coinRepository;
     private final CoinQuantityRepository coinQuantityRepository;
@@ -156,17 +162,25 @@ public class CoinService {
     @Transactional(readOnly = true)
     public List<Depot> findAllDepots() { return depotRepository.findAllByOrderByNameAsc(); }
 
-    // Spot-Preise (USD/oz) für alle drei Metalle auf einmal holen
     public Map<CoinMetal, BigDecimal> fetchSpotPricesUsd() {
-        Map<CoinMetal, BigDecimal> prices = new EnumMap<>(CoinMetal.class);
+        return spotPriceCache;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Scheduled(fixedRateString = "PT15M")
+    public void refreshSpotPrices() {
+        Map<CoinMetal, BigDecimal> fresh = new EnumMap<>(CoinMetal.class);
         for (CoinMetal metal : CoinMetal.values()) {
             try {
-                prices.put(metal, priceService.fetchPrice(metal.getYahooSymbol()));
+                fresh.put(metal, priceService.fetchPrice(metal.getYahooSymbol()));
             } catch (Exception e) {
                 log.warn("Failed to fetch spot price for {}: {}", metal.getYahooSymbol(), e.getMessage());
+                BigDecimal last = spotPriceCache.get(metal);
+                if (last != null) fresh.put(metal, last);
             }
         }
-        return prices;
+        spotPriceCache = Collections.unmodifiableMap(fresh);
+        log.debug("Spot prices refreshed: {}", fresh);
     }
 
     // Wert einer Münze in EUR:
