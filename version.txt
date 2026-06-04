@@ -1,6 +1,33 @@
 Wealth – Release History
 ========================
 
+Version 1.0.5  (2026-06-04)
+-----------------------------
+Securities
+  - Distribution policy (Distributing / Accumulating) added as a new attribute
+  - Asset search: ISIN shown in search results dropdown
+  - Asset search: distribution policy, asset allocation and security type
+    pre-filled automatically from the Yahoo Finance result name and type
+    (bond keywords → Risk-Free; Acc/Accumul → Accumulating; Dist/Income → Distributing)
+  - Asset allocation pre-fill respects the configured base currency:
+    bond ETFs in a foreign currency remain Risky
+
+Banks
+  - New Bank entity groups accounts and depots
+  - Bank list shows combined total per bank with expandable rows
+    displaying individual accounts and depots with values
+  - Bank detail page (/banks/{id}) with collapsible account and depot
+    sections, subtotals and grand total
+  - Accounts and depots can be assigned/removed from the bank detail page
+  - Deleting a bank is blocked while accounts or depots are assigned to it
+
+Accounts & Depots
+  - Accounts and depots can optionally be linked to a bank
+  - ISIN shown next to security name in depot positions form and table
+  - Account list falls back to legacy bank name string for accounts not
+    yet linked to a Bank entity
+
+
 Version 1.0.4  (2026-06-04)
 -----------------------------
 Bug Fixes
