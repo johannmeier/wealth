@@ -163,8 +163,9 @@ public class AssetController {
 
     @GetMapping("/search")
     @ResponseBody
-    public List<Map<String, String>> search(@RequestParam String q) {
-        return assetSearchService.search(q);
+    public List<Map<String, String>> search(@RequestParam String q,
+            @CookieValue(name = "wealth-currency", defaultValue = "EUR") String baseCurrency) {
+        return assetSearchService.search(q, baseCurrency);
     }
 
     @GetMapping("/quote-details")
