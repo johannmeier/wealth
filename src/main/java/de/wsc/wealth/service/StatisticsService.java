@@ -184,7 +184,7 @@ public class StatisticsService {
         List<AssetQuantity> allQuantities = quantityRepository.findAllWithAssetAndDepot();
         List<PriceHistory> allPrices = priceHistoryRepository.findAllWithAsset();
         List<AccountBalance> allBalances = balanceRepository.findAllWithAccount();
-        List<Coin> allCoins = coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc();
+        List<Coin> allCoins = coinRepository.findAllWithAsset();
         List<CoinQuantity> allCoinQuantities = coinQuantityRepository.findAllWithCoin();
 
         // (assetId)_(depotId) -> date -> quantity
@@ -294,7 +294,10 @@ public class StatisticsService {
                     }
                 }
                 if (priceEur == null) {
-                    priceEur = exchangeRateService.toEur(coin.getAsset().getCurrentPrice(), coin.getAsset().getCurrency());
+                    Asset coinAsset = assetById.get(coin.getAsset().getId());
+                    if (coinAsset != null) {
+                        priceEur = exchangeRateService.toEur(coinAsset.getCurrentPrice(), coinAsset.getCurrency());
+                    }
                 }
                 if (priceEur == null) continue;
                 coinsValue = coinsValue.add(
