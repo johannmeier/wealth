@@ -1,5 +1,6 @@
 package de.wsc.wealth.controller;
 
+import de.wsc.wealth.dto.WealthPosition;
 import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.StatisticsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,10 +20,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DashboardControllerTest {
 
-    @Mock
-    private StatisticsService statisticsService;
-    @Mock
-    private AssetService assetService;
+    @Mock private StatisticsService statisticsService;
+    @Mock private AssetService assetService;
 
     private DashboardController controller;
 
@@ -34,24 +33,20 @@ class DashboardControllerTest {
     @Test
     void dashboard_returnsIndexView() {
         when(statisticsService.getAllPositions()).thenReturn(List.of());
-        when(statisticsService.getTotalWealth()).thenReturn(BigDecimal.ZERO);
 
-        Model model = new ExtendedModelMap();
-        String view = controller.dashboard(model);
-
-        assertThat(view).isEqualTo("index");
+        assertThat(controller.dashboard(new ExtendedModelMap())).isEqualTo("index");
     }
 
     @Test
     void dashboard_populatesPositionsAndTotalWealth() {
-        when(statisticsService.getAllPositions()).thenReturn(List.of());
-        when(statisticsService.getTotalWealth()).thenReturn(new BigDecimal("12345.67"));
+        WealthPosition pos = new WealthPosition();
+        pos.setValue(new BigDecimal("12345.67"));
+        when(statisticsService.getAllPositions()).thenReturn(List.of(pos));
 
         Model model = new ExtendedModelMap();
         controller.dashboard(model);
 
         assertThat(model.asMap()).containsKey("positions");
-        assertThat(model.asMap()).containsKey("totalWealth");
         assertThat(model.getAttribute("totalWealth")).isEqualTo(new BigDecimal("12345.67"));
     }
 }

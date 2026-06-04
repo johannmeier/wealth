@@ -102,7 +102,6 @@ public class DepotController {
         model.addAttribute("positionTotal", total);
 
         List<Coin> coins = coinService.findByDepotId(id);
-        Map<CoinMetal, BigDecimal> spotPrices = coinService.fetchSpotPricesUsd();
         Map<CoinMetal, BigDecimal> coinOzByMetal = new java.util.EnumMap<>(CoinMetal.class);
         Map<CoinMetal, BigDecimal> coinValueByMetal = new java.util.EnumMap<>(CoinMetal.class);
         BigDecimal coinTotal = BigDecimal.ZERO;
@@ -110,7 +109,7 @@ public class DepotController {
             if (c.getMetal() == null || c.getWeightGrams() == null || c.getQuantity() == null) continue;
             BigDecimal oz = c.getWeightOz().multiply(BigDecimal.valueOf(c.getQuantity()));
             coinOzByMetal.merge(c.getMetal(), oz, BigDecimal::add);
-            BigDecimal val = coinService.valueEur(c, spotPrices);
+            BigDecimal val = coinService.valueEur(c);
             if (val != null) {
                 coinValueByMetal.merge(c.getMetal(), val, BigDecimal::add);
                 coinTotal = coinTotal.add(val);

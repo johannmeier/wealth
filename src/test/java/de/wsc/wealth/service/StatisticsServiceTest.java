@@ -63,7 +63,6 @@ class StatisticsServiceTest {
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
-        when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
                 .thenReturn(new BigDecimal("100.00"));
 
@@ -88,7 +87,8 @@ class StatisticsServiceTest {
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of(account));
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
-        when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
+        when(exchangeRateService.toEur(new BigDecimal("1000.00"), "EUR"))
+                .thenReturn(new BigDecimal("1000.00"));
 
         List<WealthPosition> positions = statisticsService.getAllPositions();
 
@@ -112,9 +112,10 @@ class StatisticsServiceTest {
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of(account));
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
-        when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
                 .thenReturn(new BigDecimal("100.00"));
+        when(exchangeRateService.toEur(new BigDecimal("500.00"), "EUR"))
+                .thenReturn(new BigDecimal("500.00"));
 
         List<WealthPosition> positions = statisticsService.getAllPositions();
 
@@ -135,7 +136,6 @@ class StatisticsServiceTest {
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
-        when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
         when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR"))
                 .thenReturn(new BigDecimal("100.00"));
 
@@ -150,7 +150,6 @@ class StatisticsServiceTest {
         when(accountRepository.findAllByOrderByBankAscAccountNumberAsc()).thenReturn(List.of());
         when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
         when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
-        when(coinService.fetchSpotPricesUsd()).thenReturn(Map.of());
     }
 
     private Asset asset(Long id, String name, BigDecimal price, String currency) {

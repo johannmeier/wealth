@@ -2,22 +2,18 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.Asset;
 import de.wsc.wealth.domain.Coin;
-import de.wsc.wealth.domain.CoinMetal;
 import de.wsc.wealth.domain.CoinQuantity;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.repository.AssetRepository;
 import de.wsc.wealth.repository.CoinQuantityRepository;
 import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,26 +22,23 @@ import java.util.Optional;
 @Transactional
 public class CoinService {
 
-    private static final Logger log = LoggerFactory.getLogger(CoinService.class);
     private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1034768");
 
     private final CoinRepository coinRepository;
     private final CoinQuantityRepository coinQuantityRepository;
     private final DepotRepository depotRepository;
     private final AssetRepository assetRepository;
-    private final PriceService priceService;
     private final ExchangeRateService exchangeRateService;
 
     public CoinService(CoinRepository coinRepository,
                        CoinQuantityRepository coinQuantityRepository,
                        DepotRepository depotRepository,
                        AssetRepository assetRepository,
-                       PriceService priceService, ExchangeRateService exchangeRateService) {
+                       ExchangeRateService exchangeRateService) {
         this.coinRepository = coinRepository;
         this.coinQuantityRepository = coinQuantityRepository;
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
-        this.priceService = priceService;
         this.exchangeRateService = exchangeRateService;
     }
 
@@ -67,12 +60,6 @@ public class CoinService {
         return coinRepository.findByDepotOrderByMetalAscNameAscMintYearAsc(depot);
     }
 
-    public BigDecimal totalValueEur(List<Coin> coins, Map<CoinMetal, BigDecimal> spotPricesUsd) {
-        return coins.stream()
-            .map(c -> valueEur(c, spotPricesUsd))
-            .filter(v -> v != null)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
 
     public Coin save(Long depotId, Long assetId, Coin coin) {
         Depot depot = depotRepository.findById(depotId).orElseThrow();
@@ -156,34 +143,14 @@ public class CoinService {
     @Transactional(readOnly = true)
     public List<Depot> findAllDepots() { return depotRepository.findAllByOrderByNameAsc(); }
 
-    // Spot-Preise (USD/oz) für alle drei Metalle auf einmal holen
-    public Map<CoinMetal, BigDecimal> fetchSpotPricesUsd() {
-        Map<CoinMetal, BigDecimal> prices = new EnumMap<>(CoinMetal.class);
-        for (CoinMetal metal : CoinMetal.values()) {
-            try {
-                prices.put(metal, priceService.fetchPrice(metal.getYahooSymbol()));
-            } catch (Exception e) {
-                log.warn("Failed to fetch spot price for {}: {}", metal.getYahooSymbol(), e.getMessage());
-            }
-        }
-        return prices;
-    }
-
-    // Wert einer Münze in EUR:
-    // - Mit verknüpftem Wertpapier: Anzahl × (Gewicht / 31,1035) × Kurs(EUR/oz)
-    // - Ohne Wertpapier: Anzahl × (Gewicht / 31,1035) × Spotpreis(USD/oz) × USD→EUR
-    public BigDecimal valueEur(Coin coin, Map<CoinMetal, BigDecimal> spotPricesUsd) {
+    public BigDecimal valueEur(Coin coin) {
         if (coin.getMetal() == null || coin.getWeightGrams() == null || coin.getQuantity() == null) return null;
+        Asset asset = coin.getAsset();
+        if (asset == null || asset.getCurrentPrice() == null) return null;
+        BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
+        if (priceEur == null) return null;
         BigDecimal qty = BigDecimal.valueOf(coin.getQuantity());
         BigDecimal oz = coin.getWeightGrams().divide(GRAMS_PER_OZ, 10, RoundingMode.HALF_UP);
-        Asset asset = coin.getAsset();
-        if (asset != null && asset.getCurrentPrice() != null) {
-            BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
-            if (priceEur != null) return qty.multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
-        }
-        BigDecimal spotUsd = spotPricesUsd.get(coin.getMetal());
-        if (spotUsd == null) return null;
-        BigDecimal valueUsd = qty.multiply(oz).multiply(spotUsd);
-        return exchangeRateService.toEur(valueUsd, "USD");
+        return qty.multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
     }
 }

@@ -15,15 +15,8 @@
 
   <div class="table-section">
 
-  <!-- Spot-Preise und Mengenübersicht -->
+  <!-- Mengenübersicht -->
   <div class="mb-3 d-flex flex-wrap gap-3 align-items-center">
-    <span th:each="entry : ${spotPrices}"
-          class="badge fs-6 fw-normal px-3 py-2"
-          th:style="${entry.key.name() == 'GOLD'} ? 'background-color:#b8860b' : (${entry.key.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#5a5a72')">
-      <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>:
-      <span th:text="${#numbers.formatDecimal(entry.value, 1, 'DEFAULT', 2, 'DEFAULT')}"></span> USD/oz
-    </span>
-    <span th:if="${#maps.isEmpty(spotPrices)}" class="text-muted small" th:text="#{page.coins.spot-unavailable}">Spotpreise nicht verfügbar</span>
     <span th:each="entry : ${totalQtyByMetal}" class="badge fs-6 fw-normal px-3 py-2"
           th:style="${entry.key.name() == 'GOLD'} ? 'background-color:#b8860b' : (${entry.key.name() == 'SILBER'} ? 'background-color:#708090' : 'background-color:#5a5a72')">
       <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>:
