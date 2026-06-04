@@ -9,6 +9,8 @@ import de.wsc.wealth.repository.AssetRepository;
 import de.wsc.wealth.repository.CoinQuantityRepository;
 import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import java.util.Optional;
 @Transactional
 public class CoinService {
 
+    private static final Logger log = LoggerFactory.getLogger(CoinService.class);
     private static final BigDecimal GRAMS_PER_OZ = new BigDecimal("31.1034768");
 
     private final CoinRepository coinRepository;
@@ -103,12 +106,10 @@ public class CoinService {
         cq.setDate(date);
         cq.setQuantity(quantity);
         coinQuantityRepository.save(cq);
-        coinQuantityRepository.findFirstByCoinOrderByDateDesc(coin).ifPresent(latest ->
-            coinRepository.findById(coinId).ifPresent(c -> {
-                c.setQuantity(latest.getQuantity());
-                coinRepository.save(c);
-            })
-        );
+        coinQuantityRepository.findFirstByCoinOrderByDateDesc(coin).ifPresent(latest -> {
+            coin.setQuantity(latest.getQuantity());
+            coinRepository.save(coin);
+        });
     }
 
     public void deleteQuantity(Long id) {
@@ -152,7 +153,9 @@ public class CoinService {
         for (CoinMetal metal : CoinMetal.values()) {
             try {
                 prices.put(metal, priceService.fetchPrice(metal.getYahooSymbol()));
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.warn("Failed to fetch spot price for {}: {}", metal.getYahooSymbol(), e.getMessage());
+            }
         }
         return prices;
     }
