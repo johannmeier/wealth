@@ -66,7 +66,7 @@ public class AssetSearchService {
                 r.put("currency", currency);
                 r.put("type", mapType(quoteType));
                 r.put("category", mapCategory(quoteType));
-                r.put("assetAllocation", mapAssetAllocation(r.get("name"), r.get("symbol"), quoteType));
+                r.put("assetAllocation", mapAssetAllocation(r.get("name"), r.get("symbol"), quoteType, r.get("currency")));
                 String isin = q.path("isin").asString("");
                 if (!isin.isBlank()) r.put("isin", isin);
                 String dp = mapDistributionPolicy(r.get("name"), r.get("symbol"));
@@ -105,7 +105,7 @@ public class AssetSearchService {
             r.put("currency", currency.isBlank() ? currencyForExchange(exchange) : currency);
             r.put("type", "SONSTIGE");
             r.put("category", "BOERSENGEHANDELT");
-            r.put("assetAllocation", mapAssetAllocation(r.get("name"), r.get("symbol"), ""));
+            r.put("assetAllocation", mapAssetAllocation(r.get("name"), r.get("symbol"), "", r.get("currency")));
             String dp = mapDistributionPolicy(r.get("name"), r.get("symbol"));
             if (dp != null) r.put("distributionPolicy", dp);
             return r;
@@ -142,14 +142,13 @@ public class AssetSearchService {
         };
     }
 
-    private String mapAssetAllocation(String name, String symbol, String quoteType) {
+    private String mapAssetAllocation(String name, String symbol, String quoteType, String currency) {
         if ("EQUITY".equals(quoteType) || "CRYPTOCURRENCY".equals(quoteType)) return "RISIKOBEHAFTET";
         String combined = ((name != null ? name : "") + " " + (symbol != null ? symbol : "")).toUpperCase();
-        if (combined.contains("BOND") || combined.contains("ANLEIHE") || combined.contains("RENTEN")
+        boolean isBond = combined.contains("BOND") || combined.contains("ANLEIHE") || combined.contains("RENTEN")
                 || combined.contains("FIXED INCOME") || combined.contains("TREASUR")
-                || combined.contains("AGGREGATE") || combined.contains("SOVEREIGN") || combined.contains("GILT")) {
-            return "RISIKOFREI";
-        }
+                || combined.contains("AGGREGATE") || combined.contains("SOVEREIGN") || combined.contains("GILT");
+        if (isBond && "EUR".equals(currency)) return "RISIKOFREI";
         return "RISIKOBEHAFTET";
     }
 
