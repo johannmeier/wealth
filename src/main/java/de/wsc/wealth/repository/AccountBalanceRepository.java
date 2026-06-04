@@ -13,4 +13,7 @@ public interface AccountBalanceRepository extends JpaRepository<AccountBalance, 
 
     @Query("SELECT b FROM AccountBalance b JOIN FETCH b.account")
     List<AccountBalance> findAllWithAccount();
+
+    @Query("SELECT b FROM AccountBalance b JOIN FETCH b.account WHERE b.date = (SELECT MAX(b2.date) FROM AccountBalance b2 WHERE b2.account.id = b.account.id)")
+    List<AccountBalance> findLatestPerAccount();
 }

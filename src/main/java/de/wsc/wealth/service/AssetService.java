@@ -110,8 +110,10 @@ public class AssetService {
 
     @Transactional(readOnly = true)
     public java.util.Set<Long> getDeletableArchivedIds() {
+        java.util.Set<Long> withQty = quantityRepository.findDistinctAssetIds();
+        java.util.Set<Long> withCoins = coinRepository.findDistinctLinkedAssetIds();
         return findAllArchived().stream()
-            .filter(a -> !quantityRepository.existsByAsset(a) && !coinRepository.existsByAsset(a))
+            .filter(a -> !withQty.contains(a.getId()) && !withCoins.contains(a.getId()))
             .map(Asset::getId)
             .collect(java.util.stream.Collectors.toSet());
     }

@@ -18,4 +18,7 @@ public interface AssetQuantityRepository extends JpaRepository<AssetQuantity, Lo
 
     @Query("SELECT q FROM AssetQuantity q JOIN FETCH q.asset JOIN FETCH q.depot")
     List<AssetQuantity> findAllWithAssetAndDepot();
+
+    @Query("SELECT DISTINCT q.asset.id FROM AssetQuantity q")
+    java.util.Set<Long> findDistinctAssetIds();
 }

@@ -87,29 +87,42 @@ public class DepotService {
 
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getCurrentValueByDepotId() {
-        Map<Long, BigDecimal> result = new LinkedHashMap<>();
         var spotPrices = coinService.fetchSpotPricesUsd();
-        for (Depot depot : depotRepository.findAllByOrderByNameAsc()) {
-            // group by asset, keep only the most recent entry per asset (list is already date-desc)
-            BigDecimal assetValue = quantityRepository.findByDepotOrderByDateDesc(depot).stream()
-                .collect(Collectors.toMap(
-                    q -> q.getAsset().getId(),
-                    q -> q,
-                    (existing, replacement) -> existing
-                ))
-                .values().stream()
-                .filter(q -> q.getQuantity() != null
-                         && exchangeRateService.toEur(q.getAsset().getCurrentPrice(), q.getAsset().getCurrency()) != null)
-                .map(q -> q.getQuantity()
-                    .multiply(exchangeRateService.toEur(q.getAsset().getCurrentPrice(), q.getAsset().getCurrency()))
-                    .setScale(2, RoundingMode.HALF_UP))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal coinValue = coinRepository.findByDepotOrderByMetalAscNameAscMintYearAsc(depot).stream()
-                .map(c -> coinService.valueEur(c, spotPrices))
+        // Bulk-load: latest quantity per depot+asset
+        Map<Long, Map<Long, AssetQuantity>> latestQtyByDepotAsset = new java.util.HashMap<>();
+        for (AssetQuantity q : quantityRepository.findAllWithAssetAndDepot()) {
+            if (q.getQuantity() == null) continue;
+            latestQtyByDepotAsset
+                .computeIfAbsent(q.getDepot().getId(), k -> new java.util.HashMap<>())
+                .merge(q.getAsset().getId(), q, (a, b) ->
+                    b.getDate().isAfter(a.getDate()) ? b : a);
+        }
+
+        // Bulk-load: coin values per depot
+        Map<Long, BigDecimal> coinValueByDepotId = new java.util.HashMap<>();
+        for (de.wsc.wealth.domain.Coin c : coinRepository.findAllWithDepot()) {
+            if (c.getDepot() == null) continue;
+            BigDecimal val = coinService.valueEur(c, spotPrices);
+            if (val != null) coinValueByDepotId.merge(c.getDepot().getId(), val, BigDecimal::add);
+        }
+
+        Map<Long, BigDecimal> result = new LinkedHashMap<>();
+        for (Depot depot : depotRepository.findAllByOrderByNameAsc()) {
+            BigDecimal assetValue = latestQtyByDepotAsset
+                .getOrDefault(depot.getId(), java.util.Map.of()).values().stream()
+                .filter(q -> q.getQuantity().compareTo(BigDecimal.ZERO) > 0)
+                .map(q -> {
+                    BigDecimal eur = exchangeRateService.toEur(
+                        q.getAsset().getCurrentPrice(), q.getAsset().getCurrency());
+                    return eur != null
+                        ? q.getQuantity().multiply(eur).setScale(2, RoundingMode.HALF_UP)
+                        : null;
+                })
                 .filter(v -> v != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+            BigDecimal coinValue = coinValueByDepotId.getOrDefault(depot.getId(), BigDecimal.ZERO);
             result.put(depot.getId(), assetValue.add(coinValue));
         }
         return result;
