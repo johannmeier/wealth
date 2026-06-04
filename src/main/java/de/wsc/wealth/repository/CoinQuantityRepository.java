@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface CoinQuantityRepository extends JpaRepository<CoinQuantity, Long> {
     List<CoinQuantity> findByCoinOrderByDateDesc(Coin coin);
     Optional<CoinQuantity> findFirstByCoinOrderByDateDesc(Coin coin);
+    Optional<CoinQuantity> findByCoinAndDate(Coin coin, java.time.LocalDate date);
 
     @Query("SELECT cq FROM CoinQuantity cq JOIN FETCH cq.coin")
     List<CoinQuantity> findAllWithCoin();

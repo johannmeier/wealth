@@ -149,9 +149,17 @@ public class AssetService {
     public AssetQuantity saveQuantity(Long assetId, Long depotId, AssetQuantity quantity) {
         Asset asset = assetRepository.findById(assetId).orElseThrow();
         Depot depot = depotRepository.findById(depotId).orElseThrow();
-        quantity.setAsset(asset);
-        quantity.setDepot(depot);
-        return quantityRepository.save(quantity);
+        AssetQuantity entry = quantityRepository
+            .findByAssetAndDepotAndDate(asset, depot, quantity.getDate())
+            .orElseGet(() -> {
+                AssetQuantity q = new AssetQuantity();
+                q.setAsset(asset);
+                q.setDepot(depot);
+                q.setDate(quantity.getDate());
+                return q;
+            });
+        entry.setQuantity(quantity.getQuantity());
+        return quantityRepository.save(entry);
     }
 
     @Transactional(readOnly = true)

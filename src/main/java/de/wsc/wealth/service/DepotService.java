@@ -63,10 +63,17 @@ public class DepotService {
     public AssetQuantity saveQuantity(Long depotId, Long assetId, AssetQuantity quantity) {
         Depot depot = depotRepository.findById(depotId).orElseThrow();
         Asset asset = assetRepository.findById(assetId).orElseThrow();
-        quantity.setId(null);
-        quantity.setDepot(depot);
-        quantity.setAsset(asset);
-        return quantityRepository.save(quantity);
+        AssetQuantity entry = quantityRepository
+            .findByAssetAndDepotAndDate(asset, depot, quantity.getDate())
+            .orElseGet(() -> {
+                AssetQuantity q = new AssetQuantity();
+                q.setDepot(depot);
+                q.setAsset(asset);
+                q.setDate(quantity.getDate());
+                return q;
+            });
+        entry.setQuantity(quantity.getQuantity());
+        return quantityRepository.save(entry);
     }
 
     public void updateQuantity(Long quantityId, Long assetId, LocalDate date, BigDecimal quantity) {

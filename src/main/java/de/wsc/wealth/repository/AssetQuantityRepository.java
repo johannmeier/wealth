@@ -5,6 +5,7 @@ import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.domain.AssetQuantity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ public interface AssetQuantityRepository extends JpaRepository<AssetQuantity, Lo
     List<AssetQuantity> findByAssetOrderByDateDesc(Asset asset);
     List<AssetQuantity> findByDepotOrderByDateDesc(Depot depot);
     Optional<AssetQuantity> findFirstByAssetAndDepotOrderByDateDesc(Asset asset, Depot depot);
+    Optional<AssetQuantity> findByAssetAndDepotAndDate(Asset asset, Depot depot, LocalDate date);
     void deleteByAsset(Asset asset);
     boolean existsByAsset(Asset asset);
 
