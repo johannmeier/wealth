@@ -17,47 +17,117 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
   <div class="table-section">
-  <table class="table table-striped table-hover align-middle">
+  <table class="table table-hover align-middle">
     <caption>
       <div class="d-flex justify-content-between align-items-center">
         <span th:text="#{page.banks.title}">Banken</span>
         <a th:href="@{/banks/new}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ Neu</a>
       </div>
+      <div th:if="${!#lists.isEmpty(banks)}" class="alert alert-info d-flex justify-content-between align-items-center mb-0 mt-2 fs-6 fw-normal">
+        <span th:text="#{common.total}">Gesamt</span>
+        <strong th:text="${#numbers.formatDecimal(grandTotal.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></strong>
+      </div>
     </caption>
     <thead class="table-dark">
       <tr>
+        <th scope="col" style="width:2rem"></th>
         <th scope="col" th:text="#{col.name}">Name</th>
+        <th scope="col" class="text-end" th:text="#{col.value}">Wert</th>
         <th scope="col" th:text="#{common.actions}">Aktionen</th>
       </tr>
     </thead>
     <tbody>
-      <tr th:each="b : ${banks}">
-        <td th:text="${b.name}"></td>
-        <td>
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}" th:text="#{common.actions}">Aktionen</button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" th:href="@{/banks/{id}(id=${b.id})}" th:text="#{page.banks.detail}">Konten &amp; Depots</a></li>
-              <li><a class="dropdown-item" th:href="@{/banks/{id}/edit(id=${b.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
-              <li><hr class="dropdown-divider"/></li>
-              <li>
-                <form th:action="@{/banks/{id}/delete(id=${b.id})}" method="post"
-                      th:attr="onsubmit=|return confirm('#{confirm.delete}')|">
-                  <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
-                </form>
-              </li>
-            </ul>
-          </div>
-        </td>
-      </tr>
+      <th:block th:each="b : ${banks}">
+        <!-- Bank-Zeile -->
+        <tr>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button"
+                    data-bs-toggle="collapse" th:attr="data-bs-target='#bank-' + ${b.id}"
+                    aria-expanded="false">&#x25BC;</button>
+          </td>
+          <td th:text="${b.name}"></td>
+          <td class="text-end" style="white-space:nowrap"
+              th:text="${#numbers.formatDecimal(bankTotals.get(b.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></td>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                      data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}" th:text="#{common.actions}">Aktionen</button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" th:href="@{/banks/{id}(id=${b.id})}" th:text="#{page.banks.detail}">Konten &amp; Depots</a></li>
+                <li><a class="dropdown-item" th:href="@{/banks/{id}/edit(id=${b.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
+                <li><hr class="dropdown-divider"/></li>
+                <li>
+                  <form th:action="@{/banks/{id}/delete(id=${b.id})}" method="post"
+                        th:attr="onsubmit=|return confirm('#{confirm.delete}')|">
+                    <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+        <!-- Aufklapp-Zeile -->
+        <tr class="collapse" th:id="'bank-' + ${b.id}">
+          <td colspan="4" class="p-0 border-0">
+            <div class="px-4 py-3 bg-body-secondary">
+              <div class="row g-3">
+                <!-- Konten -->
+                <div class="col-md-6" th:with="accs=${bankAccounts.get(b.id)}">
+                  <div class="fw-semibold mb-1" th:text="#{page.accounts.title}">Konten</div>
+                  <table class="table table-sm table-bordered mb-0 bg-body">
+                    <tbody>
+                      <tr th:each="a : ${accs}">
+                        <td th:text="${a.displayName}"></td>
+                        <td class="text-end" style="white-space:nowrap">
+                          <span th:if="${accountValuesEur.containsKey(a.id)}"
+                                th:text="${#numbers.formatDecimal(accountValuesEur.get(a.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
+                          <span th:unless="${accountValuesEur.containsKey(a.id)}" class="text-muted">—</span>
+                        </td>
+                      </tr>
+                      <tr th:if="${accs == null or #lists.isEmpty(accs)}">
+                        <td class="text-muted" th:text="#{page.accounts.empty}">Keine Konten.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <!-- Depots -->
+                <div class="col-md-6" th:with="deps=${bankDepots.get(b.id)}">
+                  <div class="fw-semibold mb-1" th:text="#{page.depots.title}">Depots</div>
+                  <table class="table table-sm table-bordered mb-0 bg-body">
+                    <tbody>
+                      <tr th:each="d : ${deps}">
+                        <td th:text="${d.name}"></td>
+                        <td class="text-end" style="white-space:nowrap"
+                            th:with="val=${depotValues.get(d.id)}"
+                            th:text="${val != null} ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency} : '—'"></td>
+                      </tr>
+                      <tr th:if="${deps == null or #lists.isEmpty(deps)}">
+                        <td class="text-muted" th:text="#{page.depots.empty}">Keine Depots.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </th:block>
       <tr th:if="${#lists.isEmpty(banks)}">
-        <td colspan="2" class="text-center text-muted" th:text="#{page.banks.empty}">Keine Banken vorhanden.</td>
+        <td colspan="4" class="text-center text-muted" th:text="#{page.banks.empty}">Keine Banken vorhanden.</td>
       </tr>
     </tbody>
   </table>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(btn) {
+  if (!btn.dataset.bsTarget) return;
+  var target = document.querySelector(btn.dataset.bsTarget);
+  if (!target) return;
+  target.addEventListener('show.bs.collapse', function() { btn.innerHTML = '&#x25B2;'; });
+  target.addEventListener('hide.bs.collapse', function() { btn.innerHTML = '&#x25BC;'; });
+});
+</script>
 </body>
 </html>

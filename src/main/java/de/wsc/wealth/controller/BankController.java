@@ -37,7 +37,45 @@ public class BankController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("banks", bankService.findAll());
+        List<de.wsc.wealth.domain.Bank> banks = bankService.findAll();
+        Map<Long, BigDecimal> latestBalances = accountService.getLatestBalancesByAccountId();
+        Map<Long, BigDecimal> depotValues    = depotService.getCurrentValueByDepotId();
+
+        Map<Long, List<de.wsc.wealth.domain.Account>> bankAccounts = new java.util.LinkedHashMap<>();
+        Map<Long, List<de.wsc.wealth.domain.Depot>>   bankDepots   = new java.util.LinkedHashMap<>();
+        Map<Long, BigDecimal> accountValuesEur = new java.util.HashMap<>();
+        Map<Long, BigDecimal> bankTotals       = new java.util.LinkedHashMap<>();
+        BigDecimal grandTotal = BigDecimal.ZERO;
+
+        for (de.wsc.wealth.domain.Bank b : banks) {
+            List<de.wsc.wealth.domain.Account> accs = accountService.findByBankId(b.getId());
+            List<de.wsc.wealth.domain.Depot>   deps = depotService.findByBankId(b.getId());
+            bankAccounts.put(b.getId(), accs);
+            bankDepots.put(b.getId(), deps);
+
+            BigDecimal total = BigDecimal.ZERO;
+            for (de.wsc.wealth.domain.Account a : accs) {
+                BigDecimal raw = latestBalances.get(a.getId());
+                if (raw != null) {
+                    BigDecimal eur = exchangeRateService.toEur(raw, a.getCurrency());
+                    if (eur != null) { accountValuesEur.put(a.getId(), eur); total = total.add(eur); }
+                }
+            }
+            for (de.wsc.wealth.domain.Depot d : deps) {
+                BigDecimal val = depotValues.get(d.getId());
+                if (val != null) total = total.add(val);
+            }
+            bankTotals.put(b.getId(), total);
+            grandTotal = grandTotal.add(total);
+        }
+
+        model.addAttribute("banks", banks);
+        model.addAttribute("bankAccounts", bankAccounts);
+        model.addAttribute("bankDepots", bankDepots);
+        model.addAttribute("accountValuesEur", accountValuesEur);
+        model.addAttribute("depotValues", depotValues);
+        model.addAttribute("bankTotals", bankTotals);
+        model.addAttribute("grandTotal", grandTotal);
         return "banks/list";
     }
 
