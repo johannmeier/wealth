@@ -25,4 +25,7 @@ public interface CoinRepository extends JpaRepository<Coin, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c.asset.id FROM Coin c WHERE c.asset IS NOT NULL")
     java.util.Set<Long> findDistinctLinkedAssetIds();
+
+    @org.springframework.data.jpa.repository.Query("SELECT c.id, c.asset.id FROM Coin c WHERE c.asset IS NOT NULL")
+    java.util.List<Object[]> findCoinIdToAssetId();
 }
