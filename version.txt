@@ -1,6 +1,19 @@
 Wealth – Release History
 ========================
 
+Version 1.0.4  (2026-06-04)
+-----------------------------
+Bug Fixes
+  - Wealth history: coin values were always shown as 0 even when coins
+    are present; fixed by replacing entity proxy access with pure ID maps
+    and correcting the quantity fallback when no historical record exists
+    before a given month
+  - Wealth history: coins without CoinQuantity history (created before
+    v1.0.2) now correctly use their current quantity for all months
+  - Outdated notice "coin quantities are not tracked historically"
+    removed from the history page
+
+
 Version 1.0.3  (2026-06-04)
 -----------------------------
 Correctness
