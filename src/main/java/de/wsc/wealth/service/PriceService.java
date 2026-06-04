@@ -51,7 +51,6 @@ public class PriceService {
     @EventListener(ApplicationReadyEvent.class)
     @Order(1)
     @Scheduled(cron = "0 0 18 * * *")
-    @Transactional
     public void updatePrices() {
         List<Asset> assets = assetRepository.findByArchivedFalseAndSymbolIsNotNull().stream()
             .filter(s -> s.isAutoPrice() && !s.getSymbol().isBlank())
@@ -82,7 +81,11 @@ public class PriceService {
         if (!result.isArray() || result.isEmpty()) {
             throw new IllegalStateException("Kein Ergebnis von Yahoo Finance für Symbol: " + symbol);
         }
-        return result.get(0).path("meta").path("regularMarketPrice").decimalValue();
+        JsonNode priceNode = result.get(0).path("meta").path("regularMarketPrice");
+        if (!priceNode.isNumber()) {
+            throw new IllegalStateException("Kein gültiger Kurs von Yahoo Finance für Symbol: " + symbol);
+        }
+        return priceNode.decimalValue();
     }
 
     // Returns the first available closing price on or after the given date (up to 7 days ahead,
