@@ -6,12 +6,17 @@ import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.service.AccountService;
 import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.DepotService;
+import de.wsc.wealth.service.ExchangeRateService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/banks")
@@ -20,11 +25,14 @@ public class BankController {
     private final BankService bankService;
     private final AccountService accountService;
     private final DepotService depotService;
+    private final ExchangeRateService exchangeRateService;
 
-    public BankController(BankService bankService, AccountService accountService, DepotService depotService) {
+    public BankController(BankService bankService, AccountService accountService,
+                          DepotService depotService, ExchangeRateService exchangeRateService) {
         this.bankService = bankService;
         this.accountService = accountService;
         this.depotService = depotService;
+        this.exchangeRateService = exchangeRateService;
     }
 
     @GetMapping
@@ -37,9 +45,35 @@ public class BankController {
     public String detail(@PathVariable Long id, Model model) {
         Bank bank = bankService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        List<Account> accounts = accountService.findByBankId(id);
+        Map<Long, BigDecimal> latestBalances = accountService.getLatestBalancesByAccountId();
+        BigDecimal accountTotal = BigDecimal.ZERO;
+        java.util.Map<Long, BigDecimal> accountValuesEur = new java.util.HashMap<>();
+        for (Account a : accounts) {
+            BigDecimal raw = latestBalances.get(a.getId());
+            if (raw != null) {
+                BigDecimal eur = exchangeRateService.toEur(raw, a.getCurrency());
+                if (eur != null) { accountValuesEur.put(a.getId(), eur); accountTotal = accountTotal.add(eur); }
+            }
+        }
+
+        Map<Long, BigDecimal> depotValues = depotService.getCurrentValueByDepotId();
+        List<de.wsc.wealth.domain.Depot> depots = depotService.findByBankId(id);
+        BigDecimal depotTotal = BigDecimal.ZERO;
+        for (de.wsc.wealth.domain.Depot d : depots) {
+            BigDecimal val = depotValues.get(d.getId());
+            if (val != null) depotTotal = depotTotal.add(val);
+        }
+
         model.addAttribute("bank", bank);
-        model.addAttribute("accounts", accountService.findByBankId(id));
-        model.addAttribute("depots", depotService.findByBankId(id));
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("accountValuesEur", accountValuesEur);
+        model.addAttribute("accountTotal", accountTotal);
+        model.addAttribute("depots", depots);
+        model.addAttribute("depotValues", depotValues);
+        model.addAttribute("depotTotal", depotTotal);
+        model.addAttribute("grandTotal", accountTotal.add(depotTotal));
         model.addAttribute("unassignedAccounts", accountService.findWithoutBank());
         model.addAttribute("unassignedDepots", depotService.findWithoutBank());
         return "banks/detail";

@@ -13,9 +13,14 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
 
-  <div class="d-flex align-items-center gap-3 mb-4">
+  <!-- Header mit Gesamtsumme -->
+  <div class="d-flex align-items-center gap-3 mb-1">
     <h3 class="mb-0" th:text="${bank.name}">Bank</h3>
     <a th:href="@{/banks/{id}/edit(id=${bank.id})}" class="btn btn-outline-secondary btn-sm" th:text="#{common.edit}">Bearbeiten</a>
+  </div>
+  <div class="alert alert-info d-flex justify-content-between align-items-center mb-4 fs-6">
+    <span th:text="#{common.total}">Gesamt</span>
+    <strong th:text="${#numbers.formatDecimal(grandTotal.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></strong>
   </div>
 
   <div class="row g-4">
@@ -23,38 +28,56 @@
     <!-- Konten -->
     <div class="col-lg-6">
       <div class="card">
-        <div class="card-header fw-semibold" th:text="#{page.accounts.title}">Konten</div>
-        <div class="card-body p-0">
-          <table class="table table-striped align-middle mb-0">
-            <tbody>
-              <tr th:each="a : ${accounts}">
-                <td>
-                  <div th:text="${a.displayName}"></div>
-                  <small th:if="${a.iban}" class="text-muted" th:text="${a.iban}"></small>
-                </td>
-                <td class="text-end">
-                  <div class="d-flex gap-2 justify-content-end">
-                    <a th:href="@{/accounts/{id}/edit(id=${a.id})}" class="btn btn-sm btn-outline-secondary" th:text="#{common.edit}">Bearbeiten</a>
-                    <form th:action="@{/banks/{bid}/accounts/{aid}/remove(bid=${bank.id},aid=${a.id})}" method="post">
-                      <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.remove}">Entfernen</button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-              <tr th:if="${#lists.isEmpty(accounts)}">
-                <td class="text-muted text-center" th:text="#{page.accounts.empty}">Keine Konten vorhanden.</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span th:text="#{page.accounts.title}">Konten</span>
+          <div class="d-flex align-items-center gap-3">
+            <span class="fw-semibold"
+                  th:text="${#numbers.formatDecimal(accountTotal.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
+            <button class="btn btn-sm btn-outline-secondary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseAccounts"
+                    aria-expanded="true" aria-controls="collapseAccounts"
+                    th:attr="data-label-collapse=#{common.collapse-all},data-label-expand=#{common.expand-all}"
+                    th:text="#{common.collapse-all}">Zuklappen</button>
+          </div>
         </div>
-        <div class="card-footer" th:if="${!#lists.isEmpty(unassignedAccounts)}">
-          <form th:action="@{/banks/{id}/accounts/assign(id=${bank.id})}" method="post"
-                class="d-flex gap-2 align-items-center">
-            <select name="accountId" class="form-select form-select-sm">
-              <option th:each="a : ${unassignedAccounts}" th:value="${a.id}" th:text="${a.displayName}"></option>
-            </select>
-            <button type="submit" class="btn btn-sm btn-primary text-nowrap" th:text="#{common.assign}">Zuordnen</button>
-          </form>
+        <div class="collapse show" id="collapseAccounts">
+          <div class="card-body p-0">
+            <table class="table table-striped align-middle mb-0">
+              <tbody>
+                <tr th:each="a : ${accounts}">
+                  <td>
+                    <div th:text="${a.displayName}"></div>
+                    <small th:if="${a.iban}" class="text-muted" th:text="${a.iban}"></small>
+                  </td>
+                  <td class="text-end" style="white-space:nowrap">
+                    <span th:if="${accountValuesEur.containsKey(a.id)}"
+                          th:text="${#numbers.formatDecimal(accountValuesEur.get(a.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
+                    <span th:unless="${accountValuesEur.containsKey(a.id)}" class="text-muted">—</span>
+                  </td>
+                  <td class="text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <a th:href="@{/accounts/{id}/edit(id=${a.id})}" class="btn btn-sm btn-outline-secondary" th:text="#{common.edit}">Bearbeiten</a>
+                      <form th:action="@{/banks/{bid}/accounts/{aid}/remove(bid=${bank.id},aid=${a.id})}" method="post">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.remove}">Entfernen</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(accounts)}">
+                  <td class="text-muted text-center" colspan="3" th:text="#{page.accounts.empty}">Keine Konten vorhanden.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer" th:if="${!#lists.isEmpty(unassignedAccounts)}">
+            <form th:action="@{/banks/{id}/accounts/assign(id=${bank.id})}" method="post"
+                  class="d-flex gap-2 align-items-center">
+              <select name="accountId" class="form-select form-select-sm">
+                <option th:each="a : ${unassignedAccounts}" th:value="${a.id}" th:text="${a.displayName}"></option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary text-nowrap" th:text="#{common.assign}">Zuordnen</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -62,35 +85,52 @@
     <!-- Depots -->
     <div class="col-lg-6">
       <div class="card">
-        <div class="card-header fw-semibold" th:text="#{page.depots.title}">Depots</div>
-        <div class="card-body p-0">
-          <table class="table table-striped align-middle mb-0">
-            <tbody>
-              <tr th:each="d : ${depots}">
-                <td th:text="${d.name}"></td>
-                <td class="text-end">
-                  <div class="d-flex gap-2 justify-content-end">
-                    <a th:href="@{/depots/{id}/edit(id=${d.id})}" class="btn btn-sm btn-outline-secondary" th:text="#{common.edit}">Bearbeiten</a>
-                    <form th:action="@{/banks/{bid}/depots/{did}/remove(bid=${bank.id},did=${d.id})}" method="post">
-                      <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.remove}">Entfernen</button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-              <tr th:if="${#lists.isEmpty(depots)}">
-                <td class="text-muted text-center" th:text="#{page.depots.empty}">Keine Depots vorhanden.</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span th:text="#{page.depots.title}">Depots</span>
+          <div class="d-flex align-items-center gap-3">
+            <span class="fw-semibold"
+                  th:text="${#numbers.formatDecimal(depotTotal.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
+            <button class="btn btn-sm btn-outline-secondary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseDepots"
+                    aria-expanded="true" aria-controls="collapseDepots"
+                    th:attr="data-label-collapse=#{common.collapse-all},data-label-expand=#{common.expand-all}"
+                    th:text="#{common.collapse-all}">Zuklappen</button>
+          </div>
         </div>
-        <div class="card-footer" th:if="${!#lists.isEmpty(unassignedDepots)}">
-          <form th:action="@{/banks/{id}/depots/assign(id=${bank.id})}" method="post"
-                class="d-flex gap-2 align-items-center">
-            <select name="depotId" class="form-select form-select-sm">
-              <option th:each="d : ${unassignedDepots}" th:value="${d.id}" th:text="${d.name}"></option>
-            </select>
-            <button type="submit" class="btn btn-sm btn-primary text-nowrap" th:text="#{common.assign}">Zuordnen</button>
-          </form>
+        <div class="collapse show" id="collapseDepots">
+          <div class="card-body p-0">
+            <table class="table table-striped align-middle mb-0">
+              <tbody>
+                <tr th:each="d : ${depots}">
+                  <td th:text="${d.name}"></td>
+                  <td class="text-end" style="white-space:nowrap">
+                    <span th:with="val=${depotValues.get(d.id)}"
+                          th:text="${val != null} ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency} : '—'"></span>
+                  </td>
+                  <td class="text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <a th:href="@{/depots/{id}/edit(id=${d.id})}" class="btn btn-sm btn-outline-secondary" th:text="#{common.edit}">Bearbeiten</a>
+                      <form th:action="@{/banks/{bid}/depots/{did}/remove(bid=${bank.id},did=${d.id})}" method="post">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.remove}">Entfernen</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(depots)}">
+                  <td class="text-muted text-center" colspan="3" th:text="#{page.depots.empty}">Keine Depots vorhanden.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer" th:if="${!#lists.isEmpty(unassignedDepots)}">
+            <form th:action="@{/banks/{id}/depots/assign(id=${bank.id})}" method="post"
+                  class="d-flex gap-2 align-items-center">
+              <select name="depotId" class="form-select form-select-sm">
+                <option th:each="d : ${unassignedDepots}" th:value="${d.id}" th:text="${d.name}"></option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary text-nowrap" th:text="#{common.assign}">Zuordnen</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -100,5 +140,12 @@
   <a th:href="@{/banks}" class="btn btn-outline-secondary mt-4" th:text="#{common.back}">Zurück</a>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(btn) {
+  var target = document.querySelector(btn.dataset.bsTarget);
+  target.addEventListener('show.bs.collapse', function() { btn.textContent = btn.getAttribute('data-label-collapse'); });
+  target.addEventListener('hide.bs.collapse', function() { btn.textContent = btn.getAttribute('data-label-expand'); });
+});
+</script>
 </body>
 </html>
