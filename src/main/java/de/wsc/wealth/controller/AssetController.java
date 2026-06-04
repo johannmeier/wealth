@@ -153,11 +153,11 @@ public class AssetController {
 
     @PostMapping("/refresh-all-prices")
     public String refreshAllPrices(RedirectAttributes ra) {
-        long count = assetService.findAll().stream()
+        List<de.wsc.wealth.domain.Asset> toUpdate = assetService.findAll().stream()
             .filter(s -> s.isAutoPrice() && s.getSymbol() != null)
-            .peek(priceService::updatePrice)
-            .count();
-        ra.addFlashAttribute("success", count + " Kurse aktualisiert.");
+            .toList();
+        toUpdate.forEach(priceService::updatePrice);
+        ra.addFlashAttribute("success", toUpdate.size() + " Kurse aktualisiert.");
         return "redirect:/assets";
     }
 
