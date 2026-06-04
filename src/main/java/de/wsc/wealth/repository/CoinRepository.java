@@ -16,4 +16,10 @@ public interface CoinRepository extends JpaRepository<Coin, Long> {
     @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c.name FROM Coin c ORDER BY c.name")
     List<String> findDistinctNames();
     boolean existsByAsset(de.wsc.wealth.domain.Asset asset);
+
+    @org.springframework.data.jpa.repository.Query("SELECT c FROM Coin c LEFT JOIN FETCH c.depot")
+    List<Coin> findAllWithDepot();
+
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT c.asset.id FROM Coin c WHERE c.asset IS NOT NULL")
+    java.util.Set<Long> findDistinctLinkedAssetIds();
 }
