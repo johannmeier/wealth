@@ -35,7 +35,13 @@ public class Account {
     public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
     public String getDisplayName() {
         String bankName = bank != null ? bank.getName() : "";
-        return accountNumber != null && !accountNumber.isBlank() ? bankName + " – " + accountNumber : bankName;
+        String acct = accountNumber != null && !accountNumber.isBlank() ? accountNumber : "";
+        if (!bankName.isBlank() && !acct.isBlank()) return bankName + " – " + acct;
+        if (!bankName.isBlank()) return bankName;
+        if (!acct.isBlank()) return acct;
+        if (iban != null && !iban.isBlank()) return iban;
+        if (description != null && !description.isBlank()) return description;
+        return "Konto " + id;
     }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
