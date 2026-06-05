@@ -27,10 +27,10 @@
     <thead class="table-dark">
       <tr>
         <th scope="col" th:text="#{col.name}">Name</th>
-        <th scope="col" th:text="#{col.depot-account}">Depot/Konto</th>
         <th scope="col" th:text="#{col.type}">Art</th>
         <th scope="col" th:text="#{col.allocation}">Allocation</th>
         <th scope="col" th:text="#{col.index}">Index</th>
+        <th scope="col" th:text="#{col.depot-account}">Depot/Konto</th>
         <th scope="col" class="text-end" th:text="#{col.quantity}">Anzahl</th>
         <th scope="col" class="text-end" th:text="#{col.price.eur}">Kurs (€)</th>
         <th scope="col" class="text-end" th:text="#{col.value}">Wert (€)</th>
@@ -40,6 +40,16 @@
     <tbody>
       <tr th:each="pos : ${positions}">
         <td th:text="${pos.name}"></td>
+        <td>
+          <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info" th:text="#{assetType.KONTO}">Konto</span>
+          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msg('assetType.' + pos.assetType.name())}"></span>
+        </td>
+        <td>
+          <span th:if="${pos.assetAllocation != null}"
+                th:class="${pos.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
+                th:text="${#messages.msg('assetAllocation.' + pos.assetAllocation.name())}"></span>
+        </td>
+        <td style="white-space:nowrap" th:text="${pos.indexName ?: '-'}"></td>
         <td>
           <th:block th:if="${pos.type != 'ACCOUNT' and depotsByAsset.get(pos.id) != null and !depotsByAsset.get(pos.id).isEmpty()}">
             <span th:each="entry, i : ${depotsByAsset.get(pos.id)}">
@@ -52,16 +62,6 @@
           <span th:unless="${pos.type == 'ACCOUNT' or (pos.type != 'ACCOUNT' and depotsByAsset.get(pos.id) != null and !depotsByAsset.get(pos.id).isEmpty())}"
                 th:text="${pos.depotName ?: '-'}"></span>
         </td>
-        <td>
-          <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info" th:text="#{assetType.KONTO}">Konto</span>
-          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msg('assetType.' + pos.assetType.name())}"></span>
-        </td>
-        <td>
-          <span th:if="${pos.assetAllocation != null}"
-                th:class="${pos.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                th:text="${#messages.msg('assetAllocation.' + pos.assetAllocation.name())}"></span>
-        </td>
-        <td style="white-space:nowrap" th:text="${pos.indexName ?: '-'}"></td>
         <td class="text-end" th:text="${pos.quantity != null ? #numbers.formatDecimal(pos.quantity, 1, 'DEFAULT', 4, 'DEFAULT') : '-'}"></td>
         <td class="text-end" style="white-space:nowrap" th:text="${pos.price != null ? #numbers.formatDecimal(pos.price.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT') + ' ' + displayCurrency : '-'}"></td>
         <td class="text-end fw-bold" th:text="${pos.value != null ? #numbers.formatDecimal(pos.value.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT') : '-'}"></td>

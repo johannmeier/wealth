@@ -47,6 +47,7 @@ public class AssetController {
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
         model.addAttribute("archivedAssets", assetService.findAllArchived());
         model.addAttribute("deletableIds", assetService.getDeletableArchivedIds());
+        model.addAttribute("deletableActiveIds", assetService.getDeletableActiveIds());
         if (highlight != null) model.addAttribute("highlightId", highlight);
         return "assets/list";
     }
@@ -54,6 +55,7 @@ public class AssetController {
     @GetMapping("/new")
     public String newForm(Model model) {
         model.addAttribute("asset", new Asset());
+        model.addAttribute("returnUrl", "/assets");
         addEnums(model);
         return "assets/form";
     }
@@ -76,7 +78,7 @@ public class AssetController {
         Asset saved = assetService.save(asset);
         ra.addFlashAttribute("success", "Wertpapier gespeichert.");
         ra.addFlashAttribute("highlightId", saved.getId());
-        return "redirect:" + (returnUrl != null ? returnUrl : "/assets");
+        return "redirect:" + (returnUrl != null && !returnUrl.isBlank() ? returnUrl : "/assets");
     }
 
     @PostMapping("/{id}/delete")

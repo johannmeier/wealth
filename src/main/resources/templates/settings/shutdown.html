@@ -17,11 +17,24 @@
       <p class="card-text" th:text="#{page.databases.shutdown.message}">
         Die Anwendung wird beendet. Bitte starten Sie sie neu, um mit der neuen Datenbank zu arbeiten.
       </p>
-      <div class="spinner-border text-secondary mt-3" role="status">
-        <span class="visually-hidden">Wird beendet...</span>
+      <div class="spinner-border text-secondary mt-3" role="status" id="spinner">
+        <span class="visually-hidden">Warte auf Neustart...</span>
       </div>
+      <p class="text-muted mt-3 small" id="statusMsg" th:text="#{page.databases.shutdown.waiting}">
+        Warte auf Neustart...
+      </p>
     </div>
   </div>
 </div>
+<script>
+  function checkServer() {
+    fetch('/', { method: 'HEAD', cache: 'no-store' })
+      .then(function(r) {
+        if (r.ok) window.location.href = '/';
+      })
+      .catch(function() {});
+  }
+  setInterval(checkServer, 10000);
+</script>
 </body>
 </html>
