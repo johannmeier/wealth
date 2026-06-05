@@ -77,7 +77,8 @@
                   <table class="table table-sm table-bordered mb-0 bg-body">
                     <tbody>
                       <tr th:each="a : ${accs}">
-                        <td th:text="${a.accountNumber ?: a.iban ?: a.description ?: 'Konto ' + a.id}"></td>
+                        <td><a th:href="@{/accounts/{id}/balances(id=${a.id})}"
+                               th:text="${a.accountNumber ?: a.iban ?: a.description ?: 'Konto ' + a.id}"></a></td>
                         <td class="text-end" style="white-space:nowrap">
                           <span th:if="${accountValuesEur.containsKey(a.id)}"
                                 th:text="${#numbers.formatDecimal(accountValuesEur.get(a.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
@@ -96,7 +97,7 @@
                   <table class="table table-sm table-bordered mb-0 bg-body">
                     <tbody>
                       <tr th:each="d : ${deps}">
-                        <td th:text="${d.name}"></td>
+                        <td><a th:href="@{/depots/{id}/positions(id=${d.id})}" th:text="${d.name}"></a></td>
                         <td class="text-end" style="white-space:nowrap"
                             th:with="val=${depotValues.get(d.id)}"
                             th:text="${val != null} ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency} : '—'"></td>
