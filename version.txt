@@ -1,6 +1,50 @@
 Wealth – Release History
 ========================
 
+Version 1.0.6  (2026-06-05)
+-----------------------------
+Navigation
+  - Bank list: account names link to their balance list, depot names link
+    to their positions page (in collapsible expand rows)
+  - Navigating back from account balances or depot positions restores the
+    previously expanded bank row and scrolls it into view
+  - Depot positions, account balances, coin/depot/asset quantities: back
+    button returns to the originating page (bank list, asset list, coins)
+    when navigated from there via a returnUrl parameter
+  - Dashboard depot links return to the dashboard; asset list depot links
+    return to the asset list; coins asset-edit links return to /coins
+
+UI & Responsiveness
+  - All form+table pages (balances, quantities, positions) are now
+    responsive: heading, form and back button sit left of the table on
+    wide screens, stacked on narrow screens
+  - Asset list: responsive — Symbol shown under ISIN; Art, Kategorie,
+    Ausschüttung and Allocation combined into one 'Eigenschaften' badge
+    column hidden below xl breakpoint; Aktionen button shows caret only;
+    Thesaurierend badge uses blue instead of grey; header buttons always
+    visible regardless of table width
+  - Depot positions select: long security names abbreviated to prevent
+    column width expansion
+  - Dashboard: Depot/Konto column moved behind Index; account rows link
+    to their balance page; fixed wrong depot links for accounts whose ID
+    coincidentally matched an asset ID
+  - Dropdown clipping inside table-responsive containers fixed globally
+
+Data & Features
+  - Quantity history page per security per depot
+    (/depots/{id}/positions/{assetId}/quantities)
+  - Asset list sorted case-insensitively
+  - Unassigned securities (no depot positions, no coin link) show Delete
+    instead of Archive on the asset list
+  - Runtime database switching: Settings → 'Datenbank wechseln' lists
+    existing H2 databases, switches by rewriting the config and shutting
+    down; shutdown page polls every 10 s and auto-redirects when the app
+    is back after restart
+
+Bug Fixes
+  - 404 on saving a new security (empty returnUrl in hidden form field)
+
+
 Version 1.0.5  (2026-06-04)
 -----------------------------
 Securities
