@@ -13,125 +13,128 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
   <div class="table-section">
-  <h3><span th:text="#{page.depots.positions.title}">Positionen</span>: <span th:text="${depot.name}"></span></h3>
-
-  <div class="card mb-4" style="max-width:500px">
-    <div class="card-header" id="formHeader" th:text="#{page.depots.positions.new}">Neuer Bestand</div>
-    <div class="card-body">
-      <form th:action="@{/depots/{id}/positions/save(id=${depot.id})}" method="post">
-        <input type="hidden" name="quantityId" id="quantityId" value=""/>
-        <div class="mb-3">
-          <label class="form-label" for="assetId" th:text="#{form.security}">Wertpapier</label>
-          <select name="assetId" id="assetId" class="form-select" required>
-            <option value="" th:text="#{form.select}">-- wählen --</option>
-            <option th:each="a : ${assets}" th:value="${a.id}"
-                    th:text="${a.name + (a.isin != null and !a.isin.isEmpty() ? ' · ' + a.isin : '') + (a.symbol != null ? ' (' + a.symbol + ')' : '')}"></option>
-          </select>
+  <div class="row g-4 align-items-start">
+    <div class="col-lg-4 overflow-hidden">
+      <h3><span th:text="#{col.depot}">Depot</span>: <span th:text="${depot.name}"></span></h3>
+      <div class="card">
+        <div class="card-header" id="formHeader" th:text="#{page.depots.positions.new}">Neuer Bestand</div>
+        <div class="card-body">
+          <form th:action="@{/depots/{id}/positions/save(id=${depot.id})}" method="post">
+            <input type="hidden" name="quantityId" id="quantityId" value=""/>
+            <div class="mb-3">
+              <label class="form-label" for="assetId" th:text="#{form.security}">Wertpapier</label>
+              <select name="assetId" id="assetId" class="form-select" required>
+                <option value="" th:text="#{form.select}">-- wählen --</option>
+                <option th:each="a : ${assets}" th:value="${a.id}"
+                        th:text="${#strings.abbreviate(a.name, 40)}"></option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="date" th:text="#{col.date}">Datum</label>
+              <input type="date" name="date" id="date" class="form-control"
+                     th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="quantity" th:text="#{col.quantity}">Anzahl</label>
+              <input type="number" name="quantity" id="quantity" class="form-control" step="any" required/>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
+              <button type="button" class="btn btn-outline-secondary" id="cancelBtn"
+                      style="display:none" onclick="cancelEdit()" th:text="#{common.cancel}">Abbrechen</button>
+            </div>
+          </form>
         </div>
-        <div class="mb-3">
-          <label class="form-label" for="date" th:text="#{col.date}">Datum</label>
-          <input type="date" name="date" id="date" class="form-control"
-                 th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="quantity" th:text="#{col.quantity}">Anzahl</label>
-          <input type="number" name="quantity" id="quantity" class="form-control" step="any" required/>
-        </div>
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
-          <button type="button" class="btn btn-outline-secondary" id="cancelBtn"
-                  style="display:none" onclick="cancelEdit()" th:text="#{common.cancel}">Abbrechen</button>
-        </div>
-      </form>
+      </div>
+      <a th:href="${returnUrl}" class="btn btn-outline-secondary mt-3" th:text="#{common.back}">Zurück</a>
+    </div>
+    <div class="col-lg-8">
+      <div class="table-responsive">
+        <table class="table table-striped align-middle">
+          <caption th:text="#{page.depots.positions.title}">Positionen</caption>
+          <thead class="table-dark">
+            <tr>
+              <th scope="col" th:text="#{col.date}">Datum</th>
+              <th scope="col" th:text="#{col.designation}">Bezeichnung</th>
+              <th scope="col" class="text-end" th:text="#{col.amount-qty}">Menge</th>
+              <th scope="col" class="text-end" th:text="#{col.value}">Wert (€)</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="q : ${quantities}">
+              <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
+              <td>
+                <a th:href="@{/assets/{id}/edit(id=${q.asset.id})}" th:text="${q.asset.name}"></a>
+                <br th:if="${q.asset.isin != null and !q.asset.isin.isEmpty()}"/>
+                <small th:if="${q.asset.isin != null and !q.asset.isin.isEmpty()}"
+                       class="text-muted" th:text="${q.asset.isin}"></small>
+              </td>
+              <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'DEFAULT', 4, 'DEFAULT')}"></td>
+              <td class="text-end">
+                <span th:if="${positionValues.containsKey(q.id)}"
+                      th:text="${#numbers.formatDecimal(positionValues.get(q.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
+                <span th:unless="${positionValues.containsKey(q.id)}" class="text-muted">-</span>
+              </td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                          data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}" th:text="#{common.actions}">Aktionen</button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <button type="button" class="dropdown-item"
+                              th:attr="data-qid=${q.id},
+                                       data-assetid=${q.asset.id},
+                                       data-date=${q.date},
+                                       data-quantity=${q.quantity.toPlainString()}"
+                              onclick="startEdit(this)" th:text="#{common.edit}">Bearbeiten</button>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"
+                         th:href="@{/depots/{depotId}/positions/{assetId}/quantities(depotId=${depot.id},assetId=${q.asset.id})}"
+                         th:text="#{page.depots.quantities.title}">Mengenhistorie</a>
+                    </li>
+                    <li><hr class="dropdown-divider"/></li>
+                    <li>
+                      <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post"
+                            th:attr="onsubmit=|return confirm('#{confirm.delete-position}')|">
+                        <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
+                      </form>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            <tr th:each="entry : ${coinOzByMetal}">
+              <td class="text-muted">-</td>
+              <td>
+                <a th:href="@{/coins}">
+                  <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>
+                </a>
+              </td>
+              <td class="text-end"
+                  th:text="${#numbers.formatDecimal(entry.value, 1, 'DEFAULT', 4, 'DEFAULT') + ' oz'}"></td>
+              <td class="text-end">
+                <span th:if="${coinValueByMetal.containsKey(entry.key)}"
+                      th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
+                <span th:unless="${coinValueByMetal.containsKey(entry.key)}" class="text-muted">-</span>
+              </td>
+              <td></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(quantities) and #maps.isEmpty(coinOzByMetal)}">
+              <td colspan="5" class="text-center text-muted" th:text="#{page.depots.positions.empty}">Noch keine Positionen eingetragen.</td>
+            </tr>
+            <tr class="table-dark fw-bold">
+              <td colspan="3" th:text="#{common.total}">Gesamt</td>
+              <td class="text-end"
+                  th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <div class="table-responsive">
-    <table class="table table-striped align-middle">
-      <caption th:text="#{page.depots.positions.title}">Positionen</caption>
-      <thead class="table-dark">
-        <tr>
-          <th scope="col" th:text="#{col.date}">Datum</th>
-          <th scope="col" th:text="#{col.designation}">Bezeichnung</th>
-          <th scope="col" class="text-end" th:text="#{col.amount-qty}">Menge</th>
-          <th scope="col" class="text-end" th:text="#{col.value}">Wert (€)</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="q : ${quantities}">
-          <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
-          <td>
-            <a th:href="@{/assets/{id}/edit(id=${q.asset.id})}" th:text="${q.asset.name}"></a>
-            <br th:if="${q.asset.isin != null and !q.asset.isin.isEmpty()}"/>
-            <small th:if="${q.asset.isin != null and !q.asset.isin.isEmpty()}"
-                   class="text-muted" th:text="${q.asset.isin}"></small>
-          </td>
-          <td class="text-end" th:text="${#numbers.formatDecimal(q.quantity, 1, 'DEFAULT', 4, 'DEFAULT')}"></td>
-          <td class="text-end">
-            <span th:if="${positionValues.containsKey(q.id)}"
-                  th:text="${#numbers.formatDecimal(positionValues.get(q.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
-            <span th:unless="${positionValues.containsKey(q.id)}" class="text-muted">-</span>
-          </td>
-          <td>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                      data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}" th:text="#{common.actions}">Aktionen</button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <button type="button" class="dropdown-item"
-                          th:attr="data-qid=${q.id},
-                                   data-assetid=${q.asset.id},
-                                   data-date=${q.date},
-                                   data-quantity=${q.quantity.toPlainString()}"
-                          onclick="startEdit(this)" th:text="#{common.edit}">Bearbeiten</button>
-                </li>
-                <li>
-                  <a class="dropdown-item"
-                     th:href="@{/depots/{depotId}/positions/{assetId}/quantities(depotId=${depot.id},assetId=${q.asset.id})}"
-                     th:text="#{page.depots.quantities.title}">Mengenhistorie</a>
-                </li>
-                <li><hr class="dropdown-divider"/></li>
-                <li>
-                  <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post"
-                        th:attr="onsubmit=|return confirm('#{confirm.delete-position}')|">
-                    <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
-                  </form>
-                </li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        <tr th:each="entry : ${coinOzByMetal}">
-          <td class="text-muted">-</td>
-          <td>
-            <a th:href="@{/coins}">
-              <span th:text="${#messages.msg('coinMetal.' + entry.key.name())}"></span>
-            </a>
-          </td>
-          <td class="text-end"
-              th:text="${#numbers.formatDecimal(entry.value, 1, 'DEFAULT', 4, 'DEFAULT') + ' oz'}"></td>
-          <td class="text-end">
-            <span th:if="${coinValueByMetal.containsKey(entry.key)}"
-                  th:text="${#numbers.formatDecimal(coinValueByMetal.get(entry.key).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
-            <span th:unless="${coinValueByMetal.containsKey(entry.key)}" class="text-muted">-</span>
-          </td>
-          <td></td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(quantities) and #maps.isEmpty(coinOzByMetal)}">
-          <td colspan="5" class="text-center text-muted" th:text="#{page.depots.positions.empty}">Noch keine Positionen eingetragen.</td>
-        </tr>
-        <tr class="table-dark fw-bold">
-          <td colspan="3" th:text="#{common.total}">Gesamt</td>
-          <td class="text-end"
-              th:text="${#numbers.formatDecimal(positionTotal.add(coinTotal).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <a th:href="${returnUrl}" class="btn btn-outline-secondary mt-2" th:text="#{common.back}">Zurück</a>
   </div>
 </div>
 
