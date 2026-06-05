@@ -101,11 +101,14 @@ public class AccountController {
     }
 
     @GetMapping("/{id}/balances")
-    public String balances(@PathVariable Long id, Model model) {
+    public String balances(@PathVariable Long id,
+                           @RequestParam(required = false) String returnUrl,
+                           Model model) {
         model.addAttribute("account", accountService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         model.addAttribute("balances", accountService.getBalances(id));
         model.addAttribute("newBalance", new AccountBalance());
+        model.addAttribute("returnUrl", returnUrl != null ? returnUrl : "/accounts");
         return "accounts/balances";
     }
 
