@@ -60,7 +60,7 @@
           <td class="small">
             <span th:if="${depotsByAsset.get(s.id) == null}" class="text-muted">-</span>
             <span th:each="entry, i : ${depotsByAsset.get(s.id)}">
-              <a th:href="@{/depots/{id}/positions(id=${entry.key})}" th:text="${entry.value}"></a><span th:unless="${i.last}">, </span>
+              <a th:href="@{/depots/{id}/positions(id=${entry.key},returnUrl='/assets')}" th:text="${entry.value}"></a><span th:unless="${i.last}">, </span>
             </span>
           </td>
           <td class="text-end">

@@ -59,19 +59,24 @@ public class AssetController {
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(@PathVariable Long id,
+                           @RequestParam(required = false) String returnUrl,
+                           Model model) {
         model.addAttribute("asset", assetService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("returnUrl", returnUrl != null ? returnUrl : "/assets");
         addEnums(model);
         return "assets/form";
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Asset asset, RedirectAttributes ra) {
+    public String save(@ModelAttribute Asset asset,
+                       @RequestParam(required = false) String returnUrl,
+                       RedirectAttributes ra) {
         Asset saved = assetService.save(asset);
         ra.addFlashAttribute("success", "Wertpapier gespeichert.");
         ra.addFlashAttribute("highlightId", saved.getId());
-        return "redirect:/assets";
+        return "redirect:" + (returnUrl != null ? returnUrl : "/assets");
     }
 
     @PostMapping("/{id}/delete")
