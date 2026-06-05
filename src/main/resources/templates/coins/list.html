@@ -82,8 +82,8 @@
               <!-- Einzelne Münze: Aktionen direkt anzeigen -->
               <th:block th:if="${groupSize == 1}">
                 <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                          th:text="#{common.actions}">Aktionen</button>
+                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown"
+                          >&#x2630;</button>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${first.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                     <li><a class="dropdown-item" th:href="@{/coins/{id}/quantities(id=${first.id})}" th:text="#{page.coins.quantities.title}">Mengenhistorie</a></li>
@@ -135,8 +135,8 @@
             </td>
             <td>
               <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                        th:text="#{common.actions}">Aktionen</button>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown"
+                        >&#x2630;</button>
                 <ul class="dropdown-menu dropdown-menu-end">
                   <li><a class="dropdown-item" th:href="@{/coins/{id}/edit(id=${c.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                   <li><a class="dropdown-item" th:href="@{/coins/{id}/quantities(id=${c.id})}" th:text="#{page.coins.quantities.title}">Mengenhistorie</a></li>
