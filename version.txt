@@ -1,6 +1,14 @@
 Wealth – Release History
 ========================
 
+Version 1.0.7  (2026-06-06)
+-----------------------------
+UI
+  - All actions dropdown buttons now show the hamburger icon (☰) instead
+    of the Bootstrap caret; expand/collapse triangles in the bank list
+    remain unchanged
+
+
 Version 1.0.6  (2026-06-05)
 -----------------------------
 Navigation
