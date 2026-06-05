@@ -68,7 +68,7 @@
             <td th:text="${groupSize == 1} ? ${first.mintYear ?: '-'} : '-'"></td>
             <td class="text-end" th:text="${groupedQty.get(entry.key)}"></td>
             <td>
-              <a th:if="${first.asset != null}" th:href="@{/assets/{id}/edit(id=${first.asset.id})}"
+              <a th:if="${first.asset != null}" th:href="@{/assets/{id}/edit(id=${first.asset.id},returnUrl='/coins')}"
                  th:text="${first.asset.name}" class="small"></a>
               <span th:unless="${first.asset != null}" class="text-muted small">Spot</span>
             </td>
@@ -123,7 +123,7 @@
             <td th:text="${c.mintYear ?: '-'}"></td>
             <td class="text-end" th:text="${c.quantity ?: '-'}"></td>
             <td>
-              <a th:if="${c.asset != null}" th:href="@{/assets/{id}/edit(id=${c.asset.id})}"
+              <a th:if="${c.asset != null}" th:href="@{/assets/{id}/edit(id=${c.asset.id},returnUrl='/coins')}"
                  th:text="${c.asset.name}" class="small"></a>
               <span th:unless="${c.asset != null}" class="text-muted small">Spot</span>
             </td>

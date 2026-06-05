@@ -26,6 +26,7 @@
 
   <form th:action="@{/assets/save}" th:object="${asset}" method="post">
     <input type="hidden" th:field="*{id}"/>
+    <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
     <div class="mb-3">
       <label class="form-label" th:text="#{col.name} + ' *'">Name *</label>
       <input type="text" th:field="*{name}" class="form-control" required/>
@@ -94,7 +95,7 @@
     </div>
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
-      <a th:href="${asset.id != null} ? @{/assets(highlight=${asset.id})} : @{/assets}"
+      <a th:href="${returnUrl}"
          class="btn btn-outline-secondary" th:text="#{common.cancel}">Abbrechen</a>
     </div>
   </form>
