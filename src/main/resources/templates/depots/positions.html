@@ -86,6 +86,11 @@
                                    data-quantity=${q.quantity.toPlainString()}"
                           onclick="startEdit(this)" th:text="#{common.edit}">Bearbeiten</button>
                 </li>
+                <li>
+                  <a class="dropdown-item"
+                     th:href="@{/depots/{depotId}/positions/{assetId}/quantities(depotId=${depot.id},assetId=${q.asset.id})}"
+                     th:text="#{page.depots.quantities.title}">Mengenhistorie</a>
+                </li>
                 <li><hr class="dropdown-divider"/></li>
                 <li>
                   <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post"

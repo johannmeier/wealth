@@ -1,5 +1,6 @@
 package de.wsc.wealth.controller;
 
+import de.wsc.wealth.domain.Asset;
 import de.wsc.wealth.domain.AssetQuantity;
 import de.wsc.wealth.domain.Coin;
 import de.wsc.wealth.domain.CoinMetal;
@@ -151,5 +152,32 @@ public class DepotController {
         depotService.deleteQuantity(quantityId);
         ra.addFlashAttribute("success", "Bestand gelöscht.");
         return "redirect:/depots/" + id + "/positions";
+    }
+
+    @GetMapping("/{depotId}/positions/{assetId}/quantities")
+    public String assetQuantities(@PathVariable Long depotId, @PathVariable Long assetId, Model model) {
+        model.addAttribute("depot", depotService.findById(depotId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("asset", depotService.findAssetById(assetId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        model.addAttribute("quantities", depotService.getQuantitiesForAsset(depotId, assetId));
+        return "depots/quantities";
+    }
+
+    @PostMapping("/{depotId}/positions/{assetId}/quantities/save")
+    public String saveAssetQuantity(@PathVariable Long depotId, @PathVariable Long assetId,
+                                    @ModelAttribute AssetQuantity quantity, RedirectAttributes ra) {
+        if (quantity.getDate() == null) quantity.setDate(LocalDate.now());
+        depotService.saveQuantity(depotId, assetId, quantity);
+        ra.addFlashAttribute("success", "Eintrag gespeichert.");
+        return "redirect:/depots/" + depotId + "/positions/" + assetId + "/quantities";
+    }
+
+    @PostMapping("/{depotId}/positions/{assetId}/quantities/{quantityId}/delete")
+    public String deleteAssetQuantity(@PathVariable Long depotId, @PathVariable Long assetId,
+                                      @PathVariable Long quantityId, RedirectAttributes ra) {
+        depotService.deleteQuantity(quantityId);
+        ra.addFlashAttribute("success", "Eintrag gelöscht.");
+        return "redirect:/depots/" + depotId + "/positions/" + assetId + "/quantities";
     }
 }
