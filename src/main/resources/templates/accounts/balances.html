@@ -13,54 +13,60 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
   <div class="table-section">
-  <h3><span th:text="#{page.accounts.balances.title}">Salden</span>: <span th:text="${account.displayName}"></span></h3>
-
-  <div class="card mb-4" style="max-width:400px">
-    <div class="card-header" th:text="#{page.accounts.balances.new}">Neuer Saldo</div>
-    <div class="card-body">
-      <form th:action="@{/accounts/{id}/balances/save(id=${account.id})}" method="post">
-        <div class="mb-3">
-          <label class="form-label" for="bal-date" th:text="#{col.date}">Datum</label>
-          <input type="date" id="bal-date" name="date" class="form-control"
-                 th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+  <div class="row g-4 align-items-start">
+    <div class="col-lg-4">
+      <h3 th:text="${account.displayName}"></h3>
+      <div class="card">
+        <div class="card-header" th:text="#{page.accounts.balances.new}">Neuer Saldo</div>
+        <div class="card-body">
+          <form th:action="@{/accounts/{id}/balances/save(id=${account.id})}" method="post">
+            <div class="mb-3">
+              <label class="form-label" for="bal-date" th:text="#{col.date}">Datum</label>
+              <input type="date" id="bal-date" name="date" class="form-control"
+                     th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="bal-balance">
+                <span th:text="#{col.balance}">Saldo</span> (<span th:text="${account.currency}"></span>)
+              </label>
+              <input type="number" id="bal-balance" name="balance" class="form-control" step="0.01" required/>
+            </div>
+            <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
+          </form>
         </div>
-        <div class="mb-3">
-          <label class="form-label" for="bal-balance">
-            <span th:text="#{col.balance}">Saldo</span> (<span th:text="${account.currency}"></span>)
-          </label>
-          <input type="number" id="bal-balance" name="balance" class="form-control" step="0.01" required/>
-        </div>
-        <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
-      </form>
+      </div>
+      <a th:href="${returnUrl}" class="btn btn-outline-secondary mt-3" th:text="#{common.back}">Zurück</a>
+    </div>
+    <div class="col-lg-8">
+      <div class="table-responsive">
+        <table class="table table-striped align-middle">
+          <caption th:text="#{page.accounts.balances.history}">Saldenhistorie</caption>
+          <thead class="table-dark">
+            <tr>
+              <th scope="col" th:text="#{col.date}">Datum</th>
+              <th scope="col" class="text-end" th:text="#{col.balance}">Saldo</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="b : ${balances}">
+              <td th:text="${#temporals.format(b.date, 'dd.MM.yyyy')}"></td>
+              <td class="text-end" th:text="${#numbers.formatDecimal(b.balance, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${account.currency}"></td>
+              <td>
+                <form th:action="@{/accounts/{id}/balances/{bid}/delete(id=${account.id},bid=${b.id})}" method="post"
+                      th:attr="onsubmit=|return confirm('#{confirm.delete-balance}')|">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(balances)}">
+              <td colspan="3" class="text-center text-muted" th:text="#{page.accounts.balances.empty}">Noch keine Salden eingetragen.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <table class="table table-striped align-middle">
-    <caption th:text="#{page.accounts.balances.history}">Saldenhistorie</caption>
-    <thead class="table-dark">
-      <tr>
-        <th scope="col" th:text="#{col.date}">Datum</th>
-        <th scope="col" class="text-end" th:text="#{col.balance}">Saldo</th>
-        <th scope="col"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr th:each="b : ${balances}">
-        <td th:text="${#temporals.format(b.date, 'dd.MM.yyyy')}"></td>
-        <td class="text-end" th:text="${#numbers.formatDecimal(b.balance, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${account.currency}"></td>
-        <td>
-          <form th:action="@{/accounts/{id}/balances/{bid}/delete(id=${account.id},bid=${b.id})}" method="post"
-                th:attr="onsubmit=|return confirm('#{confirm.delete-balance}')|">
-            <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
-          </form>
-        </td>
-      </tr>
-      <tr th:if="${#lists.isEmpty(balances)}">
-        <td colspan="3" class="text-center text-muted" th:text="#{page.accounts.balances.empty}">Noch keine Salden eingetragen.</td>
-      </tr>
-    </tbody>
-  </table>
-  <a th:href="${returnUrl}" class="btn btn-outline-secondary mt-2" th:text="#{common.back}">Zurück</a>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
