@@ -86,8 +86,8 @@
           </td>
           <td>
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                      data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}"></button>
+              <button class="btn btn-sm btn-outline-secondary" type="button"
+                      data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}">&#x2630;</button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/edit(id=${s.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/quantities(id=${s.id})}" th:text="#{page.assets.quantities.title}">Bestände</a></li>
