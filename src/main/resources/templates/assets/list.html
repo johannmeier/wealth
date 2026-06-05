@@ -7,7 +7,7 @@
 </head>
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<div class="container-fluid px-4 mt-4">
+<div class="container-fluid px-4 mt-4" style="overflow-x: hidden">
   <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
     <span th:text="${success}"></span>
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
@@ -17,46 +17,49 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
   <div class="table-section">
+  <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <span class="fw-semibold" th:text="#{page.assets.title}">Wertpapiere</span>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <form class="m-0" th:action="@{/assets/refresh-all-prices}" method="post">
+        <button type="submit" class="btn btn-outline-success btn-sm" th:text="#{common.refresh-all}">Alle Kurse aktualisieren</button>
+      </form>
+      <a th:href="@{/assets/new}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ Neu</a>
+    </div>
+  </div>
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
-      <caption>
-        <div class="d-flex justify-content-between align-items-center">
-          <span th:text="#{page.assets.title}">Wertpapiere</span>
-          <div class="d-flex gap-2 align-items-center">
-            <form class="m-0 d-flex" th:action="@{/assets/refresh-all-prices}" method="post">
-              <button type="submit" class="btn btn-outline-success btn-sm" th:text="#{common.refresh-all}">Alle Kurse aktualisieren</button>
-            </form>
-            <a th:href="@{/assets/new}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ Neu</a>
-          </div>
-        </div>
-      </caption>
+      <caption class="visually-hidden" th:text="#{page.assets.title}">Wertpapiere</caption>
       <thead class="table-dark">
         <tr>
-          <th scope="col" th:text="#{col.name}">Name</th><th scope="col" th:text="#{col.isin}">ISIN</th><th scope="col" th:text="#{col.symbol}">Symbol</th><th scope="col" th:text="#{col.category}">Kategorie</th>
-          <th scope="col" th:text="#{col.type}">Art</th><th scope="col" th:text="#{col.distribution-policy}">Ausschüttung</th><th scope="col" th:text="#{col.index}">Index</th><th scope="col" th:text="#{col.allocation}">Allocation</th>
+          <th scope="col" th:text="#{col.name}">Name</th>
+          <th scope="col" th:text="#{col.isin}">ISIN</th>
+          <th scope="col" class="d-none d-xl-table-cell" th:text="#{col.properties}">Eigenschaften</th>
+          <th scope="col" th:text="#{col.index}">Index</th>
           <th scope="col" th:text="#{col.depots}">Depots</th>
-          <th scope="col" class="text-end" th:text="#{col.price}">Kurs</th><th scope="col" th:text="#{common.actions}">Aktionen</th>
+          <th scope="col" class="text-end" th:text="#{col.price}">Kurs</th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
         <tr th:each="s : ${assets}" th:attr="data-id=${s.id}">
           <td th:text="${s.name}"></td>
-          <td th:text="${s.isin ?: '-'}"></td>
-          <td th:text="${s.symbol ?: '-'}"></td>
-          <td th:text="${s.category != null ? #messages.msg('assetCategory.' + s.category.name()) : '-'}"></td>
-          <td th:text="${s.type != null ? #messages.msg('assetType.' + s.type.name()) : '-'}"></td>
           <td>
-            <span th:if="${s.distributionPolicy != null}"
-                  th:class="${s.distributionPolicy.name() == 'AUSSCHUETTEND'} ? 'badge bg-info text-dark' : 'badge bg-secondary'"
-                  th:text="${#messages.msg('distributionPolicy.' + s.distributionPolicy.name())}"></span>
-            <span th:if="${s.distributionPolicy == null}" class="text-muted">-</span>
+            <div th:text="${s.isin ?: '-'}"></div>
+            <small th:if="${s.symbol != null}" class="text-muted" th:text="${s.symbol}"></small>
           </td>
-          <td style="white-space:nowrap" th:text="${s.indexName ?: '-'}"></td>
-          <td>
+          <td class="d-none d-xl-table-cell">
+            <span th:if="${s.type != null}" class="badge bg-primary me-1"
+                  th:text="${#messages.msg('assetType.' + s.type.name())}"></span>
+            <span th:if="${s.category != null}" class="badge bg-secondary me-1"
+                  th:text="${#messages.msg('assetCategory.' + s.category.name())}"></span>
+            <span th:if="${s.distributionPolicy != null}"
+                  th:class="${s.distributionPolicy.name() == 'AUSSCHUETTEND'} ? 'badge bg-info text-dark me-1' : 'badge bg-primary me-1'"
+                  th:text="${#messages.msg('distributionPolicy.' + s.distributionPolicy.name())}"></span>
             <span th:if="${s.assetAllocation != null}"
-                  th:class="${s.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
+                  th:class="${s.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark me-1' : 'badge bg-success me-1'"
                   th:text="${#messages.msg('assetAllocation.' + s.assetAllocation.name())}"></span>
           </td>
+          <td style="white-space:nowrap" th:text="${s.indexName ?: '-'}"></td>
           <td class="small">
             <span th:if="${depotsByAsset.get(s.id) == null}" class="text-muted">-</span>
             <span th:each="entry, i : ${depotsByAsset.get(s.id)}">
@@ -83,8 +86,8 @@
           </td>
           <td>
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                      th:text="#{common.actions}">Aktionen</button>
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                      data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}"></button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/edit(id=${s.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/quantities(id=${s.id})}" th:text="#{page.assets.quantities.title}">Bestände</a></li>
@@ -95,7 +98,13 @@
                   </form>
                 </li>
                 <li><hr class="dropdown-divider"/></li>
-                <li>
+                <li th:if="${deletableActiveIds.contains(s.id)}">
+                  <form th:action="@{/assets/{id}/hard-delete(id=${s.id})}" method="post"
+                        th:attr="onsubmit=|return confirm('#{confirm.hard-delete}')|">
+                    <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
+                  </form>
+                </li>
+                <li th:unless="${deletableActiveIds.contains(s.id)}">
                   <form th:action="@{/assets/{id}/delete(id=${s.id})}" method="post"
                         th:attr="onsubmit=|return confirm('#{confirm.archive}')|">
                     <button type="submit" class="dropdown-item text-secondary" th:text="#{common.archive}">Archivieren</button>
@@ -106,7 +115,7 @@
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(assets)}">
-          <td colspan="10" class="text-center text-muted" th:text="#{page.assets.empty}">Keine Wertpapiere vorhanden.</td>
+          <td colspan="7" class="text-center text-muted" th:text="#{page.assets.empty}">Keine Wertpapiere vorhanden.</td>
         </tr>
       </tbody>
     </table>
@@ -118,7 +127,12 @@
       <table class="table table-sm align-middle text-muted">
         <caption th:text="#{page.assets.archived}">Archivierte Wertpapiere</caption>
         <thead>
-          <tr><th scope="col" th:text="#{col.name}">Name</th><th scope="col" th:text="#{col.isin}">ISIN</th><th scope="col" th:text="#{col.symbol}">Symbol</th><th scope="col"></th></tr>
+          <tr>
+            <th scope="col" th:text="#{col.name}">Name</th>
+            <th scope="col" th:text="#{col.isin}">ISIN</th>
+            <th scope="col" th:text="#{col.symbol}">Symbol</th>
+            <th scope="col"></th>
+          </tr>
         </thead>
         <tbody>
           <tr th:each="s : ${archivedAssets}" th:attr="data-id=${s.id}">

@@ -136,6 +136,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); applyCurrency(); }
   });
 
+  // Allow dropdowns inside table-responsive to overflow without clipping
+  document.querySelectorAll('.table-responsive').forEach(function(wrapper) {
+    wrapper.addEventListener('shown.bs.dropdown', function() { wrapper.style.overflow = 'visible'; });
+    wrapper.addEventListener('hidden.bs.dropdown', function() { wrapper.style.overflow = ''; });
+  });
+
   // German number paste handler
   document.querySelectorAll('input[type="number"]').forEach(function (el) {
     el.addEventListener('paste', function (e) {

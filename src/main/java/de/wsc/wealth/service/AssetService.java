@@ -123,6 +123,16 @@ public class AssetService {
             .collect(java.util.stream.Collectors.toSet());
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> getDeletableActiveIds() {
+        java.util.Set<Long> withQty = quantityRepository.findDistinctAssetIds();
+        java.util.Set<Long> withCoins = coinRepository.findDistinctLinkedAssetIds();
+        return findAll().stream()
+            .filter(a -> !withQty.contains(a.getId()) && !withCoins.contains(a.getId()))
+            .map(Asset::getId)
+            .collect(java.util.stream.Collectors.toSet());
+    }
+
     private Optional<Asset> findArchivedMatch(Asset asset) {
         boolean hasIsin   = asset.getIsin()   != null && !asset.getIsin().isBlank();
         boolean hasSymbol = asset.getSymbol() != null && !asset.getSymbol().isBlank();
