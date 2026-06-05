@@ -99,6 +99,16 @@ public class DepotService {
     public List<Asset> findAllAssets() { return assetRepository.findAllByArchivedFalseOrderByNameAsc(); }
 
     @Transactional(readOnly = true)
+    public Optional<Asset> findAssetById(Long assetId) { return assetRepository.findById(assetId); }
+
+    @Transactional(readOnly = true)
+    public List<AssetQuantity> getQuantitiesForAsset(Long depotId, Long assetId) {
+        Depot depot = depotRepository.findById(depotId).orElseThrow();
+        Asset asset = assetRepository.findById(assetId).orElseThrow();
+        return quantityRepository.findByAssetAndDepotOrderByDateDesc(asset, depot);
+    }
+
+    @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getCurrentValueByDepotId() {
         // Bulk-load: latest quantity per depot+asset
         Map<Long, Map<Long, AssetQuantity>> latestQtyByDepotAsset = new java.util.HashMap<>();
