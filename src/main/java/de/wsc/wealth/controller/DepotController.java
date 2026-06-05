@@ -89,7 +89,10 @@ public class DepotController {
     }
 
     @GetMapping("/{id}/positions")
-    public String positions(@PathVariable Long id, Model model) {
+    public String positions(@PathVariable Long id,
+                            @RequestParam(required = false) String returnUrl,
+                            Model model) {
+        model.addAttribute("returnUrl", returnUrl != null ? returnUrl : "/depots");
         model.addAttribute("depot", depotService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         List<AssetQuantity> quantities = depotService.getQuantities(id);
