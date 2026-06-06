@@ -49,6 +49,7 @@
           <td class="text-end" style="white-space:nowrap"
               th:text="${#numbers.formatDecimal(bankTotals.get(b.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></td>
           <td>
+            <div class="d-flex gap-1 align-items-center">
             <div class="dropdown">
               <button class="btn btn-sm btn-outline-secondary" type="button"
                       data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}">&#x2630;</button>
@@ -63,6 +64,11 @@
                   </form>
                 </li>
               </ul>
+            </div>
+            <a th:if="${syncUrls.containsKey(b.id)}"
+               th:href="${syncUrls.get(b.id)}"
+               class="btn btn-sm btn-outline-secondary"
+               th:attr="title=#{common.refresh},aria-label=#{common.refresh}">&#x21BB;</a>
             </div>
           </td>
         </tr>
