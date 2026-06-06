@@ -1,5 +1,7 @@
 # Wealth
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A personal wealth tracking application to manage and monitor your entire financial portfolio in one place.
 
 ## Features
