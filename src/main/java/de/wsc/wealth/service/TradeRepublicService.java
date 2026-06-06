@@ -360,6 +360,7 @@ public class TradeRepublicService {
             BigDecimal qty = entry.getValue();
 
             Asset asset = assetRepository.findFirstByIsinAndArchivedFalse(isin)
+                .or(() -> assetRepository.findFirstByArchivedTrueAndIsin(isin))
                 .orElseGet(() -> createAssetFromIsin(isin, newAssets));
 
             AssetQuantity q = quantityRepository.findByAssetAndDepotAndDate(asset, depot, today)
