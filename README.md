@@ -29,6 +29,7 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Expand each bank row to see its accounts and depots with individual values
 - Assign or remove accounts and depots from the bank detail page
 - Deleting a bank is blocked while accounts or depots are still assigned to it
+- Automated banks (BullionVault, Trade Republic) show a ↻ sync icon in the bank list for quick navigation to their sync page
 
 ### Accounts
 - Track bank accounts with individual currencies
@@ -42,6 +43,7 @@ A personal wealth tracking application to manage and monitor your entire financi
 - View current holding value per depot
 - Record date-based quantity entries per security and depot
 - ISIN is shown next to the security name in the position form and table
+- DKB and FondsDepotBank depots show a ⬇ import icon in the depot list for quick navigation to CSV import
 
 ### Physical Coins & Precious Metals
 - Track physical gold, silver and platinum coins separately from securities
@@ -71,7 +73,63 @@ The price of each security on the 1st of every month is saved automatically. The
 ### Currency Conversion
 All values are stored and calculated in EUR internally. Exchange rates for non-EUR securities are fetched automatically from Yahoo Finance. The display currency can be set freely — see [Settings](#settings) below.
 
-### Settings
+---
+
+## Automatic Sync
+
+### BullionVault
+Navigate to **Settings → BullionVault** to set up the automatic sync. Enter your BullionVault username and password (the password is never stored). On each sync the app:
+- Creates a bank, currency accounts and vault depots (one per location) on first run
+- Updates cash balances and precious metal holdings in troy ounces
+- Shows a table of changed positions with old and new quantities
+
+Metal classification (Gold, Silver, Platinum) and vault location (e.g. Zurich, London) are read directly from the BullionVault API. Weights are returned in kilograms and converted to troy ounces automatically.
+
+### Trade Republic
+Navigate to **Settings → Trade Republic** to set up the automatic sync. The integration uses Trade Republic's unofficial API and requires a two-step authentication (phone number + PIN → SMS OTP).
+
+**AWS WAF token (one-time setup):**  
+Trade Republic blocks automated logins without a valid browser cookie. You need to obtain the `aws-waf-token` cookie once from Chrome DevTools:
+1. Open Chrome → go to `https://app.traderepublic.com/login`
+2. Open DevTools (F12) → Application → Cookies → `https://app.traderepublic.com`
+3. Copy the value of `aws-waf-token` and paste it into the WAF token field in the app
+
+The token is valid for days to weeks and only needs to be refreshed when logins start failing.
+
+**Sync process:**
+1. Enter your phone number and PIN → click *OTP anfordern*
+2. Enter the 6-digit code from the SMS → click *Abrufen*
+
+On each sync the app:
+- Creates a bank, cash account and securities depot on first run
+- Updates the EUR cash balance
+- Updates depot positions by ISIN; new securities are enriched via Yahoo Finance (name, symbol, type, allocation, distribution policy)
+- If a security with the same ISIN already exists (active or archived), it is reused rather than duplicated
+- Shows a table of changed positions with old and new quantities
+
+The PIN is never stored. The session token is not stored.
+
+---
+
+## CSV Import
+
+### Supported formats
+| Bank | Format | Encoding | Delimiter |
+|------|--------|----------|-----------|
+| DKB | Depot export (Wertpapierbestand) | UTF-8 | Comma |
+| FondsDepotBank | Depot export | ISO-8859-1 | Semicolon |
+
+### How to import
+1. Export your depot positions as CSV from the bank's web interface
+2. In the app, navigate to **Depots** and open the actions menu for the target depot
+3. Click *CSV-Import* (or the ⬇ icon for DKB/FondsDepotBank depots)
+4. Select the format and upload the file
+
+The format is pre-selected automatically based on the depot or bank name. After the import a table shows which positions changed and by how much. Existing securities are matched by ISIN; new securities are enriched via Yahoo Finance. Only quantities that actually changed are written to the database.
+
+---
+
+## Settings
 All preferences are stored as cookies and persist across sessions.
 
 | Setting | Options |
@@ -101,7 +159,7 @@ mvn spring-boot:run
 **Build a standalone JAR:**
 ```bash
 mvn package
-java -jar target/wealth-1.0.1-SNAPSHOT.jar
+java -jar target/wealth-*.jar
 ```
 
 The application starts on **http://localhost:8080**.
@@ -119,8 +177,6 @@ The database and configuration file are stored in a platform-specific directory:
 | Windows | `%APPDATA%\Wealth\` |
 | macOS | `~/Library/Application Support/Wealth/` |
 | Linux | `$XDG_CONFIG_HOME/wealth/` or `~/.config/wealth/` |
-
-The H2 database console is available at http://localhost:8080/h2-console (JDBC URL shown on the Info page).
 
 ---
 

@@ -45,6 +45,7 @@
                           : '—'"></span>
         </td>
         <td>
+          <div class="d-flex gap-1 align-items-center">
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary" type="button"
                     data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}">&#x2630;</button>
@@ -60,6 +61,11 @@
                 </form>
               </li>
             </ul>
+          </div>
+          <a th:if="${importDepotIds.contains(d.id)}"
+             th:href="@{/depots/{id}/import(id=${d.id})}"
+             class="btn btn-sm btn-outline-secondary"
+             th:attr="title=#{csv.import.title},aria-label=#{csv.import.title}">&#x2B07;</a>
           </div>
         </td>
       </tr>
