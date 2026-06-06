@@ -21,8 +21,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/depots")
@@ -48,11 +50,24 @@ public class DepotController {
 
     @GetMapping
     public String list(Model model) {
+        List<Depot> depots = depotService.findAll();
         Map<Long, BigDecimal> depotValues = depotService.getCurrentValueByDepotId();
         BigDecimal total = depotValues.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        model.addAttribute("depots", depotService.findAll());
+
+        Set<Long> importDepotIds = new HashSet<>();
+        for (Depot d : depots) {
+            String name = (d.getName() + " " +
+                           (d.getBank() != null ? d.getBank().getName() : "")).toLowerCase();
+            if (name.contains("dkb") || name.contains("deutsche kreditbank") ||
+                name.contains("fondsdepot") || name.contains("fonds depot") || name.contains("fdb")) {
+                importDepotIds.add(d.getId());
+            }
+        }
+
+        model.addAttribute("depots", depots);
         model.addAttribute("depotValues", depotValues);
         model.addAttribute("depotTotal", total);
+        model.addAttribute("importDepotIds", importDepotIds);
         return "depots/list";
     }
 
