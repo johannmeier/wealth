@@ -115,6 +115,8 @@
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/bullionvault}"
                    th:classappend="${currentUri.startsWith('/bullionvault')} ? ' active' : ''">BullionVault</a></li>
+            <li><a class="dropdown-item" th:href="@{/traderepublic}"
+                   th:classappend="${currentUri.startsWith('/traderepublic')} ? ' active' : ''">Trade Republic</a></li>
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
           </ul>
