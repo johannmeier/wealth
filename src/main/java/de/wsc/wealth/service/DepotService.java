@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,13 @@ public class DepotService {
     @Transactional(readOnly = true)
     public List<AssetQuantity> getQuantities(Long depotId) {
         Depot depot = depotRepository.findById(depotId).orElseThrow();
-        return quantityRepository.findByDepotOrderByDateDesc(depot);
+        List<AssetQuantity> all = quantityRepository.findByDepotOrderByDateDesc(depot);
+        // Keep only the most recent entry per asset (list is already sorted date desc)
+        Map<Long, AssetQuantity> latest = new LinkedHashMap<>();
+        for (AssetQuantity q : all) {
+            latest.putIfAbsent(q.getAsset().getId(), q);
+        }
+        return new ArrayList<>(latest.values());
     }
 
     public AssetQuantity saveQuantity(Long depotId, Long assetId, AssetQuantity quantity) {

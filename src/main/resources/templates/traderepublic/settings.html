@@ -53,6 +53,38 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
 
+</div>
+
+<!-- Geänderte Positionen (volle Breite) -->
+<div th:if="${syncResult != null and !syncResult.changedPositions().isEmpty()}"
+     class="container-fluid px-4 mb-4">
+  <div class="card">
+    <div class="card-header" th:text="#{csv.import.changed}">Geänderte Positionen</div>
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th th:text="#{col.name}">Name</th>
+          <th th:text="#{col.isin}">ISIN</th>
+          <th class="text-end" th:text="#{csv.import.old-qty}">Vorher</th>
+          <th class="text-end" th:text="#{csv.import.new-qty}">Nachher</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${syncResult.changedPositions()}">
+          <td th:text="${p.name()}"></td>
+          <td th:text="${p.identifier()}"></td>
+          <td class="text-end text-muted"
+              th:text="${p.oldQuantity() != null} ? ${#numbers.formatDecimal(p.oldQuantity(), 1, 'DEFAULT', 6, 'DEFAULT')} : '–'"></td>
+          <td class="text-end fw-semibold"
+              th:text="${#numbers.formatDecimal(p.newQuantity(), 1, 'DEFAULT', 6, 'DEFAULT')}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="container" style="max-width:600px">
+
   <!-- WAF token card -->
   <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
