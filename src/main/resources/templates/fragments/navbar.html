@@ -113,6 +113,9 @@
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/settings/databases}" th:text="#{settings.databases}">Datenbank wechseln</a></li>
             <li><hr class="dropdown-divider"/></li>
+            <li><a class="dropdown-item" th:href="@{/bullionvault}"
+                   th:classappend="${currentUri.startsWith('/bullionvault')} ? ' active' : ''">BullionVault</a></li>
+            <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
           </ul>
         </li>

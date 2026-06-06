@@ -8,4 +8,5 @@ public interface DepotRepository extends JpaRepository<Depot, Long> {
     List<Depot> findAllByOrderByNameAsc();
     List<Depot> findByBankIdOrderByNameAsc(Long bankId);
     List<Depot> findByBankIsNullOrderByNameAsc();
+    java.util.Optional<Depot> findByBankIdAndName(Long bankId, String name);
 }
