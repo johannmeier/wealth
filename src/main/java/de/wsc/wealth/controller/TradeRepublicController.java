@@ -23,6 +23,19 @@ public class TradeRepublicController {
         return "traderepublic/settings";
     }
 
+    @PostMapping("/waf-token")
+    public String saveWafToken(@RequestParam String phoneNumber,
+                               @RequestParam String wafToken,
+                               RedirectAttributes ra) {
+        try {
+            trService.saveWafToken(phoneNumber, wafToken);
+            ra.addFlashAttribute("wafSaved", true);
+        } catch (Exception e) {
+            ra.addFlashAttribute("syncError", e.getMessage());
+        }
+        return "redirect:/traderepublic";
+    }
+
     @PostMapping("/request-otp")
     public String requestOtp(@RequestParam String phoneNumber,
                              @RequestParam String pin,

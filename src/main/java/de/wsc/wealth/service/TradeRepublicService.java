@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.CookieManager;
+import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -81,13 +82,36 @@ public class TradeRepublicService {
     }
 
     /**
+     * Saves a new WAF token for the given phone number (creates config if needed).
+     */
+    @Transactional
+    public void saveWafToken(String phoneNumber, String wafToken) {
+        TradeRepublicConfig config = configRepository.findByPhoneNumber(phoneNumber)
+            .orElseGet(() -> {
+                TradeRepublicConfig c = new TradeRepublicConfig();
+                c.setPhoneNumber(phoneNumber);
+                return c;
+            });
+        config.setWafToken(wafToken.strip());
+        configRepository.save(config);
+    }
+
+    /**
      * Step 1: Initiates OTP login. Returns processId for step 2.
      * PIN is used only here and never stored.
      */
+    @Transactional(readOnly = true)
     public String requestOtp(String phoneNumber, String pin) {
+        String wafToken = configRepository.findByPhoneNumber(phoneNumber)
+            .map(TradeRepublicConfig::getWafToken)
+            .filter(t -> t != null && !t.isBlank())
+            .orElseThrow(() -> new IllegalStateException(
+                "Kein WAF-Token hinterlegt. Bitte zuerst den Token aus dem Browser eintragen."));
         try {
+            CookieManager cookieManager = new CookieManager();
+            addWafCookie(cookieManager, wafToken);
             HttpClient client = HttpClient.newBuilder()
-                .cookieHandler(new CookieManager())
+                .cookieHandler(cookieManager)
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
 
@@ -108,7 +132,8 @@ public class TradeRepublicService {
 
             if (resp.statusCode() != 200) {
                 throw new IllegalStateException(
-                    "Anmeldung fehlgeschlagen (HTTP " + resp.statusCode() + "): Telefonnummer oder PIN falsch?");
+                    "Anmeldung fehlgeschlagen (HTTP " + resp.statusCode() +
+                    "). Bitte WAF-Token prüfen — er könnte abgelaufen sein.");
             }
 
             JsonNode json = objectMapper.readTree(resp.body());
@@ -128,14 +153,27 @@ public class TradeRepublicService {
         }
     }
 
+    private void addWafCookie(CookieManager cookieManager, String wafToken) {
+        HttpCookie cookie = new HttpCookie("aws-waf-token", wafToken);
+        cookie.setDomain(".traderepublic.com");
+        cookie.setPath("/");
+        cookie.setVersion(0);
+        cookieManager.getCookieStore().add(URI.create("https://api.traderepublic.com"), cookie);
+    }
+
     /**
      * Step 2: Completes OTP login and syncs portfolio + cash.
      * No credentials are stored; session is closed after the sync.
      */
     @Transactional
     public SyncResult sync(String phoneNumber, String processId, String otp) {
+        String wafToken = configRepository.findByPhoneNumber(phoneNumber)
+            .map(TradeRepublicConfig::getWafToken)
+            .filter(t -> t != null && !t.isBlank())
+            .orElse(null);
         try {
             CookieManager cookieManager = new CookieManager();
+            if (wafToken != null) addWafCookie(cookieManager, wafToken);
             HttpClient client = HttpClient.newBuilder()
                 .cookieHandler(cookieManager)
                 .followRedirects(HttpClient.Redirect.NORMAL)
