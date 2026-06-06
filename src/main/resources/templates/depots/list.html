@@ -51,6 +51,7 @@
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" th:href="@{/depots/{id}/edit(id=${d.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
               <li><a class="dropdown-item" th:href="@{/depots/{id}/positions(id=${d.id})}" th:text="#{page.depots.positions.title}">Positionen</a></li>
+              <li><a class="dropdown-item" th:href="@{/depots/{id}/import(id=${d.id})}" th:text="#{csv.import.title}">CSV-Import</a></li>
               <li><hr class="dropdown-divider"/></li>
               <li>
                 <form th:action="@{/depots/{id}/delete(id=${d.id})}" method="post"

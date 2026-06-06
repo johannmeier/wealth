@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ public class AssetSearchService {
             log.warn("Asset search failed for '{}': {}", query, e.getMessage());
             // Fallback: try query as direct symbol
             Map<String, String> direct = tryDirectSymbol(query, baseCurrency);
-            return direct.isEmpty() ? List.of() : List.of(direct);
+            return direct.isEmpty() ? Collections.emptyList() : List.of(direct);
         }
     }
 

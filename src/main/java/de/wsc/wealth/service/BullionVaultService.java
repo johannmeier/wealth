@@ -1,6 +1,7 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
+import de.wsc.wealth.dto.ChangedPosition;
 import de.wsc.wealth.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +74,8 @@ public class BullionVaultService {
         List<String> metalsUpdated,
         List<String> newAssets,
         List<String> newDepots,
-        Long bankId
+        Long bankId,
+        List<ChangedPosition> changedPositions
     ) {}
 
     private record VaultPosition(String metal, String locationCode, String locationName, BigDecimal oz) {}
@@ -146,9 +148,10 @@ public class BullionVaultService {
         }
 
         // 7. Sync vault positions → one depot per location, one AssetQuantity per metal+location
-        List<String> metalsUpdated = new ArrayList<>();
-        List<String> newAssets     = new ArrayList<>();
-        List<String> newDepots     = new ArrayList<>();
+        List<String> metalsUpdated    = new ArrayList<>();
+        List<String> newAssets        = new ArrayList<>();
+        List<String> newDepots        = new ArrayList<>();
+        List<ChangedPosition> changed = new ArrayList<>();
 
         for (VaultPosition pos : positions) {
             Asset asset = resolveAsset(config, pos.metal(), newAssets);
@@ -168,22 +171,30 @@ public class BullionVaultService {
                     return depotRepository.save(d);
                 });
 
-            AssetQuantity qty = quantityRepository
-                .findByAssetAndDepotAndDate(asset, depot, today)
-                .orElseGet(() -> {
-                    AssetQuantity q = new AssetQuantity();
-                    q.setAsset(asset);
-                    q.setDepot(depot);
-                    q.setDate(today);
-                    return q;
-                });
-            qty.setQuantity(pos.oz());
-            quantityRepository.save(qty);
+            BigDecimal oldQty = quantityRepository
+                .findFirstByAssetAndDepotOrderByDateDesc(asset, depot)
+                .map(AssetQuantity::getQuantity)
+                .orElse(null);
+
+            if (oldQty == null || oldQty.compareTo(pos.oz()) != 0) {
+                AssetQuantity qty = quantityRepository
+                    .findByAssetAndDepotAndDate(asset, depot, today)
+                    .orElseGet(() -> {
+                        AssetQuantity q = new AssetQuantity();
+                        q.setAsset(asset);
+                        q.setDepot(depot);
+                        q.setDate(today);
+                        return q;
+                    });
+                qty.setQuantity(pos.oz());
+                quantityRepository.save(qty);
+                changed.add(new ChangedPosition(asset.getName(), pos.metal() + " – " + pos.locationName(), oldQty, pos.oz()));
+            }
             if (!metalsUpdated.contains(pos.metal())) metalsUpdated.add(pos.metal());
         }
 
         configRepository.save(config);
-        return new SyncResult(balancesUpdated, newAccounts, metalsUpdated, newAssets, newDepots, bank.getId());
+        return new SyncResult(balancesUpdated, newAccounts, metalsUpdated, newAssets, newDepots, bank.getId(), changed);
     }
 
     // --- HTTP helpers ---

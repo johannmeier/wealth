@@ -1,6 +1,7 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
+import de.wsc.wealth.dto.ChangedPosition;
 import de.wsc.wealth.repository.*;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -71,10 +72,12 @@ public class TradeRepublicService {
     public record SyncResult(
         int balancesUpdated,
         List<String> newAccounts,
-        int positionsUpdated,
+        List<ChangedPosition> changedPositions,
         List<String> newAssets,
         Long bankId
-    ) {}
+    ) {
+        public int positionsUpdated() { return changedPositions.size(); }
+    }
 
     @Transactional(readOnly = true)
     public Optional<TradeRepublicConfig> findConfig() {
@@ -390,31 +393,38 @@ public class TradeRepublicService {
                 return depotRepository.save(d);
             });
 
-        int positionsUpdated = 0;
+        List<ChangedPosition> changedPositions = new ArrayList<>();
         List<String> newAssets = new ArrayList<>();
 
         for (Map.Entry<String, BigDecimal> entry : positions.entrySet()) {
             String isin = entry.getKey();
-            BigDecimal qty = entry.getValue();
+            BigDecimal newQty = entry.getValue();
 
             Asset asset = assetRepository.findFirstByIsinAndArchivedFalse(isin)
                 .or(() -> assetRepository.findFirstByArchivedTrueAndIsin(isin))
                 .orElseGet(() -> createAssetFromIsin(isin, newAssets));
 
-            AssetQuantity q = quantityRepository.findByAssetAndDepotAndDate(asset, depot, today)
-                .orElseGet(() -> {
-                    AssetQuantity aq = new AssetQuantity();
-                    aq.setAsset(asset);
-                    aq.setDepot(depot);
-                    aq.setDate(today);
-                    return aq;
-                });
-            q.setQuantity(qty);
-            quantityRepository.save(q);
-            positionsUpdated++;
+            BigDecimal oldQty = quantityRepository
+                .findFirstByAssetAndDepotOrderByDateDesc(asset, depot)
+                .map(AssetQuantity::getQuantity)
+                .orElse(null);
+
+            if (oldQty == null || oldQty.compareTo(newQty) != 0) {
+                AssetQuantity q = quantityRepository.findByAssetAndDepotAndDate(asset, depot, today)
+                    .orElseGet(() -> {
+                        AssetQuantity aq = new AssetQuantity();
+                        aq.setAsset(asset);
+                        aq.setDepot(depot);
+                        aq.setDate(today);
+                        return aq;
+                    });
+                q.setQuantity(newQty);
+                quantityRepository.save(q);
+                changedPositions.add(new ChangedPosition(asset.getName(), isin, oldQty, newQty));
+            }
         }
 
-        return new SyncResult(balancesUpdated, newAccounts, positionsUpdated, newAssets, bank.getId());
+        return new SyncResult(balancesUpdated, newAccounts, changedPositions, newAssets, bank.getId());
     }
 
     private Asset createAssetFromIsin(String isin, List<String> newAssets) {
