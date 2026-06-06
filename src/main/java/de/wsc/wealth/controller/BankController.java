@@ -3,6 +3,8 @@ package de.wsc.wealth.controller;
 import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.Bank;
 import de.wsc.wealth.domain.Depot;
+import de.wsc.wealth.repository.BullionVaultConfigRepository;
+import de.wsc.wealth.repository.TradeRepublicConfigRepository;
 import de.wsc.wealth.service.AccountService;
 import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.DepotService;
@@ -15,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,13 +29,19 @@ public class BankController {
     private final AccountService accountService;
     private final DepotService depotService;
     private final ExchangeRateService exchangeRateService;
+    private final BullionVaultConfigRepository bvConfigRepo;
+    private final TradeRepublicConfigRepository trConfigRepo;
 
     public BankController(BankService bankService, AccountService accountService,
-                          DepotService depotService, ExchangeRateService exchangeRateService) {
+                          DepotService depotService, ExchangeRateService exchangeRateService,
+                          BullionVaultConfigRepository bvConfigRepo,
+                          TradeRepublicConfigRepository trConfigRepo) {
         this.bankService = bankService;
         this.accountService = accountService;
         this.depotService = depotService;
         this.exchangeRateService = exchangeRateService;
+        this.bvConfigRepo = bvConfigRepo;
+        this.trConfigRepo = trConfigRepo;
     }
 
     @GetMapping
@@ -69,6 +78,10 @@ public class BankController {
             grandTotal = grandTotal.add(total);
         }
 
+        Map<Long, String> syncUrls = new HashMap<>();
+        bvConfigRepo.findAll().forEach(c -> { if (c.getBank() != null) syncUrls.put(c.getBank().getId(), "/bullionvault"); });
+        trConfigRepo.findAll().forEach(c -> { if (c.getBank() != null) syncUrls.put(c.getBank().getId(), "/traderepublic"); });
+
         model.addAttribute("banks", banks);
         model.addAttribute("bankAccounts", bankAccounts);
         model.addAttribute("bankDepots", bankDepots);
@@ -76,6 +89,7 @@ public class BankController {
         model.addAttribute("depotValues", depotValues);
         model.addAttribute("bankTotals", bankTotals);
         model.addAttribute("grandTotal", grandTotal);
+        model.addAttribute("syncUrls", syncUrls);
         return "banks/list";
     }
 
