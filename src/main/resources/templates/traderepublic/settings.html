@@ -47,6 +47,47 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
 
+  <!-- WAF token saved alert -->
+  <div th:if="${wafSaved}" class="alert alert-success alert-dismissible fade show">
+    <span th:text="#{traderepublic.waf.saved}">WAF-Token gespeichert.</span>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- WAF token card -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span th:text="#{traderepublic.waf.title}">WAF-Token</span>
+      <span th:if="${config != null and config.wafToken != null}"
+            class="badge bg-success" th:text="#{traderepublic.waf.set}">gesetzt</span>
+      <span th:unless="${config != null and config.wafToken != null}"
+            class="badge bg-danger" th:text="#{traderepublic.waf.missing}">fehlt</span>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-2" th:text="#{traderepublic.waf.hint}">Anleitung</p>
+      <ol class="small text-muted mb-3">
+        <li th:text="#{traderepublic.waf.step1}">Chrome öffnen</li>
+        <li th:text="#{traderepublic.waf.step2}">DevTools öffnen</li>
+        <li th:text="#{traderepublic.waf.step3}">Cookie kopieren</li>
+      </ol>
+      <form th:action="@{/traderepublic/waf-token}" method="post">
+        <div class="mb-2">
+          <label class="form-label" for="waf-phone" th:text="#{traderepublic.phone}">Telefonnummer</label>
+          <input type="tel" id="waf-phone" name="phoneNumber" class="form-control"
+                 placeholder="+49" required
+                 th:value="${config != null} ? ${config.phoneNumber} : ''"/>
+        </div>
+        <div class="mb-2">
+          <label class="form-label" for="waf-token" th:text="#{traderepublic.waf.token-label}">aws-waf-token</label>
+          <input type="text" id="waf-token" name="wafToken" class="form-control font-monospace"
+                 style="font-size:0.75rem" required
+                 th:value="${config != null} ? ${config.wafToken} : ''"/>
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-primary"
+                th:text="#{traderepublic.waf.save}">Speichern</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Status card -->
   <div class="card mb-4" th:if="${config != null}">
     <div class="card-header" th:text="#{traderepublic.status.title}">Aktuelle Konfiguration</div>
