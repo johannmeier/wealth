@@ -1,6 +1,30 @@
 Wealth – Release History
 ========================
 
+Version 1.0.8  (2026-06-06)
+-----------------------------
+Integrations
+  - BullionVault automatic sync: bank, accounts and vault positions
+    (gold, silver, platinum) are created and updated automatically
+  - BullionVault: fixed metal classification (API returns GOLD/SILVER/
+    PLATINUM directly); fixed weight unit (API returns kg, converted to
+    troy ounces)
+  - Trade Republic automatic sync via unofficial WebSocket API: two-step
+    auth (phone + PIN → SMS OTP), cash balances and portfolio positions
+    synced automatically
+  - Trade Republic: AWS WAF token support to bypass bot protection
+    (token obtained once from Chrome DevTools, stored in config)
+  - Trade Republic: new assets enriched via Yahoo Finance ISIN lookup
+    (name, symbol, currency, type, allocation, distribution policy)
+  - Trade Republic: existing assets (active or archived) reused by ISIN
+    instead of creating duplicates
+
+Banks
+  - Automated banks (BullionVault, Trade Republic) show a ↻ sync icon
+    next to the actions menu in the bank list for quick navigation to
+    their sync page
+
+
 Version 1.0.7  (2026-06-06)
 -----------------------------
 UI
