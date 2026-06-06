@@ -17,4 +17,5 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     List<Asset> findAllByArchivedTrueOrderByNameAsc();
     java.util.Optional<Asset> findFirstByArchivedTrueAndIsin(String isin);
     java.util.Optional<Asset> findFirstByArchivedTrueAndSymbol(String symbol);
+    java.util.Optional<Asset> findFirstByNameAndArchivedFalse(String name);
 }
