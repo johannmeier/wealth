@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.10] – 2026-06-07
+
+### Added
+- Coins overview: spot price per oz shown in metal summary badges (in selected display currency)
+- Depot import icon for DKB and FondsDepotBank in depot list
+
+### Changed
+- Replaced version.txt with CHANGELOG.md in Keep a Changelog format
+- Added MIT license badge to README
+
 ## [1.0.9] – 2026-06-06
 
 ### Added
