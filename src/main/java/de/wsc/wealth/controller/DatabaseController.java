@@ -25,7 +25,9 @@ public class DatabaseController {
     public String list(Model model) {
         String configPath = System.getProperty("wealth.config.path");
         Path dir = Path.of(configPath).getParent();
-        String currentName = readDbName(configPath);
+        Properties config = readConfig(configPath);
+        String customPath = config.getProperty("db.path");
+        String currentName = config.getProperty("db.name", "?");
 
         List<String> databases = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "wealth-db-*.mv.db")) {
@@ -39,6 +41,8 @@ public class DatabaseController {
 
         model.addAttribute("databases", databases);
         model.addAttribute("currentDb", currentName);
+        model.addAttribute("customDbPath", customPath);
+        model.addAttribute("currentDbFile", System.getProperty("wealth.db.path"));
         return "settings/databases";
     }
 
@@ -47,6 +51,32 @@ public class DatabaseController {
         writeDbName(dbName);
         scheduleShutdown();
         model.addAttribute("newDb", dbName);
+        return "settings/shutdown";
+    }
+
+    @PostMapping("/set-path")
+    public String setCustomPath(@RequestParam String dbPath, Model model, RedirectAttributes ra) {
+        String trimmed = dbPath.strip();
+        if (trimmed.isEmpty()) {
+            // Clear custom path → fall back to db.name
+            String configPath = System.getProperty("wealth.config.path");
+            Properties config = readConfig(configPath);
+            config.remove("db.path");
+            writeConfig(config);
+            scheduleShutdown();
+            model.addAttribute("newDb", config.getProperty("db.name", "standard"));
+            return "settings/shutdown";
+        }
+        // Strip .mv.db suffix if user accidentally included it
+        if (trimmed.endsWith(".mv.db")) trimmed = trimmed.substring(0, trimmed.length() - 6);
+
+        String configPath = System.getProperty("wealth.config.path");
+        Properties config = readConfig(configPath);
+        config.setProperty("db.path", trimmed);
+        config.remove("db.name");
+        writeConfig(config);
+        scheduleShutdown();
+        model.addAttribute("newDb", Path.of(trimmed).getFileName().toString());
         return "settings/shutdown";
     }
 
@@ -70,25 +100,29 @@ public class DatabaseController {
         return "settings/shutdown";
     }
 
-    private String readDbName(String configPath) {
+    private Properties readConfig(String configPath) {
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(Path.of(configPath))) {
             props.load(in);
         } catch (IOException e) {
-            return "?";
+            return props;
         }
-        return props.getProperty("db.name", "?");
+        return props;
     }
 
-    private void writeDbName(String dbName) {
+    private void writeConfig(Properties props) {
         String configPath = System.getProperty("wealth.config.path");
-        Properties props = new Properties();
-        props.setProperty("db.name", dbName);
         try (OutputStream out = Files.newOutputStream(Path.of(configPath))) {
             props.store(out, "Wealth Konfiguration - nicht manuell bearbeiten");
         } catch (IOException e) {
             throw new RuntimeException("Fehler beim Schreiben der Konfiguration", e);
         }
+    }
+
+    private void writeDbName(String dbName) {
+        Properties props = new Properties();
+        props.setProperty("db.name", dbName);
+        writeConfig(props);
     }
 
     private void scheduleShutdown() {
