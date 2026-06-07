@@ -24,6 +24,10 @@
       <span th:if="${totalOzByMetal.containsKey(entry.key)}">
         · <span th:text="${#numbers.formatDecimal(totalOzByMetal.get(entry.key), 1, 'DEFAULT', 3, 'DEFAULT')}"></span> oz
       </span>
+      <span th:if="${spotPriceEurByMetal.containsKey(entry.key)}">
+        · <span th:text="${#numbers.formatDecimal(spotPriceEurByMetal.get(entry.key).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></span>
+        <span th:text="${displayCurrency}"></span>/oz
+      </span>
     </span>
   </div>
 
