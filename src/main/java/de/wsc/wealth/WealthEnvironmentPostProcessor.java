@@ -61,7 +61,7 @@ public class WealthEnvironmentPostProcessor implements EnvironmentPostProcessor 
             String urlPath = dbFile.toString().replace("\\", "/");
             environment.getPropertySources().addFirst(
                 new MapPropertySource("wealthConfig",
-                    Map.of("spring.datasource.url", "jdbc:h2:file:" + urlPath + ";AUTO_SERVER=TRUE")));
+                    Map.of("spring.datasource.url", "jdbc:h2:file:" + urlPath)));
         } else {
             dbName = config.getProperty(DB_NAME_KEY);
             if (dbName != null && !dbName.isBlank()) {
@@ -70,7 +70,7 @@ public class WealthEnvironmentPostProcessor implements EnvironmentPostProcessor 
                 String urlPath = dbFile.toString().replace("\\", "/");
                 environment.getPropertySources().addFirst(
                     new MapPropertySource("wealthConfig",
-                        Map.of("spring.datasource.url", "jdbc:h2:file:" + urlPath + ";AUTO_SERVER=TRUE")));
+                        Map.of("spring.datasource.url", "jdbc:h2:file:" + urlPath)));
             }
         }
     }
