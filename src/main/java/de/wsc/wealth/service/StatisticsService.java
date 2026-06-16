@@ -96,6 +96,7 @@ public class StatisticsService {
                 p.setPrice(priceEur);
                 p.setCurrency("EUR");
                 p.setValue(totalValue);
+                Collections.sort(assetDepots);
                 p.setDepotName(String.join(", ", assetDepots));
                 positions.add(p);
             }
@@ -139,8 +140,13 @@ public class StatisticsService {
             p.setValue(p.getValue() != null ? p.getValue().add(extra) : extra);
             Set<String> coinDepots = coinDepotsByAssetId.get(p.getId());
             if (coinDepots != null) {
-                String existing = p.getDepotName() != null && !p.getDepotName().isBlank() ? p.getDepotName() + ", " : "";
-                p.setDepotName(existing + String.join(", ", coinDepots));
+                List<String> allDepots = new ArrayList<>();
+                if (p.getDepotName() != null && !p.getDepotName().isBlank()) {
+                    Collections.addAll(allDepots, p.getDepotName().split(", "));
+                }
+                allDepots.addAll(coinDepots);
+                Collections.sort(allDepots);
+                p.setDepotName(String.join(", ", allDepots));
             }
         }
         // Coins, deren verknüpftes Wertpapier keine eigene Depotposition hat, als eigene Position einfügen
@@ -158,7 +164,11 @@ public class StatisticsService {
             p.setValue(entry.getValue());
             p.setCurrency("EUR");
             Set<String> coinDepots = coinDepotsByAssetId.get(assetId);
-            if (coinDepots != null) p.setDepotName(String.join(", ", coinDepots));
+            if (coinDepots != null) {
+                List<String> sortedDepots = new ArrayList<>(coinDepots);
+                Collections.sort(sortedDepots);
+                p.setDepotName(String.join(", ", sortedDepots));
+            }
             positions.add(p);
         }
 
