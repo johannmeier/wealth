@@ -18,6 +18,7 @@ public class WealthEnvironmentPostProcessor implements EnvironmentPostProcessor 
 
     private static final String CONFIG_FILE = "wealth-config.properties";
     private static final String DB_NAME_KEY = "db.name";
+    private static final String DB_PATH_KEY = "db.path";
 
     private static Path appDataDir() {
         String os = System.getProperty("os.name", "").toLowerCase();
@@ -40,34 +41,48 @@ public class WealthEnvironmentPostProcessor implements EnvironmentPostProcessor 
         Path configPath = dir.resolve(CONFIG_FILE);
         String dbName;
 
+        Properties config;
         if (Files.exists(configPath)) {
-            dbName = readDbName(configPath);
+            config = readConfig(configPath);
         } else {
             dbName = promptForDbName();
-            saveConfig(configPath, dbName);
+            config = new Properties();
+            config.setProperty(DB_NAME_KEY, dbName);
+            saveConfig(configPath, config);
         }
 
         System.setProperty("wealth.config.path", configPath.toAbsolutePath().toString());
 
-        if (dbName != null && !dbName.isBlank()) {
-            Path dbFile = dir.resolve("wealth-db-" + dbName);
+        String customPath = config.getProperty(DB_PATH_KEY);
+        if (customPath != null && !customPath.isBlank()) {
+            // User-specified absolute path
+            Path dbFile = Path.of(customPath.strip());
             System.setProperty("wealth.db.path", dbFile.toAbsolutePath() + ".mv.db");
-            String dbPath = dbFile.toString().replace("\\", "/");
-            String url = "jdbc:h2:file:" + dbPath + ";AUTO_SERVER=TRUE";
+            String urlPath = dbFile.toString().replace("\\", "/");
             environment.getPropertySources().addFirst(
-                new MapPropertySource("wealthConfig", Map.of("spring.datasource.url", url))
-            );
+                new MapPropertySource("wealthConfig",
+                    Map.of("spring.datasource.url", "jdbc:h2:file:" + urlPath)));
+        } else {
+            dbName = config.getProperty(DB_NAME_KEY);
+            if (dbName != null && !dbName.isBlank()) {
+                Path dbFile = dir.resolve("wealth-db-" + dbName);
+                System.setProperty("wealth.db.path", dbFile.toAbsolutePath() + ".mv.db");
+                String urlPath = dbFile.toString().replace("\\", "/");
+                environment.getPropertySources().addFirst(
+                    new MapPropertySource("wealthConfig",
+                        Map.of("spring.datasource.url", "jdbc:h2:file:" + urlPath)));
+            }
         }
     }
 
-    private String readDbName(Path configPath) {
+    private Properties readConfig(Path configPath) {
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(configPath)) {
             props.load(in);
         } catch (IOException e) {
             throw new RuntimeException("Fehler beim Lesen von " + CONFIG_FILE, e);
         }
-        return props.getProperty(DB_NAME_KEY);
+        return props;
     }
 
     private String promptForDbName() {
@@ -103,9 +118,7 @@ public class WealthEnvironmentPostProcessor implements EnvironmentPostProcessor 
         return (input != null) ? input.trim() : "default";
     }
 
-    private void saveConfig(Path configPath, String dbName) {
-        Properties props = new Properties();
-        props.setProperty(DB_NAME_KEY, dbName);
+    private void saveConfig(Path configPath, Properties props) {
         try {
             Files.createDirectories(configPath.getParent());
         } catch (IOException e) {

@@ -13,7 +13,7 @@
 
     <groupId>de.wsc.wealth</groupId>
     <artifactId>wealth</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.11-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <licenses>
@@ -54,7 +54,6 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card mb-4">
     <div class="card-header" th:text="#{page.databases.create}">Neue Datenbank anlegen</div>
     <div class="card-body">
       <form th:action="@{/settings/databases/create}" method="post">
@@ -53,6 +53,29 @@
           <div class="form-text" th:text="#{page.databases.name-hint}">Nur Buchstaben und Zahlen, z.B. „familie" oder „firma".</div>
         </div>
         <button type="submit" class="btn btn-primary" th:text="#{page.databases.create-btn}">Anlegen und wechseln</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" th:text="#{page.databases.custom-path}">Benutzerdefinierter Pfad</div>
+    <div class="card-body">
+      <p class="form-text mb-3" th:text="#{page.databases.custom-path-hint}">
+        Absoluter Pfad zur H2-Datenbankdatei (ohne .mv.db).
+      </p>
+      <div th:if="${currentDbFile != null}" class="mb-3">
+        <label class="form-label small text-muted" th:text="#{page.databases.current-file}">Aktuelle Datei:</label>
+        <div class="font-monospace small text-break" th:text="${currentDbFile}"></div>
+      </div>
+      <form th:action="@{/settings/databases/set-path}" method="post">
+        <div class="mb-3">
+          <label class="form-label" for="dbPath" th:text="#{page.databases.path-label}">Pfad</label>
+          <input type="text" id="dbPath" name="dbPath" class="form-control font-monospace"
+                 th:value="${customDbPath}"
+                 th:placeholder="#{page.databases.path-placeholder}"/>
+          <div class="form-text" th:text="#{page.databases.path-hint}">Leer lassen, um zur standardmäßigen Datenbankauswahl zurückzukehren.</div>
+        </div>
+        <button type="submit" class="btn btn-primary" th:text="#{page.databases.path-btn}">Speichern und neu starten</button>
       </form>
     </div>
   </div>
