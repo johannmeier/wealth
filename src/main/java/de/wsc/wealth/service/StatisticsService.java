@@ -125,12 +125,13 @@ public class StatisticsService {
         Map<Long, Set<String>> coinDepotsByAssetId = new HashMap<>();
         Map<Long, Asset> coinAssetObjects = new HashMap<>();
         for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
-            if (coin.getAsset() == null) continue;
+            Asset resolvedAsset = coinService.resolveAssetForPricing(coin);
+            if (resolvedAsset == null) continue;
             BigDecimal val = coinService.valueEur(coin);
             if (val == null) continue;
-            Long aid = coin.getAsset().getId();
+            Long aid = resolvedAsset.getId();
             coinValueByAssetId.merge(aid, val, BigDecimal::add);
-            coinAssetObjects.put(aid, coin.getAsset());
+            coinAssetObjects.put(aid, resolvedAsset);
             String depotName = coin.getDepot() != null ? coin.getDepot().getName() : null;
             if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
         }

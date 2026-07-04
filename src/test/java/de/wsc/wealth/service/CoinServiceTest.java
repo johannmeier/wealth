@@ -60,8 +60,36 @@ class CoinServiceTest {
     }
 
     @Test
-    void valueEur_withNoLinkedAsset_returnsNull() {
+    void valueEur_withNoLinkedAssetAndNoMetalSpotAsset_returnsNull() {
+        when(assetRepository.findFirstBySymbolAndArchivedFalse("GC=F")).thenReturn(java.util.Optional.empty());
         assertThat(coinService.valueEur(coin(CoinMetal.GOLD, ONE_OZ_GRAMS, 1))).isNull();
+    }
+
+    @Test
+    void valueEur_withoutLinkedAsset_fallsBackToMetalSpotAsset() {
+        // Physical bullion with no manually linked asset (e.g. a private-safe coin) should still
+        // be priced via the metal's spot-price asset (same one BullionVault sync creates/reuses).
+        Asset spotAsset = new Asset();
+        spotAsset.setSymbol("GC=F");
+        spotAsset.setCurrentPrice(new BigDecimal("60.00"));
+        spotAsset.setCurrency("EUR");
+        when(assetRepository.findFirstBySymbolAndArchivedFalse("GC=F")).thenReturn(java.util.Optional.of(spotAsset));
+        when(exchangeRateService.toEur(new BigDecimal("60.00"), "EUR"))
+                .thenReturn(new BigDecimal("60.00"));
+
+        Coin coin = coin(CoinMetal.GOLD, ONE_OZ_GRAMS, 2);
+
+        assertThat(coinService.valueEur(coin)).isEqualByComparingTo(new BigDecimal("120.00"));
+        assertThat(coinService.resolveAssetForPricing(coin)).isSameAs(spotAsset);
+    }
+
+    @Test
+    void resolveAssetForPricing_prefersLinkedAssetOverMetalSpotAsset() {
+        Asset linked = new Asset();
+        Coin coin = coin(CoinMetal.GOLD, ONE_OZ_GRAMS, 1);
+        coin.setAsset(linked);
+
+        assertThat(coinService.resolveAssetForPricing(coin)).isSameAs(linked);
     }
 
     @Test

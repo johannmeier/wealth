@@ -222,6 +222,20 @@ public class AssetService {
                 ));
             if (!depots.isEmpty()) result.put(asset.getId(), depots);
         }
+
+        // Coins also count as holding an asset in their depot — either the manually linked one,
+        // or (for physical bullion without a link) the metal's spot-price asset. Without this,
+        // coin-only depots (e.g. a private safe) would be missing from the depot list.
+        for (Coin coin : coinRepository.findAllWithDepot()) {
+            if (coin.getDepot() == null) continue;
+            Asset resolved = coin.getAsset() != null ? coin.getAsset()
+                : (coin.getMetal() != null
+                    ? assetRepository.findFirstBySymbolAndArchivedFalse(coin.getMetal().getYahooSymbol()).orElse(null)
+                    : null);
+            if (resolved == null) continue;
+            result.computeIfAbsent(resolved.getId(), k -> new java.util.TreeMap<>())
+                  .put(coin.getDepot().getId(), coin.getDepot().getName());
+        }
         return result;
     }
 }

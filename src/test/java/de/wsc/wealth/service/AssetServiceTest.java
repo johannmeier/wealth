@@ -1,6 +1,9 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.Asset;
+import de.wsc.wealth.domain.Coin;
+import de.wsc.wealth.domain.CoinMetal;
+import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.domain.PriceHistory;
 import de.wsc.wealth.repository.AssetQuantityRepository;
 import de.wsc.wealth.repository.AssetRepository;
@@ -79,6 +82,29 @@ class AssetServiceTest {
 
         assertThat(prices.get(1L)).isEqualByComparingTo("100.00");
         assertThat(prices.get(2L)).isEqualByComparingTo("77.00");
+    }
+
+    @Test
+    void getDepotsByAssetId_includesCoinOnlyDepot_viaMetalSpotAsset() {
+        // A coin without a manually linked asset (e.g. physical bullion in a private safe) should
+        // still show up under its resolved metal-spot-price asset's depot list.
+        Asset spotAsset = asset(3L, null);
+        spotAsset.setSymbol("GC=F");
+        when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(spotAsset));
+        when(quantityRepository.findByAssetOrderByDateDesc(spotAsset)).thenReturn(List.of());
+        when(assetRepository.findFirstBySymbolAndArchivedFalse("GC=F")).thenReturn(Optional.of(spotAsset));
+
+        Depot depot = new Depot();
+        depot.setId(10L);
+        depot.setName("Schließfach (Privat)");
+        Coin coin = new Coin();
+        coin.setMetal(CoinMetal.GOLD);
+        coin.setDepot(depot);
+        when(coinRepository.findAllWithDepot()).thenReturn(List.of(coin));
+
+        Map<Long, Map<Long, String>> depotsByAsset = assetService.getDepotsByAssetId();
+
+        assertThat(depotsByAsset.get(3L)).containsEntry(10L, "Schließfach (Privat)");
     }
 
     private Asset asset(Long id, BigDecimal currentPrice) {
