@@ -147,6 +147,33 @@ class StatisticsServiceTest {
         assertThat(statisticsService.getAllPositions()).isEmpty();
     }
 
+    @Test
+    void getAllPositions_withUnlinkedCoin_includesPositionViaResolvedMetalAsset() {
+        // A coin with no manually linked asset (e.g. physical bullion in a private safe) is still
+        // priced via CoinService's metal-spot-asset fallback and must show up as its own position.
+        Asset spotAsset = asset(2L, "Gold (physisch in Unzen)", null, "USD");
+        Coin coin = new Coin();
+        coin.setDepot(depot(1L, "Schließfach (Privat)"));
+
+        when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of());
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of());
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
+        when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of(coin));
+        when(coinService.resolveAssetForPricing(coin)).thenReturn(spotAsset);
+        when(coinService.valueEur(coin)).thenReturn(new BigDecimal("250.00"));
+        when(assetService.getEffectivePricesByAssetId()).thenReturn(Map.of());
+
+        List<WealthPosition> positions = statisticsService.getAllPositions();
+
+        assertThat(positions).hasSize(1);
+        WealthPosition pos = positions.get(0);
+        assertThat(pos.getType()).isEqualTo("COIN");
+        assertThat(pos.getName()).isEqualTo("Gold (physisch in Unzen)");
+        assertThat(pos.getValue()).isEqualByComparingTo("250.00");
+        assertThat(pos.getDepotName()).isEqualTo("Schließfach (Privat)");
+    }
+
     // --- helpers ---
 
     private void stubEmpty() {

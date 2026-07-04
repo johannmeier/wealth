@@ -148,7 +148,7 @@ public class CoinService {
 
     public BigDecimal valueEur(Coin coin) {
         if (coin.getMetal() == null || coin.getWeightGrams() == null || coin.getQuantity() == null) return null;
-        Asset asset = coin.getAsset();
+        Asset asset = resolveAssetForPricing(coin);
         if (asset == null) return null;
         BigDecimal price = assetService.getEffectivePrice(asset);
         if (price == null) return null;
@@ -157,5 +157,15 @@ public class CoinService {
         BigDecimal qty = BigDecimal.valueOf(coin.getQuantity());
         BigDecimal oz = coin.getWeightGrams().divide(GRAMS_PER_OZ, 10, RoundingMode.HALF_UP);
         return qty.multiply(oz).multiply(priceEur).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    // Coins without a manually linked asset (e.g. physical bullion in a private safe) are priced
+    // via the metal's spot-price asset (Yahoo symbol GC=F/SI=F/PL=F), the same asset BullionVault
+    // sync creates/uses — so unlinked and linked holdings of the same metal share one live price.
+    @Transactional(readOnly = true)
+    public Asset resolveAssetForPricing(Coin coin) {
+        if (coin.getAsset() != null) return coin.getAsset();
+        if (coin.getMetal() == null) return null;
+        return assetRepository.findFirstBySymbolAndArchivedFalse(coin.getMetal().getYahooSymbol()).orElse(null);
     }
 }
