@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +55,14 @@ public class DepotService {
         this.coinService = coinService;
     }
 
+    private static final Comparator<Depot> DEPOT_ORDER = Comparator
+        .comparing((Depot d) -> d.getBank() != null ? d.getBank().getName() : "", String.CASE_INSENSITIVE_ORDER)
+        .thenComparing(Depot::getName, String.CASE_INSENSITIVE_ORDER);
+
     @Transactional(readOnly = true)
-    public List<Depot> findAll() { return depotRepository.findAllByOrderByNameAsc(); }
+    public List<Depot> findAll() {
+        return depotRepository.findAll().stream().sorted(DEPOT_ORDER).collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public List<Depot> findByBankId(Long bankId) { return depotRepository.findByBankIdOrderByNameAsc(bankId); }
