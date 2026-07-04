@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Interactive Brokers</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div class="container mt-4" style="max-width:600px">
+
+  <h3 th:text="#{ibkr.title}">Interactive Brokers</h3>
+  <p class="text-muted" th:text="#{ibkr.subtitle}">Automatischer Datenabgleich per Flex Query</p>
+
+  <!-- Error alert -->
+  <div th:if="${syncError}" class="alert alert-danger alert-dismissible fade show">
+    <strong th:text="#{ibkr.sync.error}">Fehler:</strong>
+    <span th:text="${syncError}"></span>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Success alert -->
+  <div th:if="${syncResult}" class="alert alert-success alert-dismissible fade show">
+    <strong th:text="#{ibkr.sync.success}">Abruf erfolgreich.</strong>
+    <ul class="mb-0 mt-1">
+      <li>
+        <span th:text="#{ibkr.sync.balances-updated}">Salden aktualisiert:</span>
+        <strong th:text="${syncResult.balancesUpdated()}"></strong>
+      </li>
+      <li th:if="${!syncResult.newAccounts().isEmpty()}">
+        <span th:text="#{ibkr.sync.new-accounts}">Neue Konten angelegt:</span>
+        <strong th:text="${#strings.arrayJoin(syncResult.newAccounts().toArray(), ', ')}"></strong>
+      </li>
+      <li>
+        <span th:text="#{ibkr.sync.positions-updated}">Positionen aktualisiert:</span>
+        <strong th:text="${syncResult.positionsUpdated()}"></strong>
+      </li>
+      <li th:if="${!syncResult.newAssets().isEmpty()}">
+        <span th:text="#{ibkr.sync.new-assets}">Neue Wertpapiere (ISIN):</span>
+        <strong th:text="${#strings.arrayJoin(syncResult.newAssets().toArray(), ', ')}"></strong>
+      </li>
+    </ul>
+    <div class="mt-2" th:if="${syncResult.bankId() != null}">
+      <a th:href="@{/banks/{id}(id=${syncResult.bankId()})}" class="btn btn-sm btn-outline-success"
+         th:text="#{ibkr.go-to-bank}">Zur Bank</a>
+    </div>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
+  </div>
+
+</div>
+
+<!-- Geänderte Positionen (volle Breite) -->
+<div th:if="${syncResult != null and !syncResult.changedPositions().isEmpty()}"
+     class="container-fluid px-4 mb-4">
+  <div class="card">
+    <div class="card-header" th:text="#{csv.import.changed}">Geänderte Positionen</div>
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th th:text="#{col.name}">Name</th>
+          <th th:text="#{col.isin}">ISIN</th>
+          <th class="text-end" th:text="#{csv.import.old-qty}">Vorher</th>
+          <th class="text-end" th:text="#{csv.import.new-qty}">Nachher</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${syncResult.changedPositions()}">
+          <td th:text="${p.name()}"></td>
+          <td th:text="${p.identifier()}"></td>
+          <td class="text-end text-muted"
+              th:text="${p.oldQuantity() != null} ? ${#numbers.formatDecimal(p.oldQuantity(), 1, 'DEFAULT', 6, 'DEFAULT')} : '–'"></td>
+          <td class="text-end fw-semibold"
+              th:text="${#numbers.formatDecimal(p.newQuantity(), 1, 'DEFAULT', 6, 'DEFAULT')}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="container" style="max-width:600px">
+
+  <!-- Status card (shown when config exists) -->
+  <div class="card mb-4" th:if="${config != null}">
+    <div class="card-header" th:text="#{ibkr.status.title}">Aktuelle Konfiguration</div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-4" th:text="#{ibkr.query-id}">Query-ID</dt>
+        <dd class="col-sm-8" th:text="${config.queryId}"></dd>
+
+        <dt class="col-sm-4" th:text="#{col.bank}">Bank</dt>
+        <dd class="col-sm-8">
+          <a th:if="${config.bank != null}" th:href="@{/banks/{id}(id=${config.bank.id})}"
+             th:text="${config.bank.name}"></a>
+          <span th:if="${config.bank == null}" class="text-muted">–</span>
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Sync form -->
+  <div class="card">
+    <div class="card-header" th:text="${config != null} ? #{ibkr.sync.title} : #{ibkr.setup.title}">
+      Daten abrufen
+    </div>
+    <div class="card-body">
+      <p class="text-muted small" th:text="${config != null} ? #{ibkr.sync.hint} : #{ibkr.setup.hint}">
+        Flex-Query-Token und Query-ID eingeben.
+      </p>
+      <ol class="small text-muted mb-3">
+        <li th:text="#{ibkr.setup.step1}">In IBKR Client Portal: Berichte / Flex Queries.</li>
+        <li th:text="#{ibkr.setup.step2}">Neue Flex Query mit den Abschnitten Cash Report und Open Positions anlegen.</li>
+        <li th:text="#{ibkr.setup.step3}">Unter Berichte / Flex-Web-Service ein Token generieren.</li>
+      </ol>
+      <form th:action="@{/ibkr/sync}" method="post">
+        <div class="mb-3">
+          <label class="form-label" for="ibkr-query-id" th:text="#{ibkr.query-id}">Query-ID</label>
+          <input type="text" id="ibkr-query-id" name="queryId" class="form-control"
+                 required
+                 th:value="${config != null} ? ${config.queryId} : ${syncQueryId}"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ibkr-token" th:text="#{ibkr.token}">Token</label>
+          <input type="text" id="ibkr-token" name="token" class="form-control font-monospace"
+                 style="font-size:0.85rem" required/>
+          <div class="form-text" th:text="#{ibkr.token.hint}">
+            Der Token wird gespeichert, um künftige Abrufe zu ermöglichen.
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" th:text="#{ibkr.sync.run}">Abrufen</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
