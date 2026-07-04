@@ -31,6 +31,94 @@
     document.cookie = 'wealth-currency=' + val + ';path=/;max-age=' + (365*24*3600);
     window.location.reload();
   };
+
+  // --- "Aktualisieren"-Modus ---
+  var UPDATE_MODE_KEY = 'wealth-update-mode';
+  var UPDATE_CHECKED_KEY = 'wealth-update-checked';
+  var UPDATE_TOTALS_KEY = 'wealth-update-totals';
+
+  function getUpdateMode() {
+    return localStorage.getItem(UPDATE_MODE_KEY) === 'update' ? 'update' : 'view';
+  }
+  function getCheckedSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(UPDATE_CHECKED_KEY) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function saveCheckedSet(set) {
+    localStorage.setItem(UPDATE_CHECKED_KEY, JSON.stringify(Array.from(set)));
+  }
+  function getTotals() {
+    try { return JSON.parse(localStorage.getItem(UPDATE_TOTALS_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+  function saveTotals(totals) {
+    localStorage.setItem(UPDATE_TOTALS_KEY, JSON.stringify(totals));
+  }
+  function clearUpdateProgress() {
+    localStorage.removeItem(UPDATE_CHECKED_KEY);
+    localStorage.removeItem(UPDATE_TOTALS_KEY);
+  }
+  function checkCompletion() {
+    var totals = getTotals();
+    var types = Object.keys(totals);
+    if (types.length === 0 || totals.account === undefined || totals.depot === undefined) return;
+    var checked = getCheckedSet();
+    var allDone = types.every(function(type) {
+      var count = 0;
+      checked.forEach(function(id) { if (id.indexOf(type + ':') === 0) count++; });
+      return count >= totals[type];
+    });
+    if (allDone) window.setUpdateMode('view');
+  }
+
+  // Applies the current mode to the page: toggles the checkbox column,
+  // updates the mode select, and (in update mode) initializes checkboxes
+  // for the positions rendered on this particular page.
+  window.applyUpdateMode = function() {
+    var mode = getUpdateMode();
+    document.body.classList.toggle('wealth-update-mode', mode === 'update');
+    var toggle = document.getElementById('wealthUpdateModeToggle');
+    if (toggle) {
+      toggle.value = mode;
+      toggle.classList.toggle('border-warning', mode === 'update');
+      toggle.classList.toggle('bg-warning-subtle', mode === 'update');
+      toggle.classList.toggle('fw-bold', mode === 'update');
+    }
+    if (mode !== 'update') return;
+
+    var totals = getTotals();
+    document.querySelectorAll('[data-update-total]').forEach(function(el) {
+      totals[el.dataset.updateType] = parseInt(el.dataset.updateTotal, 10) || 0;
+    });
+    var checked = getCheckedSet();
+    document.querySelectorAll('[data-update-id]').forEach(function(box) {
+      var id = box.getAttribute('data-update-id');
+      if (box.getAttribute('data-update-today') === 'true') checked.add(id);
+      box.checked = checked.has(id);
+    });
+    saveCheckedSet(checked);
+    saveTotals(totals);
+    checkCompletion();
+  };
+
+  window.setUpdateMode = function(mode) {
+    localStorage.setItem(UPDATE_MODE_KEY, mode);
+    clearUpdateProgress();
+    window.applyUpdateMode();
+  };
+
+  // Avoid a flash of visible checkboxes before applyUpdateMode() runs on DOMContentLoaded.
+  document.body.classList.toggle('wealth-update-mode', getUpdateMode() === 'update');
+
+  document.addEventListener('change', function(e) {
+    var box = e.target.closest ? e.target.closest('[data-update-id]') : null;
+    if (!box) return;
+    var id = box.getAttribute('data-update-id');
+    var checked = getCheckedSet();
+    if (box.checked) checked.add(id); else checked.delete(id);
+    saveCheckedSet(checked);
+    checkCompletion();
+  });
 })();
 </script>
 <link rel="stylesheet" th:href="@{/css/wealth.css}"/>
@@ -71,7 +159,14 @@
           </ul>
         </li>
       </ul>
-      <ul class="navbar-nav ms-auto">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item me-lg-2">
+          <select id="wealthUpdateModeToggle" class="form-select form-select-sm" style="width:auto"
+                  onchange="window.setUpdateMode(this.value);">
+            <option value="view" th:text="#{nav.update-mode.stop}">Ansicht</option>
+            <option value="update" th:text="#{nav.update-mode.start}">Aktualisieren</option>
+          </select>
+        </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{settings.title}">Einstellungen</a>
           <ul class="dropdown-menu dropdown-menu-end">
@@ -131,6 +226,8 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.wealth-theme-option').forEach(function(el) {
     el.classList.toggle('active', el.dataset.theme === window._wealthTheme);
   });
+
+  window.applyUpdateMode();
 
   // Show current currency in input field
   var currencyInput = document.getElementById('currencyInput');
