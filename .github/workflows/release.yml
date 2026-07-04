@@ -24,9 +24,17 @@ jobs:
       - name: Build JAR
         run: mvn package -DskipTests
 
+      - name: Extract changelog section
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v ver="$VERSION" '
+            /^## \[/ { if (p) exit; if ($0 ~ "\\[" ver "\\]") p=1 }
+            p
+          ' CHANGELOG.md > release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: target/wealth-*.jar
           generate_release_notes: false
-          body_path: version.txt
+          body_path: release-notes.md

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.11] – 2026-07-04
+
+### Added
+- Custom database path: Settings → Datenbank wechseln can now set an absolute H2 file path (`db.path`), taking priority over the name-based database; app restarts automatically after saving
+- H2 TCP server with a configurable port, replacing `AUTO_SERVER=TRUE` (fixes a WSL2 mirrored-networking port conflict)
+- Accounts list, depots list, and expanded bank view: "Letzte Änderung" column showing the date of the most recent balance/quantity entry, highlighted with a green badge when it's today
+- "Aktualisieren" update mode (navbar): shows a checkbox per position on the accounts and depots lists to track which have been updated; positions already changed today start pre-checked; returns to view mode automatically once everything is checked, or when switched manually
+
+### Fixed
+- Trade Republic sync: adapted to Trade Republic's renamed WebSocket subscription topic (`compactPortfolio` → `compactPortfolioByType`) and its changed response shape
+- DKB CSV import: adapted to DKB's new semicolon-delimited export format (previously comma-separated)
+- Current-value calculations (depot value, depot positions, coin value, wealth statistics) now fall back to the latest price history entry when the current price is unavailable, instead of showing no value
+- Physical bullion coins without a manually linked security (e.g. in a private safe) are now priced via the metal's spot-price asset and correctly shown in the wealth overview and dashboard depot list
+- Depot list, bank list, and account list are now sorted case-insensitively (previously, lowercase-starting names like "etoro" sorted after all uppercase names)
+
+### Changed
+- Depot list sorted by bank, then name
+- Depot list: removed the redundant "CSV-Import" menu entry (the import icon next to it already covers this)
+
 ## [1.0.10] – 2026-06-07
 
 ### Added
