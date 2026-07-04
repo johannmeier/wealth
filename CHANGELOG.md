@@ -5,10 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [1.0.11] – 2026-07-04
 
 ### Added
-- Custom database path: Settings → Datenbank wechseln can now set an absolute H2 file path (`db.path`), taking priority over the name-based database; app restarts automatically after saving
+- Custom database path: Settings → Switch Database can now set an absolute H2 file path (`db.path`), taking priority over the name-based database; app restarts automatically after saving
 - H2 TCP server with a configurable port, replacing `AUTO_SERVER=TRUE` (fixes a WSL2 mirrored-networking port conflict)
-- Accounts list, depots list, and expanded bank view: "Letzte Änderung" column showing the date of the most recent balance/quantity entry, highlighted with a green badge when it's today
-- "Aktualisieren" update mode (navbar): shows a checkbox per position on the accounts and depots lists to track which have been updated; positions already changed today start pre-checked; returns to view mode automatically once everything is checked, or when switched manually
+- Accounts list, depots list, and expanded bank view: "Last changed" column showing the date of the most recent balance/quantity entry, highlighted with a green badge when it's today
+- "Update" mode (navbar): shows a checkbox per position on the accounts and depots lists to track which have been updated; positions already changed today start pre-checked; returns to view mode automatically once everything is checked, or when switched manually
 
 ### Fixed
 - Trade Republic sync: adapted to Trade Republic's renamed WebSocket subscription topic (`compactPortfolio` → `compactPortfolioByType`) and its changed response shape
@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Depot list sorted by bank, then name
 - Depot list: removed the redundant "CSV-Import" menu entry (the import icon next to it already covers this)
-- Updated README: documented database management, "Letzte Änderung", update mode, and the fixed DKB CSV delimiter/coin pricing behavior; removed the stale reference to the removed depot-list CSV-Import menu entry
+- Updated README: documented database management, "Last changed", update mode, and the fixed DKB CSV delimiter/coin pricing behavior; removed the stale reference to the removed depot-list CSV-Import menu entry
 
 ## [1.0.10] – 2026-06-07
 

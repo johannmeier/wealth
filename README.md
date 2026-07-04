@@ -39,7 +39,7 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Record date-based balance snapshots
 - Balances are displayed in your configured display currency with the native account currency shown below for reference
 - Sorted alphabetically (case-insensitive) by bank, then account number
-- "Letzte Änderung" column shows the date of the most recent balance entry, highlighted in green when it's today
+- "Last changed" column shows the date of the most recent balance entry, highlighted in green when it's today
 
 ### Depots (Portfolios)
 - Group securities into depots
@@ -49,14 +49,14 @@ A personal wealth tracking application to manage and monitor your entire financi
 - ISIN is shown next to the security name in the position form and table
 - DKB and FondsDepotBank depots show a ⬇ import icon in the depot list for quick navigation to CSV import
 - Sorted alphabetically (case-insensitive) by bank, then depot name
-- "Letzte Änderung" column shows the date of the most recent quantity entry, highlighted in green when it's today
+- "Last changed" column shows the date of the most recent quantity entry, highlighted in green when it's today
 
 ### Update Mode
-An "Aktualisieren" / "Ansicht" mode switch in the navbar helps track your daily update routine:
-- In "Aktualisieren" mode, a checkbox appears next to every account and depot
+An "Update" / "View" mode switch in the navbar helps track your daily update routine:
+- In "Update" mode, a checkbox appears next to every account and depot
 - Positions already updated today are pre-checked automatically
 - Checked state is kept while you navigate (e.g. to edit a balance and back)
-- Once everything is checked — or the mode is switched back manually — it returns to "Ansicht" mode and the checkmarks reset
+- Once everything is checked — or the mode is switched back manually — it returns to "View" mode and the checkmarks reset
 
 ### Physical Coins & Precious Metals
 - Track physical gold, silver and platinum coins separately from securities
@@ -112,8 +112,8 @@ Trade Republic blocks automated logins without a valid browser cookie. You need 
 The token is valid for days to weeks and only needs to be refreshed when logins start failing.
 
 **Sync process:**
-1. Enter your phone number and PIN → click *OTP anfordern*
-2. Enter the 6-digit code from the SMS → click *Abrufen*
+1. Enter your phone number and PIN → click *Request OTP*
+2. Enter the 6-digit code from the SMS → click *Sync*
 
 On each sync the app:
 - Creates a bank, cash account and securities depot on first run
@@ -131,7 +131,7 @@ The PIN is never stored. The session token is not stored.
 ### Supported formats
 | Bank | Format | Encoding | Delimiter |
 |------|--------|----------|-----------|
-| DKB | Depot export (Wertpapierbestand) | UTF-8 | Semicolon |
+| DKB | Depot export (labeled "Wertpapierbestand" in DKB online banking) | UTF-8 | Semicolon |
 | FondsDepotBank | Depot export | ISO-8859-1 | Semicolon |
 
 ### How to import
@@ -193,7 +193,7 @@ The database and configuration file are stored in a platform-specific directory:
 | Linux | `$XDG_CONFIG_HOME/wealth/` or `~/.config/wealth/` |
 
 ### Database Management
-**Settings → Datenbank wechseln** lets you:
+**Settings → Switch Database** lets you:
 - See all databases found in the data directory and switch between them
 - Create a new named database
 - Set a custom absolute path to an H2 database file outside the standard directory, taking priority over the name-based database; leave it empty to revert
