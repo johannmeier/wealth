@@ -12,7 +12,7 @@ import java.sql.SQLException;
 @ConditionalOnProperty(name = "wealth.h2.server.enabled", havingValue = "true")
 public class H2ServerConfig {
 
-    @Value("${wealth.h2.server.port:9092}")
+    @Value("${wealth.h2.server.port:9093}")
     private String port;
 
     @Bean(initMethod = "start", destroyMethod = "stop")
