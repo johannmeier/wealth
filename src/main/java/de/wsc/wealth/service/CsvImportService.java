@@ -40,16 +40,17 @@ public class CsvImportService {
     }
 
     public ImportResult importDkb(InputStream in, Depot depot) throws IOException {
-        // Comma-separated, UTF-8, quoted fields
-        // Header: Datum der Erstellung,Depotnummer,Wertpapierbezeichnung,WKN,ISIN,Einstiegskurs,Bewertungskurs,Stückzahl,...
+        // Semicolon-separated, UTF-8 (with BOM), quoted fields
+        // Header: Datum der Erstellung;Depotnummer;Wertpapierbezeichnung;WKN;ISIN;Einstiegskurs;Bewertungskurs;Stückzahl;...
         Map<String, BigDecimal> positions = new LinkedHashMap<>();
         List<String> skipped = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
             if (headerLine == null) return new ImportResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+            if (headerLine.startsWith("﻿")) headerLine = headerLine.substring(1);
 
-            List<String> headers = parseCsvLine(headerLine, ',');
+            List<String> headers = parseCsvLine(headerLine, ';');
             int isinIdx = headers.indexOf("ISIN");
             int qtyIdx  = headers.indexOf("Stückzahl");
             if (isinIdx < 0 || qtyIdx < 0) {
@@ -59,7 +60,7 @@ public class CsvImportService {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) continue;
-                List<String> fields = parseCsvLine(line, ',');
+                List<String> fields = parseCsvLine(line, ';');
                 if (fields.size() <= Math.max(isinIdx, qtyIdx)) continue;
                 String isin = fields.get(isinIdx).trim();
                 String qtyRaw = fields.get(qtyIdx).trim();
