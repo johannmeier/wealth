@@ -5,6 +5,7 @@ import de.wsc.wealth.domain.AssetQuantity;
 import de.wsc.wealth.domain.Coin;
 import de.wsc.wealth.domain.CoinMetal;
 import de.wsc.wealth.domain.Depot;
+import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.CoinService;
 import de.wsc.wealth.service.DepotService;
@@ -34,13 +35,16 @@ public class DepotController {
     private final BankService bankService;
     private final ExchangeRateService exchangeRateService;
     private final CoinService coinService;
+    private final AssetService assetService;
 
     public DepotController(DepotService depotService, BankService bankService,
-                           ExchangeRateService exchangeRateService, CoinService coinService) {
+                           ExchangeRateService exchangeRateService, CoinService coinService,
+                           AssetService assetService) {
         this.depotService = depotService;
         this.bankService = bankService;
         this.exchangeRateService = exchangeRateService;
         this.coinService = coinService;
+        this.assetService = assetService;
     }
 
     @InitBinder("quantity")
@@ -115,11 +119,12 @@ public class DepotController {
         model.addAttribute("quantities", quantities);
         model.addAttribute("assets", depotService.findAllAssets());
 
+        Map<Long, BigDecimal> effectivePrices = assetService.getEffectivePricesByAssetId();
         Map<Long, BigDecimal> positionValues = new HashMap<>();
         BigDecimal total = BigDecimal.ZERO;
         for (AssetQuantity q : quantities) {
-            BigDecimal eurPrice = exchangeRateService.toEur(
-                q.getAsset().getCurrentPrice(), q.getAsset().getCurrency());
+            BigDecimal price = effectivePrices.get(q.getAsset().getId());
+            BigDecimal eurPrice = exchangeRateService.toEur(price, q.getAsset().getCurrency());
             if (q.getQuantity() != null && eurPrice != null) {
                 BigDecimal val = q.getQuantity().multiply(eurPrice).setScale(2, RoundingMode.HALF_UP);
                 positionValues.put(q.getId(), val);
