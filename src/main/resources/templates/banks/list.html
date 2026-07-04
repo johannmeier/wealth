@@ -92,6 +92,7 @@
                         </td>
                         <td class="text-muted small" style="white-space:nowrap">
                           <span th:if="${accountLastChanged.containsKey(a.id)}"
+                                th:class="${accountLastChanged.get(a.id).isEqual(#temporals.createToday())} ? 'badge bg-success' : ''"
                                 th:text="${#temporals.format(accountLastChanged.get(a.id), 'dd.MM.yyyy')}"></span>
                           <span th:unless="${accountLastChanged.containsKey(a.id)}">—</span>
                         </td>
@@ -114,6 +115,7 @@
                             th:text="${val != null} ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency} : '—'"></td>
                         <td class="text-muted small" style="white-space:nowrap">
                           <span th:if="${depotLastChanged.containsKey(d.id)}"
+                                th:class="${depotLastChanged.get(d.id).isEqual(#temporals.createToday())} ? 'badge bg-success' : ''"
                                 th:text="${#temporals.format(depotLastChanged.get(d.id), 'dd.MM.yyyy')}"></span>
                           <span th:unless="${depotLastChanged.containsKey(d.id)}">—</span>
                         </td>

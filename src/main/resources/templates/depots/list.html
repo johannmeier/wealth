@@ -47,6 +47,7 @@
         </td>
         <td>
           <span th:if="${depotLastChanged.containsKey(d.id)}"
+                th:class="${depotLastChanged.get(d.id).isEqual(#temporals.createToday())} ? 'badge bg-success' : ''"
                 th:text="${#temporals.format(depotLastChanged.get(d.id), 'dd.MM.yyyy')}"></span>
           <span th:unless="${depotLastChanged.containsKey(d.id)}" class="text-muted">—</span>
         </td>

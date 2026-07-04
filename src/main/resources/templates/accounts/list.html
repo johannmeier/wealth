@@ -60,6 +60,7 @@
         </td>
         <td>
           <span th:if="${latestBalanceDates.containsKey(a.id)}"
+                th:class="${latestBalanceDates.get(a.id).isEqual(#temporals.createToday())} ? 'badge bg-success' : ''"
                 th:text="${#temporals.format(latestBalanceDates.get(a.id), 'dd.MM.yyyy')}"></span>
           <span th:unless="${latestBalanceDates.containsKey(a.id)}" class="text-muted">—</span>
         </td>
