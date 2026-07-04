@@ -133,6 +133,28 @@ public class AssetService {
             .collect(java.util.stream.Collectors.toSet());
     }
 
+    // Falls der letzte Kursabruf fehlgeschlagen ist (currentPrice == null), wird der jüngste
+    // Eintrag aus der Kurshistorie als Ersatzwert für Berechnungen herangezogen.
+    @Transactional(readOnly = true)
+    public BigDecimal getEffectivePrice(Asset asset) {
+        if (asset.getCurrentPrice() != null) return asset.getCurrentPrice();
+        return priceHistoryRepository.findFirstByAssetOrderByDateDesc(asset)
+            .map(PriceHistory::getPrice)
+            .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> getEffectivePricesByAssetId() {
+        Map<Long, BigDecimal> result = new java.util.HashMap<>();
+        for (PriceHistory ph : priceHistoryRepository.findLatestPerAsset()) {
+            result.put(ph.getAsset().getId(), ph.getPrice());
+        }
+        for (Asset a : assetRepository.findAll()) {
+            if (a.getCurrentPrice() != null) result.put(a.getId(), a.getCurrentPrice());
+        }
+        return result;
+    }
+
     private Optional<Asset> findArchivedMatch(Asset asset) {
         boolean hasIsin   = asset.getIsin()   != null && !asset.getIsin().isBlank();
         boolean hasSymbol = asset.getSymbol() != null && !asset.getSymbol().isBlank();

@@ -28,6 +28,7 @@ public class StatisticsService {
     private final CoinRepository coinRepository;
     private final CoinQuantityRepository coinQuantityRepository;
     private final CoinService coinService;
+    private final AssetService assetService;
 
     public StatisticsService(AssetRepository assetRepository,
                              AccountRepository accountRepository,
@@ -37,7 +38,8 @@ public class StatisticsService {
                              ExchangeRateService exchangeRateService,
                              CoinRepository coinRepository,
                              CoinQuantityRepository coinQuantityRepository,
-                             CoinService coinService) {
+                             CoinService coinService,
+                             AssetService assetService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.quantityRepository = quantityRepository;
@@ -47,6 +49,7 @@ public class StatisticsService {
         this.coinRepository = coinRepository;
         this.coinQuantityRepository = coinQuantityRepository;
         this.coinService = coinService;
+        this.assetService = assetService;
     }
 
     public List<WealthPosition> getAllPositions() {
@@ -69,8 +72,9 @@ public class StatisticsService {
                 c.getDate().isAfter(a.getDate()) ? c : a);
         }
 
+        Map<Long, BigDecimal> effectivePrices = assetService.getEffectivePricesByAssetId();
         for (Asset asset : assetRepository.findAllByArchivedFalseOrderByNameAsc()) {
-            BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
+            BigDecimal priceEur = exchangeRateService.toEur(effectivePrices.get(asset.getId()), asset.getCurrency());
             BigDecimal totalQuantity = BigDecimal.ZERO;
             BigDecimal totalValue = BigDecimal.ZERO;
             List<String> assetDepots = new ArrayList<>();

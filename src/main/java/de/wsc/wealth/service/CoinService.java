@@ -29,17 +29,20 @@ public class CoinService {
     private final DepotRepository depotRepository;
     private final AssetRepository assetRepository;
     private final ExchangeRateService exchangeRateService;
+    private final AssetService assetService;
 
     public CoinService(CoinRepository coinRepository,
                        CoinQuantityRepository coinQuantityRepository,
                        DepotRepository depotRepository,
                        AssetRepository assetRepository,
-                       ExchangeRateService exchangeRateService) {
+                       ExchangeRateService exchangeRateService,
+                       AssetService assetService) {
         this.coinRepository = coinRepository;
         this.coinQuantityRepository = coinQuantityRepository;
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
         this.exchangeRateService = exchangeRateService;
+        this.assetService = assetService;
     }
 
     @Transactional(readOnly = true)
@@ -146,8 +149,10 @@ public class CoinService {
     public BigDecimal valueEur(Coin coin) {
         if (coin.getMetal() == null || coin.getWeightGrams() == null || coin.getQuantity() == null) return null;
         Asset asset = coin.getAsset();
-        if (asset == null || asset.getCurrentPrice() == null) return null;
-        BigDecimal priceEur = exchangeRateService.toEur(asset.getCurrentPrice(), asset.getCurrency());
+        if (asset == null) return null;
+        BigDecimal price = assetService.getEffectivePrice(asset);
+        if (price == null) return null;
+        BigDecimal priceEur = exchangeRateService.toEur(price, asset.getCurrency());
         if (priceEur == null) return null;
         BigDecimal qty = BigDecimal.valueOf(coin.getQuantity());
         BigDecimal oz = coin.getWeightGrams().divide(GRAMS_PER_OZ, 10, RoundingMode.HALF_UP);

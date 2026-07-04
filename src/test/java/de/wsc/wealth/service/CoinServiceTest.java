@@ -16,6 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +28,7 @@ class CoinServiceTest {
     @Mock private DepotRepository depotRepository;
     @Mock private AssetRepository assetRepository;
     @Mock private ExchangeRateService exchangeRateService;
+    @Mock private AssetService assetService;
 
     private CoinService coinService;
 
@@ -34,7 +37,11 @@ class CoinServiceTest {
     @BeforeEach
     void setUp() {
         coinService = new CoinService(coinRepository, coinQuantityRepository, depotRepository,
-                assetRepository, exchangeRateService);
+                assetRepository, exchangeRateService, assetService);
+        // Mirrors AssetService's real fallback logic (currentPrice, else price history) closely
+        // enough for these tests: just return whatever currentPrice the test set on the asset.
+        lenient().when(assetService.getEffectivePrice(any(Asset.class)))
+                .thenAnswer(inv -> ((Asset) inv.getArgument(0)).getCurrentPrice());
     }
 
     @Test

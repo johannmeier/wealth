@@ -34,6 +34,7 @@ public class DepotService {
     private final CoinQuantityRepository coinQuantityRepository;
     private final ExchangeRateService exchangeRateService;
     private final CoinService coinService;
+    private final AssetService assetService;
 
     public DepotService(DepotRepository depotRepository,
                         AssetRepository assetRepository,
@@ -41,13 +42,15 @@ public class DepotService {
                         CoinRepository coinRepository,
                         CoinQuantityRepository coinQuantityRepository,
                         ExchangeRateService exchangeRateService,
-                        CoinService coinService) {
+                        CoinService coinService,
+                        AssetService assetService) {
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
         this.coinRepository = coinRepository;
         this.coinQuantityRepository = coinQuantityRepository;
         this.exchangeRateService = exchangeRateService;
+        this.assetService = assetService;
         this.coinService = coinService;
     }
 
@@ -123,6 +126,8 @@ public class DepotService {
 
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> getCurrentValueByDepotId() {
+        Map<Long, BigDecimal> effectivePrices = assetService.getEffectivePricesByAssetId();
+
         // Bulk-load: latest quantity per depot+asset
         Map<Long, Map<Long, AssetQuantity>> latestQtyByDepotAsset = new java.util.HashMap<>();
         for (AssetQuantity q : quantityRepository.findAllWithAssetAndDepot()) {
@@ -147,8 +152,8 @@ public class DepotService {
                 .getOrDefault(depot.getId(), java.util.Map.of()).values().stream()
                 .filter(q -> q.getQuantity().compareTo(BigDecimal.ZERO) > 0)
                 .map(q -> {
-                    BigDecimal eur = exchangeRateService.toEur(
-                        q.getAsset().getCurrentPrice(), q.getAsset().getCurrency());
+                    BigDecimal price = effectivePrices.get(q.getAsset().getId());
+                    BigDecimal eur = exchangeRateService.toEur(price, q.getAsset().getCurrency());
                     return eur != null
                         ? q.getQuantity().multiply(eur).setScale(2, RoundingMode.HALF_UP)
                         : null;
