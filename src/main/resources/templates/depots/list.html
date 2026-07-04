@@ -30,6 +30,7 @@
         <th scope="col" th:text="#{col.name}">Name</th>
         <th scope="col" th:text="#{col.description}">Beschreibung</th>
         <th scope="col" class="text-end" th:text="#{col.value.eur}">Aktueller Wert</th>
+        <th scope="col" th:text="#{col.last-changed}">Letzte Änderung</th>
         <th scope="col" th:text="#{common.actions}">Aktionen</th>
       </tr>
     </thead>
@@ -43,6 +44,11 @@
                 th:text="${val != null and val.compareTo(T(java.math.BigDecimal).ZERO) > 0}
                           ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}
                           : '—'"></span>
+        </td>
+        <td>
+          <span th:if="${depotLastChanged.containsKey(d.id)}"
+                th:text="${#temporals.format(depotLastChanged.get(d.id), 'dd.MM.yyyy')}"></span>
+          <span th:unless="${depotLastChanged.containsKey(d.id)}" class="text-muted">—</span>
         </td>
         <td>
           <div class="d-flex gap-1 align-items-center">
@@ -70,7 +76,7 @@
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(depots)}">
-        <td colspan="5" class="text-center text-muted" th:text="#{page.depots.empty}">Keine Depots vorhanden.</td>
+        <td colspan="6" class="text-center text-muted" th:text="#{page.depots.empty}">Keine Depots vorhanden.</td>
       </tr>
     </tbody>
   </table>

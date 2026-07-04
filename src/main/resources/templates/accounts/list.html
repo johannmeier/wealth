@@ -31,6 +31,7 @@
         <th scope="col" th:text="#{col.currency}">Währung</th>
         <th scope="col" th:text="#{col.allocation}">Allocation</th>
         <th scope="col" class="text-end" th:text="#{col.balance}">Aktueller Saldo</th>
+        <th scope="col" th:text="#{col.last-changed}">Letzte Änderung</th>
         <th scope="col" th:text="#{common.actions}">Aktionen</th>
       </tr>
     </thead>
@@ -58,6 +59,11 @@
           <span th:unless="${latestBalancesEur.containsKey(a.id)}" class="text-muted">—</span>
         </td>
         <td>
+          <span th:if="${latestBalanceDates.containsKey(a.id)}"
+                th:text="${#temporals.format(latestBalanceDates.get(a.id), 'dd.MM.yyyy')}"></span>
+          <span th:unless="${latestBalanceDates.containsKey(a.id)}" class="text-muted">—</span>
+        </td>
+        <td>
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary" type="button"
                     data-bs-toggle="dropdown" th:attr="aria-label=#{common.actions}">&#x2630;</button>
@@ -76,7 +82,7 @@
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(accounts)}">
-        <td colspan="6" class="text-center text-muted" th:text="#{page.accounts.empty}">Keine Konten vorhanden.</td>
+        <td colspan="7" class="text-center text-muted" th:text="#{page.accounts.empty}">Keine Konten vorhanden.</td>
       </tr>
     </tbody>
   </table>
