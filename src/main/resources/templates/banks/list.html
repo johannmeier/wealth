@@ -90,9 +90,14 @@
                                 th:text="${#numbers.formatDecimal(accountValuesEur.get(a.id).multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></span>
                           <span th:unless="${accountValuesEur.containsKey(a.id)}" class="text-muted">—</span>
                         </td>
+                        <td class="text-muted small" style="white-space:nowrap">
+                          <span th:if="${accountLastChanged.containsKey(a.id)}"
+                                th:text="${#temporals.format(accountLastChanged.get(a.id), 'dd.MM.yyyy')}"></span>
+                          <span th:unless="${accountLastChanged.containsKey(a.id)}">—</span>
+                        </td>
                       </tr>
                       <tr th:if="${accs == null or #lists.isEmpty(accs)}">
-                        <td class="text-muted" th:text="#{page.accounts.empty}">Keine Konten.</td>
+                        <td colspan="3" class="text-muted" th:text="#{page.accounts.empty}">Keine Konten.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -107,9 +112,14 @@
                         <td class="text-end" style="white-space:nowrap"
                             th:with="val=${depotValues.get(d.id)}"
                             th:text="${val != null} ? ${#numbers.formatDecimal(val.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency} : '—'"></td>
+                        <td class="text-muted small" style="white-space:nowrap">
+                          <span th:if="${depotLastChanged.containsKey(d.id)}"
+                                th:text="${#temporals.format(depotLastChanged.get(d.id), 'dd.MM.yyyy')}"></span>
+                          <span th:unless="${depotLastChanged.containsKey(d.id)}">—</span>
+                        </td>
                       </tr>
                       <tr th:if="${deps == null or #lists.isEmpty(deps)}">
-                        <td class="text-muted" th:text="#{page.depots.empty}">Keine Depots.</td>
+                        <td colspan="3" class="text-muted" th:text="#{page.depots.empty}">Keine Depots.</td>
                       </tr>
                     </tbody>
                   </table>

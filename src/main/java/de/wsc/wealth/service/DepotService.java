@@ -2,9 +2,12 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.Asset;
 import de.wsc.wealth.domain.AssetQuantity;
+import de.wsc.wealth.domain.Coin;
+import de.wsc.wealth.domain.CoinQuantity;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.repository.AssetQuantityRepository;
 import de.wsc.wealth.repository.AssetRepository;
+import de.wsc.wealth.repository.CoinQuantityRepository;
 import de.wsc.wealth.repository.CoinRepository;
 import de.wsc.wealth.repository.DepotRepository;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class DepotService {
     private final AssetRepository assetRepository;
     private final AssetQuantityRepository quantityRepository;
     private final CoinRepository coinRepository;
+    private final CoinQuantityRepository coinQuantityRepository;
     private final ExchangeRateService exchangeRateService;
     private final CoinService coinService;
 
@@ -35,12 +39,14 @@ public class DepotService {
                         AssetRepository assetRepository,
                         AssetQuantityRepository quantityRepository,
                         CoinRepository coinRepository,
+                        CoinQuantityRepository coinQuantityRepository,
                         ExchangeRateService exchangeRateService,
                         CoinService coinService) {
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
         this.coinRepository = coinRepository;
+        this.coinQuantityRepository = coinQuantityRepository;
         this.exchangeRateService = exchangeRateService;
         this.coinService = coinService;
     }
@@ -152,6 +158,22 @@ public class DepotService {
 
             BigDecimal coinValue = coinValueByDepotId.getOrDefault(depot.getId(), BigDecimal.ZERO);
             result.put(depot.getId(), assetValue.add(coinValue));
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, LocalDate> getLastChangedDateByDepotId() {
+        Map<Long, LocalDate> result = new java.util.HashMap<>();
+        for (AssetQuantity q : quantityRepository.findAllWithAssetAndDepot()) {
+            result.merge(q.getDepot().getId(), q.getDate(),
+                (a, b) -> b.isAfter(a) ? b : a);
+        }
+        for (CoinQuantity cq : coinQuantityRepository.findAllWithCoin()) {
+            Coin coin = cq.getCoin();
+            if (coin.getDepot() == null) continue;
+            result.merge(coin.getDepot().getId(), cq.getDate(),
+                (a, b) -> b.isAfter(a) ? b : a);
         }
         return result;
     }

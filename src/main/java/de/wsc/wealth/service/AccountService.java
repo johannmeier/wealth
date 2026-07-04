@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,15 @@ public class AccountService {
         Map<Long, BigDecimal> result = new LinkedHashMap<>();
         for (AccountBalance ab : balanceRepository.findLatestPerAccount()) {
             result.put(ab.getAccount().getId(), ab.getBalance());
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, LocalDate> getLatestBalanceDatesByAccountId() {
+        Map<Long, LocalDate> result = new LinkedHashMap<>();
+        for (AccountBalance ab : balanceRepository.findLatestPerAccount()) {
+            result.put(ab.getAccount().getId(), ab.getDate());
         }
         return result;
     }

@@ -68,6 +68,7 @@ public class DepotController {
         model.addAttribute("depotValues", depotValues);
         model.addAttribute("depotTotal", total);
         model.addAttribute("importDepotIds", importDepotIds);
+        model.addAttribute("depotLastChanged", depotService.getLastChangedDateByDepotId());
         return "depots/list";
     }
 

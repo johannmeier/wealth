@@ -63,6 +63,7 @@ public class AccountController {
         model.addAttribute("latestBalances", latestBalances);
         model.addAttribute("latestBalancesEur", latestBalancesEur);
         model.addAttribute("balanceTotal", total);
+        model.addAttribute("latestBalanceDates", accountService.getLatestBalanceDatesByAccountId());
         return "accounts/list";
     }
 

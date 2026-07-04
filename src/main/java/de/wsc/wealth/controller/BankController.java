@@ -49,6 +49,8 @@ public class BankController {
         List<de.wsc.wealth.domain.Bank> banks = bankService.findAll();
         Map<Long, BigDecimal> latestBalances = accountService.getLatestBalancesByAccountId();
         Map<Long, BigDecimal> depotValues    = depotService.getCurrentValueByDepotId();
+        Map<Long, java.time.LocalDate> accountLastChanged = accountService.getLatestBalanceDatesByAccountId();
+        Map<Long, java.time.LocalDate> depotLastChanged   = depotService.getLastChangedDateByDepotId();
 
         Map<Long, List<de.wsc.wealth.domain.Account>> bankAccounts = new java.util.LinkedHashMap<>();
         Map<Long, List<de.wsc.wealth.domain.Depot>>   bankDepots   = new java.util.LinkedHashMap<>();
@@ -87,6 +89,8 @@ public class BankController {
         model.addAttribute("bankDepots", bankDepots);
         model.addAttribute("accountValuesEur", accountValuesEur);
         model.addAttribute("depotValues", depotValues);
+        model.addAttribute("accountLastChanged", accountLastChanged);
+        model.addAttribute("depotLastChanged", depotLastChanged);
         model.addAttribute("bankTotals", bankTotals);
         model.addAttribute("grandTotal", grandTotal);
         model.addAttribute("syncUrls", syncUrls);
