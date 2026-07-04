@@ -9,14 +9,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class AccountService {
+
+    private static final Comparator<Account> ACCOUNT_ORDER = Comparator
+        .comparing((Account a) -> a.getBank() != null ? a.getBank().getName() : "", String.CASE_INSENSITIVE_ORDER)
+        .thenComparing(a -> a.getAccountNumber() != null ? a.getAccountNumber() : "", String.CASE_INSENSITIVE_ORDER);
 
     private final AccountRepository accountRepository;
     private final AccountBalanceRepository balanceRepository;
@@ -27,7 +33,9 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<Account> findAll() { return accountRepository.findAllByOrderByBankNameAscAccountNumberAsc(); }
+    public List<Account> findAll() {
+        return accountRepository.findAll().stream().sorted(ACCOUNT_ORDER).collect(Collectors.toList());
+    }
 
     public List<Account> findByBankId(Long bankId) { return accountRepository.findByBankIdOrderByAccountNumberAsc(bankId); }
 

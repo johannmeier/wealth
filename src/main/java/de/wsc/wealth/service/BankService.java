@@ -5,8 +5,10 @@ import de.wsc.wealth.repository.BankRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -19,7 +21,9 @@ public class BankService {
     }
 
     public List<Bank> findAll() {
-        return bankRepository.findAllByOrderByNameAsc();
+        return bankRepository.findAll().stream()
+            .sorted(Comparator.comparing(Bank::getName, String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
     }
 
     public Optional<Bank> findById(Long id) {
