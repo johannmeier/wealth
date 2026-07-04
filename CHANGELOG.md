@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Depot list sorted by bank, then name
 - Depot list: removed the redundant "CSV-Import" menu entry (the import icon next to it already covers this)
+- Updated README: documented database management, "Letzte Änderung", update mode, and the fixed DKB CSV delimiter/coin pricing behavior; removed the stale reference to the removed depot-list CSV-Import menu entry
 
 ## [1.0.10] – 2026-06-07
 

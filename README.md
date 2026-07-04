@@ -38,6 +38,8 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Optionally assign an account to a bank
 - Record date-based balance snapshots
 - Balances are displayed in your configured display currency with the native account currency shown below for reference
+- Sorted alphabetically (case-insensitive) by bank, then account number
+- "Letzte Änderung" column shows the date of the most recent balance entry, highlighted in green when it's today
 
 ### Depots (Portfolios)
 - Group securities into depots
@@ -46,13 +48,22 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Record date-based quantity entries per security and depot
 - ISIN is shown next to the security name in the position form and table
 - DKB and FondsDepotBank depots show a ⬇ import icon in the depot list for quick navigation to CSV import
+- Sorted alphabetically (case-insensitive) by bank, then depot name
+- "Letzte Änderung" column shows the date of the most recent quantity entry, highlighted in green when it's today
+
+### Update Mode
+An "Aktualisieren" / "Ansicht" mode switch in the navbar helps track your daily update routine:
+- In "Aktualisieren" mode, a checkbox appears next to every account and depot
+- Positions already updated today are pre-checked automatically
+- Checked state is kept while you navigate (e.g. to edit a balance and back)
+- Once everything is checked — or the mode is switched back manually — it returns to "Ansicht" mode and the checkmarks reset
 
 ### Physical Coins & Precious Metals
 - Track physical gold, silver and platinum coins separately from securities
 - Enter weight in grams per coin — the app converts to troy ounces automatically
 - Record date-based quantity history per coin (e.g. when you buy or sell physical coins)
 - Optionally link a coin to a security to use that security's price as the EUR/oz rate
-- Without a linked security, spot prices are fetched live from Yahoo Finance
+- Without a linked security, the coin is priced via a shared spot-price security for its metal (the same one automatic BullionVault sync creates) if one exists in your data
 - Group coins by name and metal for a clear overview
 - Assign coins to depots
 
@@ -71,6 +82,8 @@ Monthly chart and table showing how total wealth developed over time, broken dow
 
 ### Price History
 The price of each security on the 1st of every month is saved automatically. The price history is also viewable per security.
+
+If a live price cannot be fetched (e.g. Yahoo Finance is temporarily unavailable), current-value calculations fall back to the most recently saved historical price instead of treating the position as valueless.
 
 ### Currency Conversion
 All values are stored and calculated in EUR internally. Exchange rates for non-EUR securities are fetched automatically from Yahoo Finance. The display currency can be set freely — see [Settings](#settings) below.
@@ -118,14 +131,13 @@ The PIN is never stored. The session token is not stored.
 ### Supported formats
 | Bank | Format | Encoding | Delimiter |
 |------|--------|----------|-----------|
-| DKB | Depot export (Wertpapierbestand) | UTF-8 | Comma |
+| DKB | Depot export (Wertpapierbestand) | UTF-8 | Semicolon |
 | FondsDepotBank | Depot export | ISO-8859-1 | Semicolon |
 
 ### How to import
 1. Export your depot positions as CSV from the bank's web interface
-2. In the app, navigate to **Depots** and open the actions menu for the target depot
-3. Click *CSV-Import* (or the ⬇ icon for DKB/FondsDepotBank depots)
-4. Select the format and upload the file
+2. In the app, navigate to **Depots** and click the ⬇ import icon next to the actions menu for the target depot (shown for DKB and FondsDepotBank depots)
+3. Select the format and upload the file
 
 The format is pre-selected automatically based on the depot or bank name. After the import a table shows which positions changed and by how much. Existing securities are matched by ISIN; new securities are enriched via Yahoo Finance. Only quantities that actually changed are written to the database.
 
@@ -179,6 +191,14 @@ The database and configuration file are stored in a platform-specific directory:
 | Windows | `%APPDATA%\Wealth\` |
 | macOS | `~/Library/Application Support/Wealth/` |
 | Linux | `$XDG_CONFIG_HOME/wealth/` or `~/.config/wealth/` |
+
+### Database Management
+**Settings → Datenbank wechseln** lets you:
+- See all databases found in the data directory and switch between them
+- Create a new named database
+- Set a custom absolute path to an H2 database file outside the standard directory, taking priority over the name-based database; leave it empty to revert
+
+Switching, creating, or setting a custom path shuts down the application — restart it to continue with the new database. The shutdown page automatically returns to the app once it's back up.
 
 ---
 
