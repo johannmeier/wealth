@@ -267,7 +267,7 @@ public class TradeRepublicService {
 
             // Portfolio positions
             String portfolioJson = sub(ws, pending, idCounter,
-                "{\"type\":\"compactPortfolio\",\"secAccNo\":\"" + secAccNo + "\"}");
+                "{\"type\":\"compactPortfolioByType\",\"secAccNo\":\"" + secAccNo + "\"}");
             parsePortfolio(portfolioJson, positions);
             log.info("Trade Republic: {} Depot-Positionen", positions.size());
 
@@ -313,10 +313,15 @@ public class TradeRepublicService {
     private void parsePortfolio(String json, Map<String, BigDecimal> out) {
         try {
             JsonNode root = objectMapper.readTree(json);
-            JsonNode posArr = root.get("positions");
-            if (posArr != null && posArr.isArray()) {
+            JsonNode categories = root.get("categories");
+            if (categories == null || !categories.isArray()) return;
+            for (JsonNode category : categories) {
+                JsonNode posArr = category.get("positions");
+                if (posArr == null || !posArr.isArray()) continue;
                 for (JsonNode pos : posArr) {
-                    String isin = pos.get("instrumentId").asText();
+                    JsonNode idNode = pos.has("instrumentId") ? pos.get("instrumentId") : pos.get("isin");
+                    if (idNode == null) continue;
+                    String isin = idNode.asText();
                     String sizeStr = pos.has("netSize") ? pos.get("netSize").asText() : "0";
                     BigDecimal qty = new BigDecimal(sizeStr);
                     if (qty.compareTo(BigDecimal.ZERO) > 0) {
