@@ -153,6 +153,8 @@
                    th:classappend="${uri == '/statistics/by-type'} ? ' active' : ''">Nach Wertpapierart</a></li>
             <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}" th:text="#{nav.statistics.by-allocation}"
                    th:classappend="${uri == '/statistics/by-allocation'} ? ' active' : ''">Nach Allocation</a></li>
+            <li><a class="dropdown-item" th:href="@{/statistics/by-criteria}" th:text="#{nav.statistics.by-criteria}"
+                   th:classappend="${uri == '/statistics/by-criteria'} ? ' active' : ''">Nach Kriterium</a></li>
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/statistics/history}" th:text="#{nav.statistics.history}"
                    th:classappend="${uri == '/statistics/history'} ? ' active' : ''">Verlauf</a></li>

@@ -177,6 +177,34 @@ class StatisticsServiceTest {
         assertThat(pos.getDepotName()).isEqualTo("Schließfach (Privat)");
     }
 
+    @Test
+    void getStatsByCriteria_groupsAssetsByValueAndBucketsAccountsAsKonten() {
+        Asset asset1 = asset(1L, "ETF World", new BigDecimal("100.00"), "EUR");
+        Asset asset2 = asset(2L, "ETF Emerging", new BigDecimal("50.00"), "EUR");
+        Depot depot = depot(1L, "Main");
+        AssetQuantity qty1 = quantity(asset1, depot, new BigDecimal("1"));
+        AssetQuantity qty2 = quantity(asset2, depot, new BigDecimal("1"));
+        Account account = account(3L, "Bank", "EUR");
+        AccountBalance balance = balance(account, new BigDecimal("200.00"));
+
+        when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of(asset1, asset2));
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of(qty1, qty2));
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of(account));
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of(balance));
+        when(coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()).thenReturn(List.of());
+        when(assetService.getEffectivePricesByAssetId()).thenReturn(
+                Map.of(1L, new BigDecimal("100.00"), 2L, new BigDecimal("50.00")));
+        when(exchangeRateService.toEur(new BigDecimal("100.00"), "EUR")).thenReturn(new BigDecimal("100.00"));
+        when(exchangeRateService.toEur(new BigDecimal("50.00"), "EUR")).thenReturn(new BigDecimal("50.00"));
+        when(exchangeRateService.toEur(new BigDecimal("200.00"), "EUR")).thenReturn(new BigDecimal("200.00"));
+        when(assetCriteriaService.getValuesByAssetId(42L)).thenReturn(Map.of(1L, "Deutschland"));
+
+        List<de.wsc.wealth.dto.StatisticsGroup> groups = statisticsService.getStatsByCriteria(42L);
+
+        assertThat(groups).extracting(de.wsc.wealth.dto.StatisticsGroup::getName)
+                .containsExactlyInAnyOrder("Deutschland", "KEIN_WERT", "Konten");
+    }
+
     // --- helpers ---
 
     private void stubEmpty() {

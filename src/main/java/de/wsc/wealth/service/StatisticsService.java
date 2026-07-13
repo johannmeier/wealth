@@ -384,6 +384,25 @@ public class StatisticsService {
         return buildGroups(grouped, total);
     }
 
+    public List<StatisticsGroup> getStatsByCriteria(Long definitionId) {
+        List<WealthPosition> all = getAllPositions();
+        BigDecimal total = totalValue(all);
+
+        Map<Long, String> valueByAssetId = assetCriteriaService.getValuesByAssetId(definitionId);
+
+        Map<String, List<WealthPosition>> grouped = all.stream()
+            .filter(p -> "ASSET".equals(p.getType()) || "COIN".equals(p.getType()))
+            .collect(Collectors.groupingBy(
+                p -> valueByAssetId.getOrDefault(p.getId(), "KEIN_WERT"),
+                LinkedHashMap::new, Collectors.toList()
+            ));
+
+        List<WealthPosition> accounts = all.stream().filter(p -> "ACCOUNT".equals(p.getType())).toList();
+        if (!accounts.isEmpty()) grouped.put("Konten", accounts);
+
+        return buildGroups(grouped, total);
+    }
+
     public List<StatisticsGroup> getStatsByType() {
         List<WealthPosition> all = getAllPositions();
         BigDecimal total = totalValue(all);
