@@ -15,6 +15,8 @@
     <strong th:text="${#numbers.formatDecimal(totalWealth.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></strong>
   </div>
 
+  <div id="pieChart"></div>
+
   <table class="table table-sm table-striped table-hover align-middle">
     <caption class="visually-hidden">Positionen nach Risikoklasse</caption>
     <thead class="table-dark">
@@ -29,7 +31,8 @@
     </thead>
     <tbody>
       <th:block th:each="group : ${groups}">
-        <tr class="table-secondary">
+        <tr class="table-secondary stat-summary-row"
+            th:attr="data-chart-label=${#messages.msgOrNull('assetAllocation.' + group.name) ?: group.name},data-chart-value=${group.percentage}">
           <td colspan="4" class="fw-semibold">
             <span th:class="${group.name == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
                   th:text="${#messages.msgOrNull('assetAllocation.' + group.name) ?: group.name}"></span>
@@ -59,5 +62,10 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/piechart.js}"></script>
+<script th:inline="javascript">
+window.wealthPieChartOtherLabel = /*[[#{stats.other}]]*/ 'Sonstige';
+wealthRenderPieChart(document.getElementById('pieChart'), '.stat-summary-row');
+</script>
 </body>
 </html>
