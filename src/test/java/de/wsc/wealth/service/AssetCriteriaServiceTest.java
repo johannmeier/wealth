@@ -81,6 +81,54 @@ class AssetCriteriaServiceTest {
     }
 
     @Test
+    void getValuesByAssetId_returnsOptionValueForFixedListCriterion() {
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FIXED_LIST);
+        definition.setId(30L);
+        Asset asset = asset(1L);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setOption(option(definition, null, "Deutschland"));
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        Map<Long, String> result = assetCriteriaService.getValuesByAssetId(30L);
+
+        assertThat(result).containsEntry(1L, "Deutschland");
+    }
+
+    @Test
+    void getValuesByAssetId_returnsFreeTextForFreeTextCriterion() {
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
+        definition.setId(31L);
+        Asset asset = asset(1L);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setFreeTextValue("MSCI World");
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        Map<Long, String> result = assetCriteriaService.getValuesByAssetId(31L);
+
+        assertThat(result).containsEntry(1L, "MSCI World");
+    }
+
+    @Test
+    void getValuesByAssetId_ignoresValuesForOtherDefinitions() {
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
+        definition.setId(31L);
+        Asset asset = asset(1L);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setFreeTextValue("MSCI World");
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        Map<Long, String> result = assetCriteriaService.getValuesByAssetId(999L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void getSnapshotsByAssetId_ignoresValuesForCustomCriteria() {
         Asset asset = asset(1L);
         CriteriaDefinition customDefinition = definition(null, CriteriaValueType.FREE_TEXT);

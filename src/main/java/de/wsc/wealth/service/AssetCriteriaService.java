@@ -87,6 +87,17 @@ public class AssetCriteriaService {
     }
 
     @Transactional(readOnly = true)
+    public Map<Long, String> getValuesByAssetId(Long definitionId) {
+        Map<Long, String> result = new HashMap<>();
+        for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
+            if (!v.getDefinition().getId().equals(definitionId)) continue;
+            String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
+            if (display != null && !display.isBlank()) result.put(v.getAsset().getId(), display);
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
     public boolean isAutoPrice(Asset asset) {
         AssetCriteriaSnapshot snapshot = getSnapshotsByAssetId().get(asset.getId());
         return snapshot != null && snapshot.isAutoPrice();
