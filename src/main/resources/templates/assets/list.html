@@ -47,19 +47,19 @@
             <div th:text="${s.isin ?: '-'}"></div>
             <small th:if="${s.symbol != null}" class="text-muted" th:text="${s.symbol}"></small>
           </td>
-          <td class="d-none d-xl-table-cell">
-            <span th:if="${s.type != null}" class="badge bg-primary me-1"
-                  th:text="${#messages.msg('assetType.' + s.type.name())}"></span>
-            <span th:if="${s.category != null}" class="badge bg-secondary me-1"
-                  th:text="${#messages.msg('assetCategory.' + s.category.name())}"></span>
-            <span th:if="${s.distributionPolicy != null}"
-                  th:class="${s.distributionPolicy.name() == 'AUSSCHUETTEND'} ? 'badge bg-info text-dark me-1' : 'badge bg-primary me-1'"
-                  th:text="${#messages.msg('distributionPolicy.' + s.distributionPolicy.name())}"></span>
-            <span th:if="${s.assetAllocation != null}"
-                  th:class="${s.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark me-1' : 'badge bg-success me-1'"
-                  th:text="${#messages.msg('assetAllocation.' + s.assetAllocation.name())}"></span>
+          <td class="d-none d-xl-table-cell" th:with="c=${criteria.get(s.id)}">
+            <span th:if="${c != null and c.typeLabel != null}" class="badge bg-primary me-1"
+                  th:text="${#messages.msgOrNull('assetType.' + c.typeCode) ?: c.typeLabel}"></span>
+            <span th:if="${c != null and c.categoryLabel != null}" class="badge bg-secondary me-1"
+                  th:text="${#messages.msgOrNull('assetCategory.' + c.categoryCode) ?: c.categoryLabel}"></span>
+            <span th:if="${c != null and c.distributionLabel != null}"
+                  th:class="${c.distributionCode == 'AUSSCHUETTEND'} ? 'badge bg-info text-dark me-1' : 'badge bg-primary me-1'"
+                  th:text="${#messages.msgOrNull('distributionPolicy.' + c.distributionCode) ?: c.distributionLabel}"></span>
+            <span th:if="${c != null and c.allocationLabel != null}"
+                  th:class="${c.allocationCode == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark me-1' : 'badge bg-success me-1'"
+                  th:text="${#messages.msgOrNull('assetAllocation.' + c.allocationCode) ?: c.allocationLabel}"></span>
           </td>
-          <td style="white-space:nowrap" th:text="${s.indexName ?: '-'}"></td>
+          <td style="white-space:nowrap" th:text="${criteria.get(s.id) != null ? (criteria.get(s.id).indexName ?: '-') : '-'}"></td>
           <td class="small">
             <span th:if="${depotsByAsset.get(s.id) == null}" class="text-muted">-</span>
             <span th:each="entry, i : ${depotsByAsset.get(s.id)}">
@@ -92,7 +92,7 @@
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/edit(id=${s.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/quantities(id=${s.id})}" th:text="#{page.assets.quantities.title}">Bestände</a></li>
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/price-history(id=${s.id})}" th:text="#{page.assets.price-history.title}">Kurshistorie</a></li>
-                <li th:if="${s.autoPrice}">
+                <li th:if="${autoPriceByAsset.get(s.id)}">
                   <form th:action="@{/assets/{id}/refresh-price(id=${s.id})}" method="post">
                     <button type="submit" class="dropdown-item" th:text="#{common.refresh}">Kurs aktualisieren</button>
                   </form>

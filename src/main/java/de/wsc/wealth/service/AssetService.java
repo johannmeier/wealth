@@ -48,10 +48,6 @@ public class AssetService {
                 existing.setName(asset.getName());
                 existing.setIsin(asset.getIsin());
                 existing.setSymbol(asset.getSymbol());
-                existing.setCategory(asset.getCategory());
-                existing.setType(asset.getType());
-                existing.setAssetAllocation(asset.getAssetAllocation());
-                existing.setIndexName(asset.getIndexName());
                 existing.setCurrency(asset.getCurrency());
                 if (asset.getCurrentPrice() != null) existing.setCurrentPrice(asset.getCurrentPrice());
                 return assetRepository.save(existing);

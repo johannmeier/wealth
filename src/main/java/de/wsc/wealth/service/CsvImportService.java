@@ -30,13 +30,16 @@ public class CsvImportService {
     private final AssetRepository assetRepository;
     private final AssetQuantityRepository quantityRepository;
     private final AssetSearchService assetSearchService;
+    private final AssetCriteriaService assetCriteriaService;
 
     public CsvImportService(AssetRepository assetRepository,
                             AssetQuantityRepository quantityRepository,
-                            AssetSearchService assetSearchService) {
+                            AssetSearchService assetSearchService,
+                            AssetCriteriaService assetCriteriaService) {
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
         this.assetSearchService = assetSearchService;
+        this.assetCriteriaService = assetCriteriaService;
     }
 
     public ImportResult importDkb(InputStream in, Depot depot) throws IOException {
@@ -162,6 +165,10 @@ public class CsvImportService {
     private Asset createAsset(String isin, List<String> newAssets) {
         Asset a = new Asset();
         a.setIsin(isin);
+        String type = "AKTIE";
+        String category = "BOERSENGEHANDELT";
+        String allocation = "RISIKOBEHAFTET";
+        String distribution = null;
         try {
             var results = assetSearchService.search(isin, "EUR");
             if (!results.isEmpty()) {
@@ -170,36 +177,27 @@ public class CsvImportService {
                 String sym = r.get("symbol");
                 if (sym != null && !sym.isBlank()) a.setSymbol(sym);
                 a.setCurrency(r.getOrDefault("currency", "EUR"));
-                try { a.setType(AssetType.valueOf(r.getOrDefault("type", "AKTIE"))); }
-                catch (IllegalArgumentException e) { a.setType(AssetType.AKTIE); }
-                try { a.setCategory(AssetCategory.valueOf(r.getOrDefault("category", "BOERSENGEHANDELT"))); }
-                catch (IllegalArgumentException e) { a.setCategory(AssetCategory.BOERSENGEHANDELT); }
-                try { a.setAssetAllocation(AssetAllocation.valueOf(r.getOrDefault("assetAllocation", "RISIKOBEHAFTET"))); }
-                catch (IllegalArgumentException e) { a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET); }
-                String dp = r.get("distributionPolicy");
-                if (dp != null) {
-                    try { a.setDistributionPolicy(DistributionPolicy.valueOf(dp)); }
-                    catch (IllegalArgumentException ignored) {}
-                }
+                type = r.getOrDefault("type", "AKTIE");
+                category = r.getOrDefault("category", "BOERSENGEHANDELT");
+                allocation = r.getOrDefault("assetAllocation", "RISIKOBEHAFTET");
+                distribution = r.get("distributionPolicy");
             } else {
                 a.setName(isin);
                 a.setCurrency("EUR");
-                a.setType(AssetType.AKTIE);
-                a.setCategory(AssetCategory.BOERSENGEHANDELT);
-                a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
             }
         } catch (Exception e) {
             log.warn("Yahoo Finance Suche fehlgeschlagen für ISIN {}: {}", isin, e.getMessage());
             a.setName(isin);
             a.setCurrency("EUR");
-            a.setType(AssetType.AKTIE);
-            a.setCategory(AssetCategory.BOERSENGEHANDELT);
-            a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
         }
-        assetRepository.save(a);
+        Asset saved = assetRepository.save(a);
+        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.TYPE, type, "AKTIE");
+        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.CATEGORY, category, "BOERSENGEHANDELT");
+        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.ASSET_ALLOCATION, allocation, "RISIKOBEHAFTET");
+        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.DISTRIBUTION_POLICY, distribution, null);
         newAssets.add(isin);
         log.info("Neues Wertpapier aus CSV angelegt: {}", isin);
-        return a;
+        return saved;
     }
 
     // Parses a single CSV line respecting double-quoted fields.

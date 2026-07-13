@@ -1,6 +1,7 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
+import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.MonthlyWealth;
 import de.wsc.wealth.dto.StatisticsGroup;
 import de.wsc.wealth.dto.WealthPosition;
@@ -29,6 +30,7 @@ public class StatisticsService {
     private final CoinQuantityRepository coinQuantityRepository;
     private final CoinService coinService;
     private final AssetService assetService;
+    private final AssetCriteriaService assetCriteriaService;
 
     public StatisticsService(AssetRepository assetRepository,
                              AccountRepository accountRepository,
@@ -39,7 +41,8 @@ public class StatisticsService {
                              CoinRepository coinRepository,
                              CoinQuantityRepository coinQuantityRepository,
                              CoinService coinService,
-                             AssetService assetService) {
+                             AssetService assetService,
+                             AssetCriteriaService assetCriteriaService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.quantityRepository = quantityRepository;
@@ -50,6 +53,7 @@ public class StatisticsService {
         this.coinQuantityRepository = coinQuantityRepository;
         this.coinService = coinService;
         this.assetService = assetService;
+        this.assetCriteriaService = assetCriteriaService;
     }
 
     public List<WealthPosition> getAllPositions() {
@@ -72,6 +76,8 @@ public class StatisticsService {
                 c.getDate().isAfter(a.getDate()) ? c : a);
         }
 
+        Map<Long, AssetCriteriaSnapshot> criteriaByAssetId = assetCriteriaService.getSnapshotsByAssetId();
+
         Map<Long, BigDecimal> effectivePrices = assetService.getEffectivePricesByAssetId();
         for (Asset asset : assetRepository.findAllByArchivedFalseOrderByNameAsc()) {
             BigDecimal priceEur = exchangeRateService.toEur(effectivePrices.get(asset.getId()), asset.getCurrency());
@@ -93,9 +99,12 @@ public class StatisticsService {
                 p.setId(asset.getId());
                 p.setName(asset.getName());
                 p.setType("ASSET");
-                p.setAssetType(asset.getType());
-                p.setAssetAllocation(asset.getAssetAllocation());
-                p.setIndexName(asset.getIndexName());
+                AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(asset.getId());
+                if (snapshot != null) {
+                    p.setAssetType(displayCode(snapshot.getTypeCode(), snapshot.getTypeLabel()));
+                    p.setAssetAllocation(displayCode(snapshot.getAllocationCode(), snapshot.getAllocationLabel()));
+                    p.setIndexName(snapshot.getIndexName());
+                }
                 p.setQuantity(totalQuantity);
                 p.setPrice(priceEur);
                 p.setCurrency("EUR");
@@ -115,7 +124,7 @@ public class StatisticsService {
             p.setId(account.getId());
             p.setName(account.getDisplayName());
             p.setType("ACCOUNT");
-            p.setAssetAllocation(account.getAssetAllocation());
+            p.setAssetAllocation(account.getAssetAllocation() != null ? account.getAssetAllocation().name() : null);
             p.setValue(balEur);
             p.setCurrency("EUR");
             positions.add(p);
@@ -163,9 +172,12 @@ public class StatisticsService {
             p.setId(assetId);
             p.setName(asset.getName());
             p.setType("COIN");
-            p.setAssetType(asset.getType());
-            p.setAssetAllocation(asset.getAssetAllocation());
-            p.setIndexName(asset.getIndexName());
+            AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(assetId);
+            if (snapshot != null) {
+                p.setAssetType(displayCode(snapshot.getTypeCode(), snapshot.getTypeLabel()));
+                p.setAssetAllocation(displayCode(snapshot.getAllocationCode(), snapshot.getAllocationLabel()));
+                p.setIndexName(snapshot.getIndexName());
+            }
             p.setValue(entry.getValue());
             p.setCurrency("EUR");
             Set<String> coinDepots = coinDepotsByAssetId.get(assetId);
@@ -379,7 +391,7 @@ public class StatisticsService {
         Map<String, List<WealthPosition>> grouped = all.stream()
             .collect(Collectors.groupingBy(
                 p -> "ACCOUNT".equals(p.getType()) ? "KONTO"
-                    : (p.getAssetType() != null ? p.getAssetType().name() : "SONSTIGE"),
+                    : (p.getAssetType() != null ? p.getAssetType() : "SONSTIGE"),
                 LinkedHashMap::new, Collectors.toList()
             ));
 
@@ -392,7 +404,7 @@ public class StatisticsService {
 
         Map<String, List<WealthPosition>> grouped = all.stream()
             .collect(Collectors.groupingBy(
-                p -> p.getAssetAllocation() != null ? p.getAssetAllocation().name() : "NICHT_KLASSIFIZIERT",
+                p -> p.getAssetAllocation() != null ? p.getAssetAllocation() : "NICHT_KLASSIFIZIERT",
                 LinkedHashMap::new, Collectors.toList()
             ));
 
@@ -421,6 +433,10 @@ public class StatisticsService {
             .map(WealthPosition::getValue)
             .filter(Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private String displayCode(String code, String label) {
+        return code != null ? code : label;
     }
 
     private BigDecimal computeValue(BigDecimal quantity, BigDecimal price) {

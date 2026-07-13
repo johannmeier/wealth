@@ -42,12 +42,12 @@
         <td th:text="${pos.name}"></td>
         <td>
           <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info" th:text="#{assetType.KONTO}">Konto</span>
-          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msg('assetType.' + pos.assetType.name())}"></span>
+          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msgOrNull('assetType.' + pos.assetType) ?: pos.assetType}"></span>
         </td>
         <td>
           <span th:if="${pos.assetAllocation != null}"
-                th:class="${pos.assetAllocation.name() == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                th:text="${#messages.msg('assetAllocation.' + pos.assetAllocation.name())}"></span>
+                th:class="${pos.assetAllocation == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
+                th:text="${#messages.msgOrNull('assetAllocation.' + pos.assetAllocation) ?: pos.assetAllocation}"></span>
         </td>
         <td style="white-space:nowrap" th:text="${pos.indexName ?: '-'}"></td>
         <td>

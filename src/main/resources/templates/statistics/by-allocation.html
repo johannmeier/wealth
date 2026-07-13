@@ -31,7 +31,7 @@
         <tr class="table-secondary">
           <td colspan="3" class="fw-semibold">
             <span th:class="${group.name == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                  th:text="${#messages.msg('assetAllocation.' + group.name)}"></span>
+                  th:text="${#messages.msgOrNull('assetAllocation.' + group.name) ?: group.name}"></span>
           </td>
           <td class="text-end fw-semibold"
               th:text="${#numbers.formatDecimal(group.totalValue.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
@@ -40,7 +40,7 @@
         </tr>
         <tr th:each="p : ${group.positions}">
           <td th:text="${p.name}"></td>
-          <td th:text="${p.assetType != null ? #messages.msg('assetType.' + p.assetType.name()) : (p.type == 'ACCOUNT' ? #messages.msg('assetType.KONTO') : '-')}"></td>
+          <td th:text="${p.assetType != null ? (#messages.msgOrNull('assetType.' + p.assetType) ?: p.assetType) : (p.type == 'ACCOUNT' ? #messages.msg('assetType.KONTO') : '-')}"></td>
           <td th:text="${p.indexName ?: '-'}"></td>
           <td class="text-end" th:text="${#numbers.formatDecimal(p.value.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(p.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>

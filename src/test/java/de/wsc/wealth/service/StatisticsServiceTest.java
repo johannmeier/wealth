@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +31,7 @@ class StatisticsServiceTest {
     @Mock private CoinQuantityRepository coinQuantityRepository;
     @Mock private CoinService coinService;
     @Mock private AssetService assetService;
+    @Mock private AssetCriteriaService assetCriteriaService;
 
     private StatisticsService statisticsService;
 
@@ -38,7 +40,8 @@ class StatisticsServiceTest {
         statisticsService = new StatisticsService(assetRepository, accountRepository,
                 quantityRepository, balanceRepository,
                 priceHistoryRepository, exchangeRateService, coinRepository,
-                coinQuantityRepository, coinService, assetService);
+                coinQuantityRepository, coinService, assetService, assetCriteriaService);
+        lenient().when(assetCriteriaService.getSnapshotsByAssetId()).thenReturn(Map.of());
     }
 
     @Test
