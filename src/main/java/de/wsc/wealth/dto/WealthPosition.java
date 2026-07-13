@@ -1,15 +1,13 @@
 package de.wsc.wealth.dto;
 
-import de.wsc.wealth.domain.AssetAllocation;
-import de.wsc.wealth.domain.AssetType;
 import java.math.BigDecimal;
 
 public class WealthPosition {
     private Long id;
     private String name;
     private String type; // "ASSET" or "ACCOUNT"
-    private AssetType assetType;
-    private AssetAllocation assetAllocation;
+    private String assetType;
+    private String assetAllocation;
     private String indexName;
     private BigDecimal quantity;
     private BigDecimal price;
@@ -26,10 +24,10 @@ public class WealthPosition {
     public void setName(String name) { this.name = name; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
-    public AssetType getAssetType() { return assetType; }
-    public void setAssetType(AssetType assetType) { this.assetType = assetType; }
-    public AssetAllocation getAssetAllocation() { return assetAllocation; }
-    public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
+    public String getAssetType() { return assetType; }
+    public void setAssetType(String assetType) { this.assetType = assetType; }
+    public String getAssetAllocation() { return assetAllocation; }
+    public void setAssetAllocation(String assetAllocation) { this.assetAllocation = assetAllocation; }
     public String getIndexName() { return indexName; }
     public void setIndexName(String indexName) { this.indexName = indexName; }
     public BigDecimal getQuantity() { return quantity; }

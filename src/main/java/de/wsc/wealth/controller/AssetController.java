@@ -1,10 +1,13 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.*;
+import de.wsc.wealth.dto.AssetCriteriaSnapshot;
+import de.wsc.wealth.service.AssetCriteriaService;
 import de.wsc.wealth.service.AssetSearchService;
 import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.ExchangeRateService;
 import de.wsc.wealth.service.PriceService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,13 +29,16 @@ public class AssetController {
     private final PriceService priceService;
     private final ExchangeRateService exchangeRateService;
     private final AssetSearchService assetSearchService;
+    private final AssetCriteriaService assetCriteriaService;
 
     public AssetController(AssetService assetService, PriceService priceService,
-                           ExchangeRateService exchangeRateService, AssetSearchService assetSearchService) {
+                           ExchangeRateService exchangeRateService, AssetSearchService assetSearchService,
+                           AssetCriteriaService assetCriteriaService) {
         this.assetService = assetService;
         this.priceService = priceService;
         this.exchangeRateService = exchangeRateService;
         this.assetSearchService = assetSearchService;
+        this.assetCriteriaService = assetCriteriaService;
     }
 
     @GetMapping
@@ -44,6 +50,9 @@ public class AssetController {
         }
         model.addAttribute("assets", assets);
         model.addAttribute("eurPrices", eurPrices);
+        model.addAttribute("criteria", assetCriteriaService.getSnapshotsByAssetId());
+        model.addAttribute("autoPriceByAsset",
+            assetCriteriaService.getAutoPriceByAssetId(assets.stream().map(Asset::getId).toList()));
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
         model.addAttribute("archivedAssets", assetService.findAllArchived());
         model.addAttribute("deletableIds", assetService.getDeletableArchivedIds());
@@ -56,7 +65,7 @@ public class AssetController {
     public String newForm(Model model) {
         model.addAttribute("asset", new Asset());
         model.addAttribute("returnUrl", "/assets");
-        addEnums(model);
+        addCriteria(model, null);
         return "assets/form";
     }
 
@@ -64,18 +73,21 @@ public class AssetController {
     public String editForm(@PathVariable Long id,
                            @RequestParam(required = false) String returnUrl,
                            Model model) {
-        model.addAttribute("asset", assetService.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        Asset asset = assetService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("asset", asset);
         model.addAttribute("returnUrl", returnUrl != null ? returnUrl : "/assets");
-        addEnums(model);
+        addCriteria(model, asset);
         return "assets/form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute Asset asset,
                        @RequestParam(required = false) String returnUrl,
+                       HttpServletRequest request,
                        RedirectAttributes ra) {
         Asset saved = assetService.save(asset);
+        assetCriteriaService.saveAssignments(saved, request);
         ra.addFlashAttribute("success", "Wertpapier gespeichert.");
         ra.addFlashAttribute("highlightId", saved.getId());
         return "redirect:" + (returnUrl != null && !returnUrl.isBlank() ? returnUrl : "/assets");
@@ -149,7 +161,7 @@ public class AssetController {
     @PostMapping("/{id}/refresh-price")
     public String refreshPrice(@PathVariable Long id, RedirectAttributes ra) {
         assetService.findById(id).ifPresent(s -> {
-            if (s.isAutoPrice() && s.getSymbol() != null) {
+            if (assetCriteriaService.isAutoPrice(s) && s.getSymbol() != null) {
                 priceService.updatePrice(s);
             }
         });
@@ -160,8 +172,11 @@ public class AssetController {
 
     @PostMapping("/refresh-all-prices")
     public String refreshAllPrices(RedirectAttributes ra) {
-        List<de.wsc.wealth.domain.Asset> toUpdate = assetService.findAll().stream()
-            .filter(s -> s.isAutoPrice() && s.getSymbol() != null)
+        List<Asset> allAssets = assetService.findAll();
+        Map<Long, Boolean> autoPriceByAsset = assetCriteriaService.getAutoPriceByAssetId(
+            allAssets.stream().map(Asset::getId).toList());
+        List<Asset> toUpdate = allAssets.stream()
+            .filter(s -> autoPriceByAsset.getOrDefault(s.getId(), false) && s.getSymbol() != null)
             .toList();
         toUpdate.forEach(priceService::updatePrice);
         ra.addFlashAttribute("success", toUpdate.size() + " Kurse aktualisiert.");
@@ -181,10 +196,11 @@ public class AssetController {
         return assetSearchService.getQuoteDetails(symbol);
     }
 
-    private void addEnums(Model model) {
-        model.addAttribute("categories", AssetCategory.values());
-        model.addAttribute("types", AssetType.values());
-        model.addAttribute("allocations", AssetAllocation.values());
-        model.addAttribute("distributionPolicies", de.wsc.wealth.domain.DistributionPolicy.values());
+    private void addCriteria(Model model, Asset asset) {
+        model.addAttribute("criteriaDefinitions", assetCriteriaService.findAllActive());
+        model.addAttribute("criteriaOptions", assetCriteriaService.getOptionsByDefinitionId());
+        model.addAttribute("assetCriteriaValues", asset != null
+            ? assetCriteriaService.getValuesByDefinitionId(asset)
+            : java.util.Collections.emptyMap());
     }
 }

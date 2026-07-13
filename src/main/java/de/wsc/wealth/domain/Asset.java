@@ -19,20 +19,6 @@ public class Asset {
     private String isin;
     private String symbol;
 
-    @Enumerated(EnumType.STRING)
-    private AssetCategory category;
-
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR(255)")
-    private AssetType type;
-
-    @Enumerated(EnumType.STRING)
-    private AssetAllocation assetAllocation;
-
-    @Enumerated(EnumType.STRING)
-    private DistributionPolicy distributionPolicy;
-
-    private String indexName;
     private String currency = "EUR";
     @org.hibernate.annotations.ColumnDefault("false")
     @Column(nullable = false)
@@ -52,16 +38,6 @@ public class Asset {
     public void setIsin(String isin) { this.isin = isin; }
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
-    public AssetCategory getCategory() { return category; }
-    public void setCategory(AssetCategory category) { this.category = category; }
-    public AssetType getType() { return type; }
-    public void setType(AssetType type) { this.type = type; }
-    public AssetAllocation getAssetAllocation() { return assetAllocation; }
-    public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
-    public DistributionPolicy getDistributionPolicy() { return distributionPolicy; }
-    public void setDistributionPolicy(DistributionPolicy distributionPolicy) { this.distributionPolicy = distributionPolicy; }
-    public String getIndexName() { return indexName; }
-    public void setIndexName(String indexName) { this.indexName = indexName; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public BigDecimal getCurrentPrice() { return currentPrice; }
@@ -71,10 +47,4 @@ public class Asset {
 
     public boolean isArchived() { return archived; }
     public void setArchived(boolean archived) { this.archived = archived; }
-
-    public boolean isAutoPrice() {
-        return category == AssetCategory.BOERSENGEHANDELT
-            || category == AssetCategory.EDELMETALL
-            || type == AssetType.KRYPTO;
-    }
 }

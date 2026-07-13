@@ -46,6 +46,7 @@ public class BullionVaultService {
     private final DepotRepository depotRepository;
     private final AssetRepository assetRepository;
     private final AssetQuantityRepository quantityRepository;
+    private final AssetCriteriaService assetCriteriaService;
 
     public BullionVaultService(BullionVaultConfigRepository configRepository,
                                BankRepository bankRepository,
@@ -53,7 +54,8 @@ public class BullionVaultService {
                                AccountBalanceRepository balanceRepository,
                                DepotRepository depotRepository,
                                AssetRepository assetRepository,
-                               AssetQuantityRepository quantityRepository) {
+                               AssetQuantityRepository quantityRepository,
+                               AssetCriteriaService assetCriteriaService) {
         this.configRepository = configRepository;
         this.bankRepository = bankRepository;
         this.accountRepository = accountRepository;
@@ -61,6 +63,7 @@ public class BullionVaultService {
         this.depotRepository = depotRepository;
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
+        this.assetCriteriaService = assetCriteriaService;
     }
 
     @Transactional(readOnly = true)
@@ -328,11 +331,12 @@ public class BullionVaultService {
             a.setName(name);
             a.setSymbol(symbol);
             a.setCurrency(currency);
-            a.setCategory(AssetCategory.EDELMETALL);
-            a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
+            Asset saved = assetRepository.save(a);
+            assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.CATEGORY, "EDELMETALL", "EDELMETALL");
+            assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.ASSET_ALLOCATION, "RISIKOBEHAFTET", "RISIKOBEHAFTET");
             newAssets.add(name);
             log.info("Created asset {} ({})", name, symbol);
-            return assetRepository.save(a);
+            return saved;
         });
     }
 }

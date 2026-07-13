@@ -32,7 +32,7 @@
         <tr class="table-secondary">
           <td colspan="4" class="fw-semibold">
             <span th:class="${group.name == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                  th:text="${#messages.msg('assetAllocation.' + group.name)}"></span>
+                  th:text="${#messages.msgOrNull('assetAllocation.' + group.name) ?: group.name}"></span>
           </td>
           <td class="text-end fw-semibold"
               th:text="${#numbers.formatDecimal(group.totalValue.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
@@ -44,7 +44,7 @@
           <td>
             <span th:if="${p.type == 'ACCOUNT'}" class="badge bg-info text-dark" th:text="#{assetType.KONTO}">Konto</span>
             <span th:if="${p.type == 'COIN'}" class="badge" style="background-color:#b8860b" th:text="#{assetType.EDELMETALL}">Edelmetall</span>
-            <span th:if="${p.assetType != null}" class="badge bg-primary" th:text="${#messages.msg('assetType.' + p.assetType.name())}"></span>
+            <span th:if="${p.assetType != null}" class="badge bg-primary" th:text="${#messages.msgOrNull('assetType.' + p.assetType) ?: p.assetType}"></span>
           </td>
           <td th:text="${p.indexName ?: '-'}"></td>
           <td th:text="${p.depotName ?: '-'}"></td>

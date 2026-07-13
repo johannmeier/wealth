@@ -42,45 +42,23 @@
       </div>
     </div>
     <div class="row">
-      <div class="col mb-3">
-        <label class="form-label" th:text="#{col.category}">Kategorie</label>
-        <select th:field="*{category}" class="form-select">
+      <div class="col mb-3" th:each="def : ${criteriaDefinitions}">
+        <label class="form-label" th:text="${def.name}">Kriterium</label>
+        <select th:if="${def.valueType.name() == 'FIXED_LIST'}"
+                th:name="|crit_${def.id}|"
+                th:id="${def.systemCode != null} ? ('crit-' + ${def.systemCode}) : null"
+                class="form-select">
           <option value="" th:text="#{form.select}">-- wählen --</option>
-          <option th:each="c : ${categories}" th:value="${c}"
-                  th:text="${#messages.msg('assetCategory.' + c.name())}"></option>
+          <option th:each="o : ${criteriaOptions.get(def.id)}" th:value="${o.id}"
+                  th:attr="data-system-code=${o.systemCode}"
+                  th:text="${o.value}"
+                  th:selected="${assetCriteriaValues.get(def.id) != null and assetCriteriaValues.get(def.id).option != null and assetCriteriaValues.get(def.id).option.id == o.id}"></option>
         </select>
-      </div>
-      <div class="col mb-3">
-        <label class="form-label" th:text="#{form.security-type}">Wertpapierart</label>
-        <select th:field="*{type}" class="form-select">
-          <option value="" th:text="#{form.select}">-- wählen --</option>
-          <option th:each="t : ${types}" th:value="${t}"
-                  th:text="${#messages.msg('assetType.' + t.name())}"></option>
-        </select>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col mb-3">
-        <label class="form-label" th:text="#{col.allocation}">Asset Allocation</label>
-        <select th:field="*{assetAllocation}" class="form-select">
-          <option value="" th:text="#{form.select}">-- wählen --</option>
-          <option th:each="a : ${allocations}" th:value="${a}"
-                  th:text="${#messages.msg('assetAllocation.' + a.name())}"></option>
-        </select>
-      </div>
-      <div class="col mb-3">
-        <label class="form-label" th:text="#{col.distribution-policy}">Ausschüttung</label>
-        <select th:field="*{distributionPolicy}" class="form-select">
-          <option value="" th:text="#{form.select}">-- wählen --</option>
-          <option th:each="d : ${distributionPolicies}" th:value="${d}"
-                  th:text="${#messages.msg('distributionPolicy.' + d.name())}"></option>
-        </select>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col mb-3">
-        <label class="form-label" th:text="#{form.index-label}">Index</label>
-        <input type="text" th:field="*{indexName}" class="form-control"/>
+        <input th:unless="${def.valueType.name() == 'FIXED_LIST'}"
+               type="text" class="form-control"
+               th:name="|crit_${def.id}|"
+               th:id="${def.systemCode != null} ? ('crit-' + ${def.systemCode}) : null"
+               th:value="${assetCriteriaValues.get(def.id)?.freeTextValue}"/>
       </div>
     </div>
     <div class="row">
@@ -153,10 +131,10 @@
     set('name',     r.name);
     set('symbol',   r.symbol);
     set('currency', r.currency || 'EUR');
-    selectOption('category',           r.category);
-    selectOption('type',               r.type);
-    selectOption('assetAllocation',    r.assetAllocation);
-    selectOption('distributionPolicy', r.distributionPolicy);
+    selectOption('crit-CATEGORY',             r.category);
+    selectOption('crit-TYPE',                 r.type);
+    selectOption('crit-ASSET_ALLOCATION',     r.assetAllocation);
+    selectOption('crit-DISTRIBUTION_POLICY',  r.distributionPolicy);
     // If search query itself is an ISIN, use it; otherwise use result's ISIN if present
     const query = searchInput.value.trim();
     const isin = r.isin || (/^[A-Z]{2}[A-Z0-9]{10}$/i.test(query) ? query.toUpperCase() : '');
@@ -181,11 +159,11 @@
     if (el && val != null) el.value = val;
   }
 
-  function selectOption(id, val) {
+  function selectOption(id, code) {
     const sel = document.getElementById(id);
-    if (!sel || !val) return;
+    if (!sel || !code) return;
     for (const opt of sel.options) {
-      if (opt.value === val) { opt.selected = true; return; }
+      if (opt.dataset.systemCode === code) { opt.selected = true; return; }
     }
   }
 
