@@ -178,7 +178,7 @@ class StatisticsServiceTest {
     }
 
     @Test
-    void getStatsByCriteria_groupsAssetsByValueAndBucketsAccountsAsKonten() {
+    void getStatsByCriteria_groupsAssetsByValueAndExcludesAccounts() {
         Asset asset1 = asset(1L, "ETF World", new BigDecimal("100.00"), "EUR");
         Asset asset2 = asset(2L, "ETF Emerging", new BigDecimal("50.00"), "EUR");
         Depot depot = depot(1L, "Main");
@@ -202,7 +202,7 @@ class StatisticsServiceTest {
         List<de.wsc.wealth.dto.StatisticsGroup> groups = statisticsService.getStatsByCriteria(42L);
 
         assertThat(groups).extracting(de.wsc.wealth.dto.StatisticsGroup::getName)
-                .containsExactlyInAnyOrder("Deutschland", "KEIN_WERT", "Konten");
+                .containsExactlyInAnyOrder("Deutschland", "KEIN_WERT");
     }
 
     // --- helpers ---
