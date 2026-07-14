@@ -24,6 +24,8 @@ public class CriteriaDefinition {
     @Column(nullable = false)
     private int sortOrder;
 
+    private Integer colorIndex;
+
     public CriteriaDefinition() {}
 
     public Long getId() { return id; }
@@ -36,6 +38,8 @@ public class CriteriaDefinition {
     public void setSystemCode(String systemCode) { this.systemCode = systemCode; }
     public int getSortOrder() { return sortOrder; }
     public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
+    public Integer getColorIndex() { return colorIndex; }
+    public void setColorIndex(Integer colorIndex) { this.colorIndex = colorIndex; }
 
     public boolean isDeletable() {
         return systemCode == null;

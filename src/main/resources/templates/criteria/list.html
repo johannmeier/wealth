@@ -28,17 +28,16 @@
       <tr>
         <th scope="col" th:text="#{form.criteria-name}">Name</th>
         <th scope="col" th:text="#{form.criteria-value-type}">Werttyp</th>
-        <th scope="col"></th>
         <th scope="col" th:text="#{common.actions}">Aktionen</th>
       </tr>
     </thead>
     <tbody>
       <tr th:each="d : ${definitions}">
-        <td th:text="${d.name}"></td>
-        <td th:text="${#messages.msg('criteriaValueType.' + d.valueType.name())}"></td>
         <td>
-          <span th:if="${!d.deletable}" class="badge bg-secondary" th:text="#{page.criteria.system-badge}">System</span>
+          <span th:if="${d.colorIndex != null}" th:class="'badge me-1 crit-color-' + ${d.colorIndex}">&nbsp;&nbsp;</span>
+          <span th:text="${d.name}"></span>
         </td>
+        <td th:text="${#messages.msg('criteriaValueType.' + d.valueType.name())}"></td>
         <td>
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary" type="button"
@@ -62,7 +61,7 @@
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(definitions)}">
-        <td colspan="4" class="text-center text-muted" th:text="#{page.criteria.empty}">Keine Kriterien vorhanden.</td>
+        <td colspan="3" class="text-center text-muted" th:text="#{page.criteria.empty}">Keine Kriterien vorhanden.</td>
       </tr>
     </tbody>
   </table>

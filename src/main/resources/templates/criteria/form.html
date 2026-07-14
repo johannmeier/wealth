@@ -24,6 +24,15 @@
       <input th:unless="${definition.id == null}" type="text" class="form-control" disabled
              th:value="${#messages.msg('criteriaValueType.' + definition.valueType.name())}"/>
     </div>
+    <div class="mb-3">
+      <label class="form-label" th:text="#{form.criteria-color}">Farbe</label>
+      <div class="d-flex flex-wrap gap-2">
+        <label th:each="i : ${colorIndexes}" class="crit-color-swatch">
+          <input type="radio" th:field="*{colorIndex}" th:value="${i}" class="visually-hidden"/>
+          <span th:class="'crit-color-swatch-dot crit-color-' + ${i}"></span>
+        </label>
+      </div>
+    </div>
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
       <a th:href="@{/criteria}" class="btn btn-outline-secondary" th:text="#{common.cancel}">Abbrechen</a>

@@ -42,7 +42,6 @@
             <tr>
               <th scope="col" th:text="#{col.value}">Wert</th>
               <th scope="col"></th>
-              <th scope="col"></th>
             </tr>
           </thead>
           <tbody>
@@ -55,9 +54,6 @@
                 </form>
               </td>
               <td>
-                <span th:if="${!o.deletable}" class="badge bg-secondary" th:text="#{page.criteria.system-badge}">System</span>
-              </td>
-              <td>
                 <form th:if="${o.deletable}" th:action="@{/criteria/{id}/options/{oid}/delete(id=${definition.id},oid=${o.id})}" method="post"
                       th:attr="onsubmit=|return confirm('#{confirm.delete-criteria-option}')|">
                   <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
@@ -65,7 +61,7 @@
               </td>
             </tr>
             <tr th:if="${#lists.isEmpty(options)}">
-              <td colspan="3" class="text-center text-muted" th:text="#{page.criteria.options.empty}">Noch keine Werte definiert.</td>
+              <td colspan="2" class="text-center text-muted" th:text="#{page.criteria.options.empty}">Noch keine Werte definiert.</td>
             </tr>
           </tbody>
         </table>

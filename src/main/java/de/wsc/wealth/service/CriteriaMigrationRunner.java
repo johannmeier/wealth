@@ -8,9 +8,11 @@ import org.springframework.stereotype.Component;
 public class CriteriaMigrationRunner implements ApplicationRunner {
 
     private final CriteriaMigrationService migrationService;
+    private final CriteriaService criteriaService;
 
-    public CriteriaMigrationRunner(CriteriaMigrationService migrationService) {
+    public CriteriaMigrationRunner(CriteriaMigrationService migrationService, CriteriaService criteriaService) {
         this.migrationService = migrationService;
+        this.criteriaService = criteriaService;
     }
 
     @Override
@@ -18,5 +20,6 @@ public class CriteriaMigrationRunner implements ApplicationRunner {
         migrationService.seedSystemCriteria();
         migrationService.backfillAssetCriteriaValues();
         migrationService.dropLegacyAssetColumns();
+        criteriaService.assignMissingColorIndexes();
     }
 }

@@ -10,11 +10,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class CriteriaService {
+
+    public static final int COLOR_COUNT = 10;
 
     private final CriteriaDefinitionRepository definitionRepository;
     private final CriteriaOptionRepository optionRepository;
@@ -44,11 +50,50 @@ public class CriteriaService {
     public CriteriaDefinition save(CriteriaDefinition form) {
         if (form.getId() == null) {
             form.setSortOrder(nextDefinitionSortOrder());
+            form.setColorIndex(form.getColorIndex() != null ? form.getColorIndex() : nextFreeColorIndex());
             return definitionRepository.save(form);
         }
         CriteriaDefinition existing = definitionRepository.findById(form.getId()).orElseThrow();
         existing.setName(form.getName());
+        if (form.getColorIndex() != null) existing.setColorIndex(form.getColorIndex());
         return definitionRepository.save(existing);
+    }
+
+    /**
+     * The lowest color-pair index (0-9) not yet used by any criterion; once all 10 are taken,
+     * falls back to the least-used one so colors stay as spread out as possible.
+     */
+    @Transactional(readOnly = true)
+    public int nextFreeColorIndex() {
+        List<CriteriaDefinition> all = definitionRepository.findAllByOrderBySortOrderAsc();
+        Set<Integer> used = all.stream().map(CriteriaDefinition::getColorIndex)
+            .filter(Objects::nonNull).collect(Collectors.toSet());
+        for (int i = 0; i < COLOR_COUNT; i++) {
+            if (!used.contains(i)) return i;
+        }
+        Map<Integer, Long> counts = all.stream().map(CriteriaDefinition::getColorIndex)
+            .filter(Objects::nonNull)
+            .collect(Collectors.groupingBy(i -> i, Collectors.counting()));
+        int best = 0;
+        long bestCount = Long.MAX_VALUE;
+        for (int i = 0; i < COLOR_COUNT; i++) {
+            long count = counts.getOrDefault(i, 0L);
+            if (count < bestCount) {
+                bestCount = count;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    /** One-time, re-run-safe backfill for criteria that predate the color-pair feature. */
+    public void assignMissingColorIndexes() {
+        for (CriteriaDefinition definition : definitionRepository.findAllByOrderBySortOrderAsc()) {
+            if (definition.getColorIndex() == null) {
+                definition.setColorIndex(nextFreeColorIndex());
+                definitionRepository.save(definition);
+            }
+        }
     }
 
     public void delete(Long id) {

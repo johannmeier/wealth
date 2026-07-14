@@ -48,7 +48,8 @@
             <small th:if="${s.symbol != null}" class="text-muted" th:text="${s.symbol}"></small>
           </td>
           <td class="d-none d-xl-table-cell">
-            <span th:each="b : ${propertyBadgesByAsset.get(s.id)}" class="badge bg-secondary me-1"
+            <span th:each="b : ${propertyBadgesByAsset.get(s.id)}"
+                  th:class="${b.colorIndex != null} ? ('badge me-1 crit-color-' + ${b.colorIndex}) : 'badge bg-secondary me-1'"
                   th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
                   th:title="${b.tooltip}"></span>
           </td>
