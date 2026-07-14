@@ -145,16 +145,10 @@
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{nav.statistics}"
              th:classappend="${uri.startsWith('/statistics')} ? ' active' : ''">Statistiken</a>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" th:href="@{/statistics/overview}" th:text="#{nav.statistics.overview}"
-                   th:classappend="${uri == '/statistics/overview'} ? ' active' : ''">Übersicht</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-index}" th:text="#{nav.statistics.by-index}"
-                   th:classappend="${uri == '/statistics/by-index'} ? ' active' : ''">Nach Index</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-type}" th:text="#{nav.statistics.by-type}"
-                   th:classappend="${uri == '/statistics/by-type'} ? ' active' : ''">Nach Wertpapierart</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-allocation}" th:text="#{nav.statistics.by-allocation}"
-                   th:classappend="${uri == '/statistics/by-allocation'} ? ' active' : ''">Nach Allocation</a></li>
-            <li><a class="dropdown-item" th:href="@{/statistics/by-criteria}" th:text="#{nav.statistics.by-criteria}"
-                   th:classappend="${uri == '/statistics/by-criteria'} ? ' active' : ''">Nach Kriterium</a></li>
+            <li th:each="d : ${navCriteriaDefinitions}">
+              <a class="dropdown-item" th:href="@{/statistics/by-criteria(definitionId=${d.id})}" th:text="${d.name}"
+                 th:classappend="${uri == '/statistics/by-criteria' and selectedDefinitionId != null and selectedDefinitionId == d.id} ? ' active' : ''">Kriterium</a>
+            </li>
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/statistics/history}" th:text="#{nav.statistics.history}"
                    th:classappend="${uri == '/statistics/history'} ? ' active' : ''">Verlauf</a></li>

@@ -1,5 +1,6 @@
 package de.wsc.wealth.controller;
 
+import de.wsc.wealth.service.CriteriaService;
 import de.wsc.wealth.service.ExchangeRateService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ui.Model;
@@ -13,9 +14,11 @@ import java.math.BigDecimal;
 public class CurrencyAdvice {
 
     private final ExchangeRateService exchangeRateService;
+    private final CriteriaService criteriaService;
 
-    public CurrencyAdvice(ExchangeRateService exchangeRateService) {
+    public CurrencyAdvice(ExchangeRateService exchangeRateService, CriteriaService criteriaService) {
         this.exchangeRateService = exchangeRateService;
+        this.criteriaService = criteriaService;
     }
 
     @ModelAttribute
@@ -27,5 +30,6 @@ public class CurrencyAdvice {
         model.addAttribute("displayCurrency", displayCurrency);
         model.addAttribute("eurToDisplayRate", rate != null ? rate : BigDecimal.ONE);
         model.addAttribute("currentUri", request.getRequestURI());
+        model.addAttribute("navCriteriaDefinitions", criteriaService.findAll());
     }
 }
