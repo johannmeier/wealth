@@ -4,8 +4,10 @@ import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AssetAllocation;
 import de.wsc.wealth.domain.Bank;
 import de.wsc.wealth.service.AccountService;
+import de.wsc.wealth.service.AssetCriteriaService;
 import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.ExchangeRateService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,12 +32,13 @@ class AccountControllerTest {
     @Mock private AccountService accountService;
     @Mock private BankService bankService;
     @Mock private ExchangeRateService exchangeRateService;
+    @Mock private AssetCriteriaService assetCriteriaService;
 
     private AccountController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AccountController(accountService, bankService, exchangeRateService);
+        controller = new AccountController(accountService, bankService, exchangeRateService, assetCriteriaService);
     }
 
     @Test
@@ -118,11 +121,13 @@ class AccountControllerTest {
     void save_redirectsToAccountsList() {
         Account account = account(1L, "My Bank", "EUR");
         when(accountService.save(any())).thenReturn(account);
+        HttpServletRequest request = mock(HttpServletRequest.class);
 
-        String result = controller.save(account, null, new RedirectAttributesModelMap());
+        String result = controller.save(account, null, request, new RedirectAttributesModelMap());
 
         assertThat(result).isEqualTo("redirect:/accounts");
         verify(accountService).save(account);
+        verify(assetCriteriaService).saveAssignments(account, request);
     }
 
     @Test

@@ -4,8 +4,10 @@ import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AccountBalance;
 import de.wsc.wealth.domain.AssetAllocation;
 import de.wsc.wealth.service.AccountService;
+import de.wsc.wealth.service.AssetCriteriaService;
 import de.wsc.wealth.service.BankService;
 import de.wsc.wealth.service.ExchangeRateService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,12 +30,14 @@ public class AccountController {
     private final AccountService accountService;
     private final BankService bankService;
     private final ExchangeRateService exchangeRateService;
+    private final AssetCriteriaService assetCriteriaService;
 
     public AccountController(AccountService accountService, BankService bankService,
-                             ExchangeRateService exchangeRateService) {
+                             ExchangeRateService exchangeRateService, AssetCriteriaService assetCriteriaService) {
         this.accountService = accountService;
         this.bankService = bankService;
         this.exchangeRateService = exchangeRateService;
+        this.assetCriteriaService = assetCriteriaService;
     }
 
     @InitBinder("balance")
@@ -72,24 +76,29 @@ public class AccountController {
         model.addAttribute("account", new Account());
         model.addAttribute("allocations", AssetAllocation.values());
         model.addAttribute("banks", bankService.findAll());
+        addCriteria(model, null);
         return "accounts/form";
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        model.addAttribute("account", accountService.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        Account account = accountService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("account", account);
         model.addAttribute("allocations", AssetAllocation.values());
         model.addAttribute("banks", bankService.findAll());
+        addCriteria(model, account);
         return "accounts/form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute Account account,
                        @RequestParam(required = false) Long bankId,
+                       HttpServletRequest request,
                        RedirectAttributes ra) {
         account.setBank(bankId != null ? bankService.findById(bankId).orElse(null) : null);
-        accountService.save(account);
+        Account saved = accountService.save(account);
+        assetCriteriaService.saveAssignments(saved, request);
         ra.addFlashAttribute("success", "Konto gespeichert.");
         return "redirect:/accounts";
     }
@@ -128,5 +137,13 @@ public class AccountController {
         accountService.saveBalance(id, balance);
         ra.addFlashAttribute("success", "Saldo gespeichert.");
         return "redirect:/accounts/" + id + "/balances";
+    }
+
+    private void addCriteria(Model model, Account account) {
+        model.addAttribute("criteriaDefinitions", assetCriteriaService.findAllCustomActive());
+        model.addAttribute("criteriaOptions", assetCriteriaService.getOptionsByDefinitionId());
+        model.addAttribute("accountCriteriaValues", account != null
+            ? assetCriteriaService.getValuesByDefinitionId(account)
+            : java.util.Collections.emptyMap());
     }
 }
