@@ -4,6 +4,7 @@ import de.wsc.wealth.license.LicenseFeature;
 import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.service.CriteriaService;
 import de.wsc.wealth.service.ExchangeRateService;
+import de.wsc.wealth.service.UpdateCheckService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -18,12 +19,14 @@ public class CurrencyAdvice {
     private final ExchangeRateService exchangeRateService;
     private final CriteriaService criteriaService;
     private final LicenseService licenseService;
+    private final UpdateCheckService updateCheckService;
 
     public CurrencyAdvice(ExchangeRateService exchangeRateService, CriteriaService criteriaService,
-                          LicenseService licenseService) {
+                          LicenseService licenseService, UpdateCheckService updateCheckService) {
         this.exchangeRateService = exchangeRateService;
         this.criteriaService = criteriaService;
         this.licenseService = licenseService;
+        this.updateCheckService = updateCheckService;
     }
 
     @ModelAttribute
@@ -43,5 +46,8 @@ public class CurrencyAdvice {
         // Gates the generic "criteria exist" display (Eigenschaften/Index columns): true for
         // either a full custom-criteria license or a Wittmann-only one.
         model.addAttribute("licensedAnyCriteria", licenseService.hasAnyCriteriaFeature());
+        model.addAttribute("updateAvailable", updateCheckService.isUpdateAvailable());
+        model.addAttribute("latestVersion", updateCheckService.getLatestVersion());
+        model.addAttribute("releaseUrl", updateCheckService.getReleaseUrl());
     }
 }

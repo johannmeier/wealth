@@ -1,6 +1,6 @@
 # Wealth
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm--Noncommercial--1.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
 
 A personal wealth tracking application to manage and monitor your entire financial portfolio in one place.
 
@@ -224,7 +224,7 @@ For **physical coins**, use the dedicated Coins section instead — weight is en
 
 ---
 
-## Licensing
+## Paid Features (License Keys)
 
 The app is fully usable without a license (Community tier). A license key unlocks additional features:
 
@@ -241,6 +241,6 @@ Enter a key under **Settings → License**; a lapsed or missing license never de
 
 ## License
 
-MIT — free to use, distribute and modify as long as this notice is retained.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) — free to use, modify and share for any noncommercial purpose (personal use, private study, hobby projects, evaluation, …). Commercial use requires a separate agreement with the author.
 
 **Author:** Wolfgang Schneider
