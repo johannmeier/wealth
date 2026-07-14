@@ -2,6 +2,7 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
+import de.wsc.wealth.dto.CriteriaBadge;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -128,6 +129,105 @@ class AssetCriteriaServiceTest {
         Map<Long, String> result = assetCriteriaService.getValuesByAssetId(999L);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getPropertyBadgesByAssetId_systemCriterionGetsMessageKey() {
+        Asset asset = asset(1L);
+        CriteriaDefinition definition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        definition.setSortOrder(0);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setOption(option(definition, "EDELMETALL", "Edelmetall"));
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAssetId().get(1L);
+
+        assertThat(badges).hasSize(1);
+        assertThat(badges.get(0).getLabel()).isEqualTo("Edelmetall");
+        assertThat(badges.get(0).getMessageKey()).isEqualTo("assetCategory.EDELMETALL");
+        assertThat(badges.get(0).getTooltip()).isEqualTo(definition.getName());
+    }
+
+    @Test
+    void getPropertyBadgesByAssetId_customCriterionHasNoMessageKey() {
+        Asset asset = asset(1L);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
+        definition.setSortOrder(0);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setFreeTextValue("Deutschland");
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAssetId().get(1L);
+
+        assertThat(badges).hasSize(1);
+        assertThat(badges.get(0).getLabel()).isEqualTo("Deutschland");
+        assertThat(badges.get(0).getMessageKey()).isNull();
+    }
+
+    @Test
+    void getPropertyBadgesByAssetId_excludesIndexCriterion() {
+        Asset asset = asset(1L);
+        CriteriaDefinition definition = definition(SystemCriteria.INDEX_NAME, CriteriaValueType.FREE_TEXT);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setFreeTextValue("MSCI World");
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAssetId();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getPropertyBadgesByAssetId_sortsByDefinitionSortOrder() {
+        Asset asset = asset(1L);
+        CriteriaDefinition first = definition(null, CriteriaValueType.FREE_TEXT);
+        first.setSortOrder(0);
+        first.setName("Länder");
+        AssetCriteriaValue firstValue = new AssetCriteriaValue();
+        firstValue.setAsset(asset);
+        firstValue.setDefinition(first);
+        firstValue.setFreeTextValue("Deutschland");
+
+        CriteriaDefinition second = definition(null, CriteriaValueType.FREE_TEXT);
+        second.setSortOrder(1);
+        second.setName("Branche");
+        AssetCriteriaValue secondValue = new AssetCriteriaValue();
+        secondValue.setAsset(asset);
+        secondValue.setDefinition(second);
+        secondValue.setFreeTextValue("Tech");
+
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption())
+            .thenReturn(List.of(secondValue, firstValue));
+
+        List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAssetId().get(1L);
+
+        assertThat(badges).extracting(CriteriaBadge::getLabel).containsExactly("Deutschland", "Tech");
+    }
+
+    @Test
+    void getPropertyBadgesByAccountId_returnsBadgeWithoutMessageKey() {
+        Account account = account(1L);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
+        definition.setSortOrder(0);
+        definition.setName("Länder");
+        AccountCriteriaValue value = new AccountCriteriaValue();
+        value.setAccount(account);
+        value.setDefinition(definition);
+        value.setFreeTextValue("Frankreich");
+        when(accountValueRepository.findAllWithAccountAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAccountId().get(1L);
+
+        assertThat(badges).hasSize(1);
+        assertThat(badges.get(0).getLabel()).isEqualTo("Frankreich");
+        assertThat(badges.get(0).getMessageKey()).isNull();
+        assertThat(badges.get(0).getTooltip()).isEqualTo("Länder");
     }
 
     @Test

@@ -2,6 +2,7 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
+import de.wsc.wealth.dto.CriteriaBadge;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -102,6 +103,77 @@ public class AssetCriteriaService {
                 case SystemCriteria.INDEX_NAME -> snapshot.setIndexName(v.getFreeTextValue());
                 default -> { }
             }
+        }
+        return result;
+    }
+
+    // Maps a system criterion to the i18n key family used for its FIXED_LIST option labels
+    // (kept separate from SystemCriteria's own naming for backward compatibility with
+    // pre-existing message keys shared with other parts of the UI, e.g. Account.assetAllocation).
+    private static final Map<String, String> SYSTEM_MESSAGE_KEY_PREFIX = Map.of(
+        SystemCriteria.CATEGORY, "assetCategory",
+        SystemCriteria.TYPE, "assetType",
+        SystemCriteria.ASSET_ALLOCATION, "assetAllocation",
+        SystemCriteria.DISTRIBUTION_POLICY, "distributionPolicy"
+    );
+
+    /**
+     * All criteria values assigned to each asset (system + custom), sorted by the criterion's
+     * sort order, as ready-to-render badges. The index criterion is excluded since it already
+     * has its own dedicated list column.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAssetId() {
+        Map<Long, List<AssetCriteriaValue>> byAsset = new HashMap<>();
+        for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
+            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
+            String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
+            if (display == null || display.isBlank()) continue;
+            byAsset.computeIfAbsent(v.getAsset().getId(), k -> new java.util.ArrayList<>()).add(v);
+        }
+        Map<Long, List<CriteriaBadge>> result = new HashMap<>();
+        for (Map.Entry<Long, List<AssetCriteriaValue>> entry : byAsset.entrySet()) {
+            List<AssetCriteriaValue> values = entry.getValue();
+            values.sort(java.util.Comparator.comparing(v -> v.getDefinition().getSortOrder()));
+            result.put(entry.getKey(), values.stream().map(this::toBadge).toList());
+        }
+        return result;
+    }
+
+    private CriteriaBadge toBadge(AssetCriteriaValue v) {
+        String label = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
+        String messageKey = null;
+        if (v.getOption() != null && v.getOption().getSystemCode() != null) {
+            String prefix = SYSTEM_MESSAGE_KEY_PREFIX.get(v.getDefinition().getSystemCode());
+            if (prefix != null) messageKey = prefix + "." + v.getOption().getSystemCode();
+        }
+        return new CriteriaBadge(label, messageKey, v.getDefinition().getName());
+    }
+
+    /**
+     * All criteria values assigned to each account, sorted by the criterion's sort order, as
+     * ready-to-render badges. Accounts only ever carry user-defined criteria (see
+     * {@link #findAllCustomActive()}), so unlike {@link #getPropertyBadgesByAssetId()} no
+     * message-key resolution is needed here.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAccountId() {
+        Map<Long, List<AccountCriteriaValue>> byAccount = new HashMap<>();
+        for (AccountCriteriaValue v : accountValueRepository.findAllWithAccountAndDefinitionAndOption()) {
+            String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
+            if (display == null || display.isBlank()) continue;
+            byAccount.computeIfAbsent(v.getAccount().getId(), k -> new java.util.ArrayList<>()).add(v);
+        }
+        Map<Long, List<CriteriaBadge>> result = new HashMap<>();
+        for (Map.Entry<Long, List<AccountCriteriaValue>> entry : byAccount.entrySet()) {
+            List<AccountCriteriaValue> values = entry.getValue();
+            values.sort(java.util.Comparator.comparing(v -> v.getDefinition().getSortOrder()));
+            result.put(entry.getKey(), values.stream()
+                .map(v -> new CriteriaBadge(
+                    v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue(),
+                    null,
+                    v.getDefinition().getName()))
+                .toList());
         }
         return result;
     }

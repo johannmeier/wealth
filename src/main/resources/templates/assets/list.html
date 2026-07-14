@@ -47,17 +47,10 @@
             <div th:text="${s.isin ?: '-'}"></div>
             <small th:if="${s.symbol != null}" class="text-muted" th:text="${s.symbol}"></small>
           </td>
-          <td class="d-none d-xl-table-cell" th:with="c=${criteria.get(s.id)}">
-            <span th:if="${c != null and c.typeLabel != null}" class="badge bg-primary me-1"
-                  th:text="${#messages.msgOrNull('assetType.' + c.typeCode) ?: c.typeLabel}"></span>
-            <span th:if="${c != null and c.categoryLabel != null}" class="badge bg-secondary me-1"
-                  th:text="${#messages.msgOrNull('assetCategory.' + c.categoryCode) ?: c.categoryLabel}"></span>
-            <span th:if="${c != null and c.distributionLabel != null}"
-                  th:class="${c.distributionCode == 'AUSSCHUETTEND'} ? 'badge bg-info text-dark me-1' : 'badge bg-primary me-1'"
-                  th:text="${#messages.msgOrNull('distributionPolicy.' + c.distributionCode) ?: c.distributionLabel}"></span>
-            <span th:if="${c != null and c.allocationLabel != null}"
-                  th:class="${c.allocationCode == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark me-1' : 'badge bg-success me-1'"
-                  th:text="${#messages.msgOrNull('assetAllocation.' + c.allocationCode) ?: c.allocationLabel}"></span>
+          <td class="d-none d-xl-table-cell">
+            <span th:each="b : ${propertyBadgesByAsset.get(s.id)}" class="badge bg-secondary me-1"
+                  th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
+                  th:title="${b.tooltip}"></span>
           </td>
           <td style="white-space:nowrap" th:text="${criteria.get(s.id) != null ? (criteria.get(s.id).indexName ?: '-') : '-'}"></td>
           <td class="small">
