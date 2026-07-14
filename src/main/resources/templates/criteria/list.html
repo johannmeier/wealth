@@ -21,7 +21,7 @@
     <caption>
       <div class="d-flex justify-content-between align-items-center">
         <span th:text="#{page.criteria.title}">Kriterien</span>
-        <a th:href="@{/criteria/new}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ Neu</a>
+        <a th:if="${licensedCustomCriteria}" th:href="@{/criteria/new}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ Neu</a>
       </div>
     </caption>
     <thead class="table-dark">

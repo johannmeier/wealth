@@ -5,6 +5,8 @@ import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.MonthlyWealth;
 import de.wsc.wealth.dto.StatisticsGroup;
 import de.wsc.wealth.dto.WealthPosition;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.*;
 import java.util.TreeMap;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class StatisticsService {
     private final CoinService coinService;
     private final AssetService assetService;
     private final AssetCriteriaService assetCriteriaService;
+    private final LicenseService licenseService;
 
     public StatisticsService(AssetRepository assetRepository,
                              AccountRepository accountRepository,
@@ -42,7 +45,8 @@ public class StatisticsService {
                              CoinQuantityRepository coinQuantityRepository,
                              CoinService coinService,
                              AssetService assetService,
-                             AssetCriteriaService assetCriteriaService) {
+                             AssetCriteriaService assetCriteriaService,
+                             LicenseService licenseService) {
         this.assetRepository = assetRepository;
         this.accountRepository = accountRepository;
         this.quantityRepository = quantityRepository;
@@ -54,6 +58,7 @@ public class StatisticsService {
         this.coinService = coinService;
         this.assetService = assetService;
         this.assetCriteriaService = assetCriteriaService;
+        this.licenseService = licenseService;
     }
 
     public List<WealthPosition> getAllPositions() {
@@ -127,61 +132,63 @@ public class StatisticsService {
             positions.add(p);
         }
 
-        Map<Long, BigDecimal> coinValueByAssetId = new HashMap<>();
-        Map<Long, Set<String>> coinDepotsByAssetId = new HashMap<>();
-        Map<Long, Asset> coinAssetObjects = new HashMap<>();
-        for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
-            Asset resolvedAsset = coinService.resolveAssetForPricing(coin);
-            if (resolvedAsset == null) continue;
-            BigDecimal val = coinService.valueEur(coin);
-            if (val == null) continue;
-            Long aid = resolvedAsset.getId();
-            coinValueByAssetId.merge(aid, val, BigDecimal::add);
-            coinAssetObjects.put(aid, resolvedAsset);
-            String depotName = coin.getDepot() != null ? coin.getDepot().getName() : null;
-            if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
-        }
-        // Coin-Werte zu den verknüpften Wertpapier-Positionen addieren und Depot ergänzen
-        Set<Long> mergedAssetIds = new HashSet<>();
-        for (WealthPosition p : positions) {
-            if (!"ASSET".equals(p.getType())) continue;
-            BigDecimal extra = coinValueByAssetId.get(p.getId());
-            if (extra == null) continue;
-            mergedAssetIds.add(p.getId());
-            p.setValue(p.getValue() != null ? p.getValue().add(extra) : extra);
-            Set<String> coinDepots = coinDepotsByAssetId.get(p.getId());
-            if (coinDepots != null) {
-                List<String> allDepots = new ArrayList<>();
-                if (p.getDepotName() != null && !p.getDepotName().isBlank()) {
-                    Collections.addAll(allDepots, p.getDepotName().split(", "));
+        if (licenseService.isFeatureEnabled(LicenseFeature.COINS)) {
+            Map<Long, BigDecimal> coinValueByAssetId = new HashMap<>();
+            Map<Long, Set<String>> coinDepotsByAssetId = new HashMap<>();
+            Map<Long, Asset> coinAssetObjects = new HashMap<>();
+            for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
+                Asset resolvedAsset = coinService.resolveAssetForPricing(coin);
+                if (resolvedAsset == null) continue;
+                BigDecimal val = coinService.valueEur(coin);
+                if (val == null) continue;
+                Long aid = resolvedAsset.getId();
+                coinValueByAssetId.merge(aid, val, BigDecimal::add);
+                coinAssetObjects.put(aid, resolvedAsset);
+                String depotName = coin.getDepot() != null ? coin.getDepot().getName() : null;
+                if (depotName != null) coinDepotsByAssetId.computeIfAbsent(aid, k -> new LinkedHashSet<>()).add(depotName);
+            }
+            // Coin-Werte zu den verknüpften Wertpapier-Positionen addieren und Depot ergänzen
+            Set<Long> mergedAssetIds = new HashSet<>();
+            for (WealthPosition p : positions) {
+                if (!"ASSET".equals(p.getType())) continue;
+                BigDecimal extra = coinValueByAssetId.get(p.getId());
+                if (extra == null) continue;
+                mergedAssetIds.add(p.getId());
+                p.setValue(p.getValue() != null ? p.getValue().add(extra) : extra);
+                Set<String> coinDepots = coinDepotsByAssetId.get(p.getId());
+                if (coinDepots != null) {
+                    List<String> allDepots = new ArrayList<>();
+                    if (p.getDepotName() != null && !p.getDepotName().isBlank()) {
+                        Collections.addAll(allDepots, p.getDepotName().split(", "));
+                    }
+                    allDepots.addAll(coinDepots);
+                    Collections.sort(allDepots);
+                    p.setDepotName(String.join(", ", allDepots));
                 }
-                allDepots.addAll(coinDepots);
-                Collections.sort(allDepots);
-                p.setDepotName(String.join(", ", allDepots));
             }
-        }
-        // Coins, deren verknüpftes Wertpapier keine eigene Depotposition hat, als eigene Position einfügen
-        for (Map.Entry<Long, BigDecimal> entry : coinValueByAssetId.entrySet()) {
-            Long assetId = entry.getKey();
-            if (mergedAssetIds.contains(assetId)) continue;
-            Asset asset = coinAssetObjects.get(assetId);
-            WealthPosition p = new WealthPosition();
-            p.setId(assetId);
-            p.setName(asset.getName());
-            p.setType("COIN");
-            AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(assetId);
-            if (snapshot != null) {
-                p.setIndexName(snapshot.getIndexName());
+            // Coins, deren verknüpftes Wertpapier keine eigene Depotposition hat, als eigene Position einfügen
+            for (Map.Entry<Long, BigDecimal> entry : coinValueByAssetId.entrySet()) {
+                Long assetId = entry.getKey();
+                if (mergedAssetIds.contains(assetId)) continue;
+                Asset asset = coinAssetObjects.get(assetId);
+                WealthPosition p = new WealthPosition();
+                p.setId(assetId);
+                p.setName(asset.getName());
+                p.setType("COIN");
+                AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(assetId);
+                if (snapshot != null) {
+                    p.setIndexName(snapshot.getIndexName());
+                }
+                p.setValue(entry.getValue());
+                p.setCurrency("EUR");
+                Set<String> coinDepots = coinDepotsByAssetId.get(assetId);
+                if (coinDepots != null) {
+                    List<String> sortedDepots = new ArrayList<>(coinDepots);
+                    Collections.sort(sortedDepots);
+                    p.setDepotName(String.join(", ", sortedDepots));
+                }
+                positions.add(p);
             }
-            p.setValue(entry.getValue());
-            p.setCurrency("EUR");
-            Set<String> coinDepots = coinDepotsByAssetId.get(assetId);
-            if (coinDepots != null) {
-                List<String> sortedDepots = new ArrayList<>(coinDepots);
-                Collections.sort(sortedDepots);
-                p.setDepotName(String.join(", ", sortedDepots));
-            }
-            positions.add(p);
         }
 
         BigDecimal total = totalValue(positions);
@@ -208,24 +215,32 @@ public class StatisticsService {
         List<AccountBalance> allBalances = balanceRepository.findAllWithAccount();
         List<CoinQuantity> allCoinQuantities = coinQuantityRepository.findAllWithCoin();
 
+        boolean coinsLicensed = licenseService.isFeatureEnabled(LicenseFeature.COINS);
+
         // coinId -> assetId (pure ID mapping, no entity proxies)
         Map<Long, Long> coinToAssetId = new HashMap<>();
-        for (Object[] row : coinRepository.findCoinIdToAssetId()) {
-            coinToAssetId.put((Long) row[0], (Long) row[1]);
+        if (coinsLicensed) {
+            for (Object[] row : coinRepository.findCoinIdToAssetId()) {
+                coinToAssetId.put((Long) row[0], (Long) row[1]);
+            }
         }
         // coinId -> current quantity (from Coin entity)
         Map<Long, Integer> coinCurrentQty = new HashMap<>();
-        for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
-            if (coin.getQuantity() != null && coin.getQuantity() > 0
-                    && coinToAssetId.containsKey(coin.getId())) {
-                coinCurrentQty.put(coin.getId(), coin.getQuantity());
+        if (coinsLicensed) {
+            for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
+                if (coin.getQuantity() != null && coin.getQuantity() > 0
+                        && coinToAssetId.containsKey(coin.getId())) {
+                    coinCurrentQty.put(coin.getId(), coin.getQuantity());
+                }
             }
         }
         // coinId -> weightOz
         Map<Long, BigDecimal> coinWeightOz = new HashMap<>();
-        for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
-            BigDecimal oz = coin.getWeightOz();
-            if (oz != null) coinWeightOz.put(coin.getId(), oz);
+        if (coinsLicensed) {
+            for (Coin coin : coinRepository.findAllByOrderByMetalAscNameAscMintYearAsc()) {
+                BigDecimal oz = coin.getWeightOz();
+                if (oz != null) coinWeightOz.put(coin.getId(), oz);
+            }
         }
 
         // (assetId)_(depotId) -> date -> quantity

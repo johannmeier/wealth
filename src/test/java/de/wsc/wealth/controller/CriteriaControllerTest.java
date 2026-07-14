@@ -2,6 +2,8 @@ package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaValueType;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.service.CriteriaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,12 +25,13 @@ import static org.mockito.Mockito.*;
 class CriteriaControllerTest {
 
     @Mock private CriteriaService criteriaService;
+    @Mock private LicenseService licenseService;
 
     private CriteriaController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new CriteriaController(criteriaService);
+        controller = new CriteriaController(criteriaService, licenseService);
     }
 
     @Test
@@ -43,12 +46,24 @@ class CriteriaControllerTest {
     }
 
     @Test
-    void newForm_returnsFormViewWithEmptyDefinition() {
+    void newForm_whenLicensed_returnsFormViewWithEmptyDefinition() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
         Model model = new ExtendedModelMap();
-        String view = controller.newForm(model);
+        String view = controller.newForm(model, new RedirectAttributesModelMap());
 
         assertThat(view).isEqualTo("criteria/form");
         assertThat(model.asMap()).containsKey("definition");
+    }
+
+    @Test
+    void newForm_whenNotLicensed_redirectsWithErrorFlash() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        RedirectAttributesModelMap ra = new RedirectAttributesModelMap();
+
+        String view = controller.newForm(new ExtendedModelMap(), ra);
+
+        assertThat(view).isEqualTo("redirect:/criteria");
+        assertThat(ra.getFlashAttributes()).containsKey("error");
     }
 
     @Test
@@ -58,6 +73,19 @@ class CriteriaControllerTest {
 
         assertThat(result).isEqualTo("redirect:/criteria");
         verify(criteriaService).save(def);
+    }
+
+    @Test
+    void save_whenLicenseRequired_setsErrorFlashAndRedirects() {
+        CriteriaDefinition def = definition("Länder");
+        doThrow(new IllegalStateException("Eigene Kriterien erfordern eine Lizenz."))
+            .when(criteriaService).save(def);
+        RedirectAttributesModelMap ra = new RedirectAttributesModelMap();
+
+        String result = controller.save(def, ra);
+
+        assertThat(result).isEqualTo("redirect:/criteria");
+        assertThat(ra.getFlashAttributes()).containsKey("error");
     }
 
     @Test

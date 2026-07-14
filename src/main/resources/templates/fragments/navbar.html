@@ -139,7 +139,7 @@
             th:classappend="${uri.startsWith('/accounts')} ? ' active' : ''">Konten</a></li>
         <li class="nav-item"><a class="nav-link" th:href="@{/depots}" th:text="#{nav.depots}"
             th:classappend="${uri.startsWith('/depots')} ? ' active' : ''">Depots</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/coins}" th:text="#{nav.coins}"
+        <li class="nav-item" th:if="${licensedCoins}"><a class="nav-link" th:href="@{/coins}" th:text="#{nav.coins}"
             th:classappend="${uri.startsWith('/coins')} ? ' active' : ''">Münzen</a></li>
 <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" th:text="#{nav.statistics}"
@@ -204,6 +204,7 @@
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/settings/databases}" th:text="#{settings.databases}">Datenbank wechseln</a></li>
             <li><a class="dropdown-item" th:href="@{/criteria}" th:text="#{settings.criteria}">Kriterien verwalten</a></li>
+            <li><a class="dropdown-item" th:href="@{/settings/license}" th:text="#{settings.license}">Lizenz</a></li>
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/bullionvault}"
                    th:classappend="${currentUri.startsWith('/bullionvault')} ? ' active' : ''">BullionVault</a></li>

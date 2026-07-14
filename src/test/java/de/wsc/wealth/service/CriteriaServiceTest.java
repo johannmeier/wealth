@@ -3,6 +3,8 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaOption;
 import de.wsc.wealth.domain.CriteriaValueType;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -28,12 +30,14 @@ class CriteriaServiceTest {
     @Mock private CriteriaOptionRepository optionRepository;
     @Mock private AssetCriteriaValueRepository valueRepository;
     @Mock private AccountCriteriaValueRepository accountValueRepository;
+    @Mock private LicenseService licenseService;
 
     private CriteriaService criteriaService;
 
     @BeforeEach
     void setUp() {
-        criteriaService = new CriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository);
+        lenient().when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+        criteriaService = new CriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository, licenseService);
     }
 
     @Test
@@ -150,6 +154,40 @@ class CriteriaServiceTest {
         verify(definitionRepository, never()).save(colored);
         assertThat(uncolored.getColorIndex()).isNotNull();
         verify(definitionRepository).save(uncolored);
+    }
+
+    @Test
+    void save_newDefinition_whenCustomCriteriaNotLicensed_throws() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        CriteriaDefinition form = new CriteriaDefinition();
+        form.setName("Länder");
+        form.setValueType(CriteriaValueType.FIXED_LIST);
+
+        assertThatThrownBy(() -> criteriaService.save(form)).isInstanceOf(IllegalStateException.class);
+        verify(definitionRepository, never()).save(any());
+    }
+
+    @Test
+    void findAll_whenCustomCriteriaNotLicensed_excludesCustomDefinitions() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        CriteriaDefinition systemDef = definition("CATEGORY", 0);
+        CriteriaDefinition customDef = definition(null, 1);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef, customDef));
+
+        List<CriteriaDefinition> result = criteriaService.findAll();
+
+        assertThat(result).containsExactly(systemDef);
+    }
+
+    @Test
+    void findAll_whenCustomCriteriaLicensed_includesAllDefinitions() {
+        CriteriaDefinition systemDef = definition("CATEGORY", 0);
+        CriteriaDefinition customDef = definition(null, 1);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef, customDef));
+
+        List<CriteriaDefinition> result = criteriaService.findAll();
+
+        assertThat(result).containsExactly(systemDef, customDef);
     }
 
     @Test

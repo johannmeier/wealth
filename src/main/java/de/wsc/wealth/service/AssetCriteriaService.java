@@ -3,6 +3,8 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.CriteriaBadge;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -25,20 +27,30 @@ public class AssetCriteriaService {
     private final CriteriaOptionRepository optionRepository;
     private final AssetCriteriaValueRepository valueRepository;
     private final AccountCriteriaValueRepository accountValueRepository;
+    private final LicenseService licenseService;
 
     public AssetCriteriaService(CriteriaDefinitionRepository definitionRepository,
                                 CriteriaOptionRepository optionRepository,
                                 AssetCriteriaValueRepository valueRepository,
-                                AccountCriteriaValueRepository accountValueRepository) {
+                                AccountCriteriaValueRepository accountValueRepository,
+                                LicenseService licenseService) {
         this.definitionRepository = definitionRepository;
         this.optionRepository = optionRepository;
         this.valueRepository = valueRepository;
         this.accountValueRepository = accountValueRepository;
+        this.licenseService = licenseService;
     }
 
+    /**
+     * System criteria are always included; user-defined ones only when licensed for
+     * {@link LicenseFeature#CUSTOM_CRITERIA} (see {@link CriteriaService#findAll()} for the
+     * matching gate on the criteria management side).
+     */
     @Transactional(readOnly = true)
     public List<CriteriaDefinition> findAllActive() {
-        return definitionRepository.findAllByOrderBySortOrderAsc();
+        List<CriteriaDefinition> all = definitionRepository.findAllByOrderBySortOrderAsc();
+        if (licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return all;
+        return all.stream().filter(d -> d.getSystemCode() != null).toList();
     }
 
     /**
@@ -124,9 +136,12 @@ public class AssetCriteriaService {
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAssetId() {
+        boolean customCriteriaLicensed = licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA);
         Map<Long, List<AssetCriteriaValue>> byAsset = new HashMap<>();
         for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
-            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
+            String systemCode = v.getDefinition().getSystemCode();
+            if (SystemCriteria.INDEX_NAME.equals(systemCode)) continue;
+            if (systemCode == null && !customCriteriaLicensed) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display == null || display.isBlank()) continue;
             byAsset.computeIfAbsent(v.getAsset().getId(), k -> new java.util.ArrayList<>()).add(v);
@@ -158,6 +173,7 @@ public class AssetCriteriaService {
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAccountId() {
+        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return Map.of();
         Map<Long, List<AccountCriteriaValue>> byAccount = new HashMap<>();
         for (AccountCriteriaValue v : accountValueRepository.findAllWithAccountAndDefinitionAndOption()) {
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();

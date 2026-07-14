@@ -1,6 +1,8 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.CriteriaDefinition;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.service.CriteriaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -14,19 +16,26 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class CriteriaController {
 
     private final CriteriaService criteriaService;
+    private final LicenseService licenseService;
 
-    public CriteriaController(CriteriaService criteriaService) {
+    public CriteriaController(CriteriaService criteriaService, LicenseService licenseService) {
         this.criteriaService = criteriaService;
+        this.licenseService = licenseService;
     }
 
     @GetMapping
     public String list(Model model) {
         model.addAttribute("definitions", criteriaService.findAll());
+        model.addAttribute("licensedCustomCriteria", licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA));
         return "criteria/list";
     }
 
     @GetMapping("/new")
-    public String newForm(Model model) {
+    public String newForm(Model model, RedirectAttributes ra) {
+        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) {
+            ra.addFlashAttribute("error", "Eigene Kriterien erfordern eine Lizenz.");
+            return "redirect:/criteria";
+        }
         CriteriaDefinition definition = new CriteriaDefinition();
         definition.setColorIndex(criteriaService.nextFreeColorIndex());
         model.addAttribute("definition", definition);
@@ -44,8 +53,12 @@ public class CriteriaController {
 
     @PostMapping("/save")
     public String save(@ModelAttribute CriteriaDefinition definition, RedirectAttributes ra) {
-        criteriaService.save(definition);
-        ra.addFlashAttribute("success", "Kriterium gespeichert.");
+        try {
+            criteriaService.save(definition);
+            ra.addFlashAttribute("success", "Kriterium gespeichert.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/criteria";
     }
 

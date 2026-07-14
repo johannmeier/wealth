@@ -120,8 +120,10 @@ public class DatabaseController {
     }
 
     private void writeDbName(String dbName) {
-        Properties props = new Properties();
+        String configPath = System.getProperty("wealth.config.path");
+        Properties props = readConfig(configPath);
         props.setProperty("db.name", dbName);
+        props.remove("db.path");
         writeConfig(props);
     }
 

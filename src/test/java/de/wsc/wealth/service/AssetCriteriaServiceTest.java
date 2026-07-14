@@ -3,6 +3,8 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.CriteriaBadge;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -31,12 +33,14 @@ class AssetCriteriaServiceTest {
     @Mock private CriteriaOptionRepository optionRepository;
     @Mock private AssetCriteriaValueRepository valueRepository;
     @Mock private AccountCriteriaValueRepository accountValueRepository;
+    @Mock private LicenseService licenseService;
 
     private AssetCriteriaService assetCriteriaService;
 
     @BeforeEach
     void setUp() {
-        assetCriteriaService = new AssetCriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository);
+        lenient().when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+        assetCriteriaService = new AssetCriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository, licenseService);
     }
 
     @Test
@@ -166,6 +170,60 @@ class AssetCriteriaServiceTest {
         assertThat(badges).hasSize(1);
         assertThat(badges.get(0).getLabel()).isEqualTo("Deutschland");
         assertThat(badges.get(0).getMessageKey()).isNull();
+    }
+
+    @Test
+    void getPropertyBadgesByAssetId_whenCustomCriteriaNotLicensed_excludesCustomValue() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        Asset asset = asset(1L);
+        CriteriaDefinition customDefinition = definition(null, CriteriaValueType.FREE_TEXT);
+        AssetCriteriaValue customValue = new AssetCriteriaValue();
+        customValue.setAsset(asset);
+        customValue.setDefinition(customDefinition);
+        customValue.setFreeTextValue("Deutschland");
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(customValue));
+
+        Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAssetId();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getPropertyBadgesByAssetId_whenCustomCriteriaNotLicensed_stillIncludesSystemValue() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        Asset asset = asset(1L);
+        CriteriaDefinition systemDefinition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        AssetCriteriaValue systemValue = new AssetCriteriaValue();
+        systemValue.setAsset(asset);
+        systemValue.setDefinition(systemDefinition);
+        systemValue.setOption(option(systemDefinition, "EDELMETALL", "Edelmetall"));
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(systemValue));
+
+        List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAssetId().get(1L);
+
+        assertThat(badges).extracting(CriteriaBadge::getLabel).containsExactly("Edelmetall");
+    }
+
+    @Test
+    void getPropertyBadgesByAccountId_whenCustomCriteriaNotLicensed_returnsEmpty() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+
+        Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAccountId();
+
+        assertThat(result).isEmpty();
+        verifyNoInteractions(accountValueRepository);
+    }
+
+    @Test
+    void findAllActive_whenCustomCriteriaNotLicensed_excludesCustomDefinitions() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        CriteriaDefinition systemDefinition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition customDefinition = definition(null, CriteriaValueType.FREE_TEXT);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDefinition, customDefinition));
+
+        List<CriteriaDefinition> result = assetCriteriaService.findAllActive();
+
+        assertThat(result).containsExactly(systemDefinition);
     }
 
     @Test
