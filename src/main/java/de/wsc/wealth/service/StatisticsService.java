@@ -1,7 +1,6 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
-import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.MonthlyWealth;
 import de.wsc.wealth.dto.StatisticsGroup;
 import de.wsc.wealth.dto.WealthPosition;
@@ -81,7 +80,7 @@ public class StatisticsService {
                 c.getDate().isAfter(a.getDate()) ? c : a);
         }
 
-        Map<Long, AssetCriteriaSnapshot> criteriaByAssetId = assetCriteriaService.getSnapshotsByAssetId();
+        Map<Long, String> indexNameByAssetId = assetCriteriaService.getIndexNameByAssetId();
 
         Map<Long, BigDecimal> effectivePrices = assetService.getEffectivePricesByAssetId();
         for (Asset asset : assetRepository.findAllByArchivedFalseOrderByNameAsc()) {
@@ -104,10 +103,7 @@ public class StatisticsService {
                 p.setId(asset.getId());
                 p.setName(asset.getName());
                 p.setType("ASSET");
-                AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(asset.getId());
-                if (snapshot != null) {
-                    p.setIndexName(snapshot.getIndexName());
-                }
+                p.setIndexName(indexNameByAssetId.get(asset.getId()));
                 p.setQuantity(totalQuantity);
                 p.setPrice(priceEur);
                 p.setCurrency("EUR");
@@ -175,10 +171,7 @@ public class StatisticsService {
                 p.setId(assetId);
                 p.setName(asset.getName());
                 p.setType("COIN");
-                AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(assetId);
-                if (snapshot != null) {
-                    p.setIndexName(snapshot.getIndexName());
-                }
+                p.setIndexName(indexNameByAssetId.get(assetId));
                 p.setValue(entry.getValue());
                 p.setCurrency("EUR");
                 Set<String> coinDepots = coinDepotsByAssetId.get(assetId);

@@ -33,8 +33,8 @@
         <tr>
           <th scope="col" th:text="#{col.name}">Name</th>
           <th scope="col" th:text="#{col.isin}">ISIN</th>
-          <th scope="col" class="d-none d-xl-table-cell" th:if="${licensedCustomCriteria}" th:text="#{col.properties}">Eigenschaften</th>
-          <th scope="col" th:if="${licensedCustomCriteria}" th:text="#{col.index}">Index</th>
+          <th scope="col" class="d-none d-xl-table-cell" th:if="${licensedAnyCriteria}" th:text="#{col.properties}">Eigenschaften</th>
+          <th scope="col" th:if="${licensedAnyCriteria}" th:text="#{col.index}">Index</th>
           <th scope="col" th:text="#{col.depots}">Depots</th>
           <th scope="col" class="text-end" th:text="#{col.price}">Kurs</th>
           <th scope="col"></th>
@@ -47,13 +47,13 @@
             <div th:text="${s.isin ?: '-'}"></div>
             <small th:if="${s.symbol != null}" class="text-muted" th:text="${s.symbol}"></small>
           </td>
-          <td class="d-none d-xl-table-cell" th:if="${licensedCustomCriteria}">
+          <td class="d-none d-xl-table-cell" th:if="${licensedAnyCriteria}">
             <span th:each="b : ${propertyBadgesByAsset.get(s.id)}"
                   th:class="${b.colorIndex != null} ? ('badge me-1 crit-color-' + ${b.colorIndex}) : 'badge bg-secondary me-1'"
                   th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
                   th:title="${b.tooltip}"></span>
           </td>
-          <td style="white-space:nowrap" th:if="${licensedCustomCriteria}" th:text="${criteria.get(s.id) != null ? (criteria.get(s.id).indexName ?: '-') : '-'}"></td>
+          <td style="white-space:nowrap" th:if="${licensedAnyCriteria}" th:text="${indexNameByAsset.get(s.id) ?: '-'}"></td>
           <td class="small">
             <span th:if="${depotsByAsset.get(s.id) == null}" class="text-muted">-</span>
             <span th:each="entry, i : ${depotsByAsset.get(s.id)}">
@@ -86,7 +86,7 @@
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/edit(id=${s.id})}" th:text="#{common.edit}">Bearbeiten</a></li>
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/quantities(id=${s.id})}" th:text="#{page.assets.quantities.title}">Bestände</a></li>
                 <li><a class="dropdown-item" th:href="@{/assets/{id}/price-history(id=${s.id})}" th:text="#{page.assets.price-history.title}">Kurshistorie</a></li>
-                <li th:if="${autoPriceByAsset.get(s.id)}">
+                <li th:if="${s.autoPrice}">
                   <form th:action="@{/assets/{id}/refresh-price(id=${s.id})}" method="post">
                     <button type="submit" class="dropdown-item" th:text="#{common.refresh}">Kurs aktualisieren</button>
                   </form>
@@ -109,7 +109,7 @@
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(assets)}">
-          <td th:attr="colspan=${licensedCustomCriteria} ? 7 : 5" class="text-center text-muted" th:text="#{page.assets.empty}">Keine Wertpapiere vorhanden.</td>
+          <td th:attr="colspan=${licensedAnyCriteria} ? 7 : 5" class="text-center text-muted" th:text="#{page.assets.empty}">Keine Wertpapiere vorhanden.</td>
         </tr>
       </tbody>
     </table>

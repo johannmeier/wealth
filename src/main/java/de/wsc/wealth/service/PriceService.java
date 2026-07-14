@@ -36,16 +36,13 @@ public class PriceService {
     private final PriceHistoryRepository priceHistoryRepository;
     private final ObjectMapper objectMapper;
     private final RestClient restClient;
-    private final AssetCriteriaService assetCriteriaService;
 
     public PriceService(AssetRepository assetRepository,
                         PriceHistoryRepository priceHistoryRepository,
-                        ObjectMapper objectMapper,
-                        AssetCriteriaService assetCriteriaService) {
+                        ObjectMapper objectMapper) {
         this.assetRepository = assetRepository;
         this.priceHistoryRepository = priceHistoryRepository;
         this.objectMapper = objectMapper;
-        this.assetCriteriaService = assetCriteriaService;
         this.restClient = RestClient.builder()
             .defaultHeader("User-Agent", "Mozilla/5.0")
             .build();
@@ -56,10 +53,8 @@ public class PriceService {
     @Scheduled(cron = "0 0 18 * * *")
     public void updatePrices() {
         List<Asset> candidates = assetRepository.findByArchivedFalseAndSymbolIsNotNull();
-        java.util.Map<Long, Boolean> autoPriceByAsset = assetCriteriaService.getAutoPriceByAssetId(
-            candidates.stream().map(Asset::getId).toList());
         List<Asset> assets = candidates.stream()
-            .filter(s -> autoPriceByAsset.getOrDefault(s.getId(), false) && !s.getSymbol().isBlank())
+            .filter(Asset::isAutoPrice)
             .toList();
         log.info("Updating prices for {} assets", assets.size());
         assets.forEach(this::updatePrice);
@@ -137,11 +132,8 @@ public class PriceService {
     public void backfillMissingMonthlyHistory() {
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
         List<Asset> allAssets = assetRepository.findAll();
-        java.util.Map<Long, Boolean> autoPriceByAsset = assetCriteriaService.getAutoPriceByAssetId(
-            allAssets.stream().map(Asset::getId).toList());
         for (Asset asset : allAssets) {
-            if (!autoPriceByAsset.getOrDefault(asset.getId(), false)
-                || asset.getSymbol() == null || asset.getSymbol().isBlank()) continue;
+            if (!asset.isAutoPrice()) continue;
             List<PriceHistory> history = priceHistoryRepository.findByAssetOrderByDateAsc(asset);
             if (history.isEmpty()) continue;
 
@@ -175,14 +167,11 @@ public class PriceService {
     public void saveMonthlyHistory() {
         LocalDate today = LocalDate.now();
         List<Asset> allAssets = assetRepository.findAll();
-        java.util.Map<Long, Boolean> autoPriceByAsset = assetCriteriaService.getAutoPriceByAssetId(
-            allAssets.stream().map(Asset::getId).toList());
         for (Asset asset : allAssets) {
             if (asset.getCurrentPrice() == null) continue;
             if (priceHistoryRepository.existsByAssetAndDate(asset, today)) continue;
             BigDecimal price = asset.getCurrentPrice();
-            if (autoPriceByAsset.getOrDefault(asset.getId(), false)
-                && asset.getSymbol() != null && !asset.getSymbol().isBlank()) {
+            if (asset.isAutoPrice()) {
                 try {
                     BigDecimal fetched = fetchHistoricalPrice(asset.getSymbol(), today);
                     if (fetched != null) price = fetched;

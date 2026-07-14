@@ -45,7 +45,7 @@ class StatisticsServiceTest {
                 quantityRepository, balanceRepository,
                 priceHistoryRepository, exchangeRateService, coinRepository,
                 coinQuantityRepository, coinService, assetService, assetCriteriaService, licenseService);
-        lenient().when(assetCriteriaService.getSnapshotsByAssetId()).thenReturn(Map.of());
+        lenient().when(assetCriteriaService.getIndexNameByAssetId()).thenReturn(Map.of());
         lenient().when(licenseService.isFeatureEnabled(LicenseFeature.COINS)).thenReturn(true);
     }
 

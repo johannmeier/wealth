@@ -1,9 +1,7 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
-import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.CriteriaBadge;
-import de.wsc.wealth.license.LicenseFeature;
 import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
@@ -13,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,18 +39,18 @@ public class AssetCriteriaService {
     }
 
     /**
-     * The whole criteria assignment UI (system + custom) is gated by
-     * {@link LicenseFeature#CUSTOM_CRITERIA} — an empty list here means the asset form renders
-     * no criteria fields at all. This must return empty rather than "system only" because
-     * {@link #saveAssignments(Asset, HttpServletRequest)} iterates this same list: fields that
-     * are never rendered would otherwise read as blank and delete existing assignments, which
-     * violates the rule that a lapsed/missing license never deletes data (see
-     * {@link CriteriaService#findAll()} for the matching gate on the criteria management side).
+     * Only criteria the current license makes usable (see {@link LicenseService#isCriterionUsable}
+     * — e.g. a Wittmann-only license renders just the Wittmann field). Definitions the license
+     * doesn't cover are excluded here entirely rather than shown-but-disabled, because
+     * {@link #saveAssignments(Asset, HttpServletRequest)} iterates this same list: a field that's
+     * never rendered would otherwise read as blank and delete the asset's existing assignment for
+     * it, which the license gate must never do.
      */
     @Transactional(readOnly = true)
     public List<CriteriaDefinition> findAllActive() {
-        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return List.of();
-        return definitionRepository.findAllByOrderBySortOrderAsc();
+        return definitionRepository.findAllByOrderBySortOrderAsc().stream()
+            .filter(licenseService::isCriterionUsable)
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -80,33 +77,11 @@ public class AssetCriteriaService {
     }
 
     @Transactional(readOnly = true)
-    public Map<Long, AssetCriteriaSnapshot> getSnapshotsByAssetId() {
-        Map<Long, AssetCriteriaSnapshot> result = new HashMap<>();
+    public Map<Long, String> getIndexNameByAssetId() {
+        Map<Long, String> result = new HashMap<>();
         for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
-            String systemCode = v.getDefinition().getSystemCode();
-            if (systemCode == null) continue;
-            AssetCriteriaSnapshot snapshot = result.computeIfAbsent(v.getAsset().getId(), k -> new AssetCriteriaSnapshot());
-            String label = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
-            String code = v.getOption() != null ? v.getOption().getSystemCode() : null;
-            switch (systemCode) {
-                case SystemCriteria.CATEGORY -> {
-                    snapshot.setCategoryLabel(label);
-                    snapshot.setCategoryCode(code);
-                }
-                case SystemCriteria.TYPE -> {
-                    snapshot.setTypeLabel(label);
-                    snapshot.setTypeCode(code);
-                }
-                case SystemCriteria.ASSET_ALLOCATION -> {
-                    snapshot.setAllocationLabel(label);
-                    snapshot.setAllocationCode(code);
-                }
-                case SystemCriteria.DISTRIBUTION_POLICY -> {
-                    snapshot.setDistributionLabel(label);
-                    snapshot.setDistributionCode(code);
-                }
-                case SystemCriteria.INDEX_NAME -> snapshot.setIndexName(v.getFreeTextValue());
-                default -> { }
+            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) {
+                result.put(v.getAsset().getId(), v.getFreeTextValue());
             }
         }
         return result;
@@ -125,16 +100,15 @@ public class AssetCriteriaService {
     /**
      * All criteria values assigned to each asset (system + custom), sorted by the criterion's
      * sort order, as ready-to-render badges. The index criterion is excluded since it already
-     * has its own dedicated list column. Empty when {@link LicenseFeature#CUSTOM_CRITERIA} isn't
-     * licensed, matching {@link #findAllActive()} — the display is gated as a whole, not just
-     * the custom-criteria part of it.
+     * has its own dedicated list column. Per-value licensed via {@link #findAllActive()}'s same
+     * rule, so e.g. a Wittmann-only license shows Wittmann badges without custom-criteria ones.
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAssetId() {
-        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return Map.of();
         Map<Long, List<AssetCriteriaValue>> byAsset = new HashMap<>();
         for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
             if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
+            if (!licenseService.isCriterionUsable(v.getDefinition())) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display == null || display.isBlank()) continue;
             byAsset.computeIfAbsent(v.getAsset().getId(), k -> new java.util.ArrayList<>()).add(v);
@@ -152,14 +126,15 @@ public class AssetCriteriaService {
 
     /**
      * All criteria values assigned to each account, sorted by the criterion's sort order, as
-     * ready-to-render badges — same shape and license gate as {@link #getPropertyBadgesByAssetId()}.
+     * ready-to-render badges — same shape and per-value license gate as
+     * {@link #getPropertyBadgesByAssetId()}.
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAccountId() {
-        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return Map.of();
         Map<Long, List<AccountCriteriaValue>> byAccount = new HashMap<>();
         for (AccountCriteriaValue v : accountValueRepository.findAllWithAccountAndDefinitionAndOption()) {
             if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
+            if (!licenseService.isCriterionUsable(v.getDefinition())) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display == null || display.isBlank()) continue;
             byAccount.computeIfAbsent(v.getAccount().getId(), k -> new java.util.ArrayList<>()).add(v);
@@ -203,23 +178,6 @@ public class AssetCriteriaService {
             if (!v.getDefinition().getId().equals(definitionId)) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display != null && !display.isBlank()) result.put(v.getAccount().getId(), display);
-        }
-        return result;
-    }
-
-    @Transactional(readOnly = true)
-    public boolean isAutoPrice(Asset asset) {
-        AssetCriteriaSnapshot snapshot = getSnapshotsByAssetId().get(asset.getId());
-        return snapshot != null && snapshot.isAutoPrice();
-    }
-
-    @Transactional(readOnly = true)
-    public Map<Long, Boolean> getAutoPriceByAssetId(Collection<Long> assetIds) {
-        Map<Long, AssetCriteriaSnapshot> snapshots = getSnapshotsByAssetId();
-        Map<Long, Boolean> result = new HashMap<>();
-        for (Long id : assetIds) {
-            AssetCriteriaSnapshot snapshot = snapshots.get(id);
-            result.put(id, snapshot != null && snapshot.isAutoPrice());
         }
         return result;
     }

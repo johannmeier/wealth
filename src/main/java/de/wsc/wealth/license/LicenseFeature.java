@@ -5,6 +5,7 @@ public final class LicenseFeature {
 
     public static final String COINS = "COINS";
     public static final String CUSTOM_CRITERIA = "CUSTOM_CRITERIA";
+    public static final String WITTMANN = "WITTMANN";
 
     private LicenseFeature() {}
 }

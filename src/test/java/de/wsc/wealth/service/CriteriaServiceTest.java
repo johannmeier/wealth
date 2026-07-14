@@ -3,6 +3,7 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaOption;
 import de.wsc.wealth.domain.CriteriaValueType;
+import de.wsc.wealth.domain.SystemCriteria;
 import de.wsc.wealth.license.LicenseFeature;
 import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
@@ -37,6 +38,7 @@ class CriteriaServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+        lenient().when(licenseService.isCriterionUsable(any())).thenReturn(true);
         criteriaService = new CriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository, licenseService);
     }
 
@@ -168,15 +170,16 @@ class CriteriaServiceTest {
     }
 
     @Test
-    void findAll_whenCustomCriteriaNotLicensed_excludesCustomDefinitions() {
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+    void findAll_whenNoCriteriaLicensed_excludesEverything() {
+        // Community edition: no criteria at all, not even system ones.
+        when(licenseService.isCriterionUsable(any())).thenReturn(false);
         CriteriaDefinition systemDef = definition("CATEGORY", 0);
         CriteriaDefinition customDef = definition(null, 1);
         when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef, customDef));
 
         List<CriteriaDefinition> result = criteriaService.findAll();
 
-        assertThat(result).containsExactly(systemDef);
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -188,6 +191,25 @@ class CriteriaServiceTest {
         List<CriteriaDefinition> result = criteriaService.findAll();
 
         assertThat(result).containsExactly(systemDef, customDef);
+    }
+
+    @Test
+    void findAll_whenOnlyWittmannLicensed_includesOnlyWittmann() {
+        // isCriterionUsable() encapsulates the real Wittmann-vs-other-criteria rule (tested in
+        // LicenseServiceTest); here we only need CriteriaService.findAll() to delegate to it
+        // per-definition instead of applying one blanket switch.
+        when(licenseService.isCriterionUsable(any())).thenAnswer(inv -> {
+            CriteriaDefinition d = inv.getArgument(0);
+            return SystemCriteria.WITTMANN.equals(d.getSystemCode());
+        });
+        CriteriaDefinition systemDef = definition("CATEGORY", 0);
+        CriteriaDefinition wittmannDef = definition(SystemCriteria.WITTMANN, 1);
+        CriteriaDefinition customDef = definition(null, 2);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef, wittmannDef, customDef));
+
+        List<CriteriaDefinition> result = criteriaService.findAll();
+
+        assertThat(result).containsExactly(wittmannDef);
     }
 
     @Test
