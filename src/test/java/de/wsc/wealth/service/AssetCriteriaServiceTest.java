@@ -1,7 +1,6 @@
 package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
-import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.CriteriaBadge;
 import de.wsc.wealth.license.LicenseFeature;
 import de.wsc.wealth.license.LicenseService;
@@ -17,7 +16,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,51 +38,8 @@ class AssetCriteriaServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+        lenient().when(licenseService.isCriterionUsable(any())).thenReturn(true);
         assetCriteriaService = new AssetCriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository, licenseService);
-    }
-
-    @Test
-    void isAutoPrice_withCategoryBoersengehandelt_returnsTrue() {
-        Asset asset = asset(1L);
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption())
-            .thenReturn(List.of(valueFor(asset, SystemCriteria.CATEGORY, "BOERSENGEHANDELT", "Börsengehandelt")));
-
-        assertThat(assetCriteriaService.isAutoPrice(asset)).isTrue();
-    }
-
-    @Test
-    void isAutoPrice_withCategoryEdelmetall_returnsTrue() {
-        Asset asset = asset(1L);
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption())
-            .thenReturn(List.of(valueFor(asset, SystemCriteria.CATEGORY, "EDELMETALL", "Edelmetall")));
-
-        assertThat(assetCriteriaService.isAutoPrice(asset)).isTrue();
-    }
-
-    @Test
-    void isAutoPrice_withTypeKrypto_returnsTrue() {
-        Asset asset = asset(1L);
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption())
-            .thenReturn(List.of(valueFor(asset, SystemCriteria.TYPE, "KRYPTO", "Krypto")));
-
-        assertThat(assetCriteriaService.isAutoPrice(asset)).isTrue();
-    }
-
-    @Test
-    void isAutoPrice_withNeitherCategoryNorType_returnsFalse() {
-        Asset asset = asset(1L);
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption())
-            .thenReturn(List.of(valueFor(asset, SystemCriteria.CATEGORY, "SONSTIGE", "Sonstige")));
-
-        assertThat(assetCriteriaService.isAutoPrice(asset)).isFalse();
-    }
-
-    @Test
-    void isAutoPrice_withNoValuesAtAll_returnsFalse() {
-        Asset asset = asset(1L);
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(Collections.emptyList());
-
-        assertThat(assetCriteriaService.isAutoPrice(asset)).isFalse();
     }
 
     @Test
@@ -173,51 +128,82 @@ class AssetCriteriaServiceTest {
     }
 
     @Test
-    void getPropertyBadgesByAssetId_whenCustomCriteriaNotLicensed_returnsEmptyWithoutQuerying() {
-        // The badge display is gated as a whole, not just its custom-criteria part — even a
-        // system-criterion value must disappear when unlicensed, so the method short-circuits
-        // before ever reading AssetCriteriaValue rows.
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+    void getPropertyBadgesByAssetId_whenDefinitionNotUsable_excludesItsValues() {
+        // Per-value gate: even a system-criterion value disappears once isCriterionUsable()
+        // says no for its definition (e.g. no license at all, or a Wittmann-only license and
+        // this is some other system criterion).
+        when(licenseService.isCriterionUsable(any())).thenReturn(false);
+        Asset asset = asset(1L);
+        CriteriaDefinition systemDefinition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        AssetCriteriaValue systemValue = new AssetCriteriaValue();
+        systemValue.setAsset(asset);
+        systemValue.setDefinition(systemDefinition);
+        systemValue.setOption(option(systemDefinition, "EDELMETALL", "Edelmetall"));
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(systemValue));
 
         Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAssetId();
 
         assertThat(result).isEmpty();
-        verifyNoInteractions(valueRepository);
     }
 
     @Test
-    void getPropertyBadgesByAccountId_whenCustomCriteriaNotLicensed_returnsEmpty() {
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+    void getPropertyBadgesByAccountId_whenDefinitionNotUsable_excludesItsValues() {
+        when(licenseService.isCriterionUsable(any())).thenReturn(false);
+        Account account = account(1L);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
+        AccountCriteriaValue value = new AccountCriteriaValue();
+        value.setAccount(account);
+        value.setDefinition(definition);
+        value.setFreeTextValue("Frankreich");
+        when(accountValueRepository.findAllWithAccountAndDefinitionAndOption()).thenReturn(List.of(value));
 
         Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAccountId();
 
         assertThat(result).isEmpty();
-        verifyNoInteractions(accountValueRepository);
     }
 
     @Test
-    void findAllActive_whenCustomCriteriaNotLicensed_returnsEmpty() {
+    void findAllActive_whenNoDefinitionUsable_returnsEmpty() {
         // Must be fully empty, not just "system only": saveAssignments(Asset, request) iterates
         // this same list, so any definition it skips here is also skipped there — a definition
         // that appeared here but whose form field was never rendered would read as blank and
         // delete the asset's existing assignment for it, which the license gate must never do.
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+        when(licenseService.isCriterionUsable(any())).thenReturn(false);
+        when(definitionRepository.findAllByOrderBySortOrderAsc())
+            .thenReturn(List.of(definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST)));
 
         List<CriteriaDefinition> result = assetCriteriaService.findAllActive();
 
         assertThat(result).isEmpty();
-        verifyNoInteractions(definitionRepository);
     }
 
     @Test
-    void saveAssignments_asset_whenCustomCriteriaNotLicensed_leavesExistingAssignmentsUntouched() {
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+    void findAllActive_withMixedUsability_returnsOnlyUsableDefinitions() {
+        // End-to-end check that per-definition filtering (not "all or nothing") really reaches
+        // findAllActive() — e.g. a Wittmann-only license includes Wittmann but excludes other
+        // system criteria and custom ones.
+        CriteriaDefinition wittmannDef = definition(SystemCriteria.WITTMANN, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition categoryDef = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        when(licenseService.isCriterionUsable(wittmannDef)).thenReturn(true);
+        when(licenseService.isCriterionUsable(categoryDef)).thenReturn(false);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(categoryDef, wittmannDef));
+
+        List<CriteriaDefinition> result = assetCriteriaService.findAllActive();
+
+        assertThat(result).containsExactly(wittmannDef);
+    }
+
+    @Test
+    void saveAssignments_asset_whenNoDefinitionUsable_leavesExistingAssignmentsUntouched() {
+        when(licenseService.isCriterionUsable(any())).thenReturn(false);
+        when(definitionRepository.findAllByOrderBySortOrderAsc())
+            .thenReturn(List.of(definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST)));
         Asset asset = asset(1L);
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         assetCriteriaService.saveAssignments(asset, request);
 
-        verifyNoInteractions(definitionRepository, valueRepository, optionRepository);
+        verifyNoInteractions(valueRepository, optionRepository);
     }
 
     @Test
@@ -316,7 +302,7 @@ class AssetCriteriaServiceTest {
     }
 
     @Test
-    void getSnapshotsByAssetId_ignoresValuesForCustomCriteria() {
+    void getIndexNameByAssetId_ignoresValuesForOtherCriteria() {
         Asset asset = asset(1L);
         CriteriaDefinition customDefinition = definition(null, CriteriaValueType.FREE_TEXT);
         AssetCriteriaValue customValue = new AssetCriteriaValue();
@@ -325,9 +311,21 @@ class AssetCriteriaServiceTest {
         customValue.setFreeTextValue("Deutschland");
         when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(customValue));
 
-        Map<Long, AssetCriteriaSnapshot> snapshots = assetCriteriaService.getSnapshotsByAssetId();
+        Map<Long, String> indexNames = assetCriteriaService.getIndexNameByAssetId();
 
-        assertThat(snapshots).isEmpty();
+        assertThat(indexNames).isEmpty();
+    }
+
+    @Test
+    void getIndexNameByAssetId_returnsFreeTextForIndexNameCriterion() {
+        Asset asset = asset(1L);
+        AssetCriteriaValue value = valueFor(asset, SystemCriteria.INDEX_NAME, null, null);
+        value.setFreeTextValue("MSCI World");
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        Map<Long, String> indexNames = assetCriteriaService.getIndexNameByAssetId();
+
+        assertThat(indexNames).containsEntry(1L, "MSCI World");
     }
 
     @Test
@@ -487,14 +485,16 @@ class AssetCriteriaServiceTest {
     }
 
     @Test
-    void saveAssignments_account_whenCustomCriteriaNotLicensed_leavesExistingAssignmentsUntouched() {
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+    void saveAssignments_account_whenNoDefinitionUsable_leavesExistingAssignmentsUntouched() {
+        when(licenseService.isCriterionUsable(any())).thenReturn(false);
+        when(definitionRepository.findAllByOrderBySortOrderAsc())
+            .thenReturn(List.of(definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST)));
         Account account = account(1L);
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         assetCriteriaService.saveAssignments(account, request);
 
-        verifyNoInteractions(definitionRepository, accountValueRepository, optionRepository);
+        verifyNoInteractions(accountValueRepository, optionRepository);
     }
 
     private Account account(Long id) {

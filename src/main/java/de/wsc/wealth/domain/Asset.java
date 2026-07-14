@@ -47,4 +47,6 @@ public class Asset {
 
     public boolean isArchived() { return archived; }
     public void setArchived(boolean archived) { this.archived = archived; }
+
+    public boolean isAutoPrice() { return symbol != null && !symbol.isBlank(); }
 }

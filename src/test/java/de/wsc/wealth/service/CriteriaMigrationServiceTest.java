@@ -39,16 +39,16 @@ class CriteriaMigrationServiceTest {
     }
 
     @Test
-    void seedSystemCriteria_whenNotSeeded_createsAllFiveDefinitions() {
+    void seedSystemCriteria_whenNotSeeded_createsAllSixDefinitions() {
         when(definitionRepository.findBySystemCode(any())).thenReturn(Optional.empty());
         when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(optionRepository.findByDefinitionAndSystemCode(any(), any())).thenReturn(Optional.empty());
 
         migrationService.seedSystemCriteria();
 
-        verify(definitionRepository, times(5)).save(any());
-        // 3 category + 8 type + 2 allocation + 2 distribution + 0 index options = 15
-        verify(optionRepository, times(15)).save(any());
+        verify(definitionRepository, times(6)).save(any());
+        // 3 category + 8 type + 2 allocation + 2 distribution + 0 index + 5 wittmann options = 20
+        verify(optionRepository, times(20)).save(any());
     }
 
     @Test

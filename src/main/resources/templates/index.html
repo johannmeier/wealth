@@ -27,8 +27,8 @@
     <thead class="table-dark">
       <tr>
         <th scope="col" th:text="#{col.name}">Name</th>
-        <th scope="col" th:if="${licensedCustomCriteria}" th:text="#{col.properties}">Eigenschaften</th>
-        <th scope="col" th:if="${licensedCustomCriteria}" th:text="#{col.index}">Index</th>
+        <th scope="col" th:if="${licensedAnyCriteria}" th:text="#{col.properties}">Eigenschaften</th>
+        <th scope="col" th:if="${licensedAnyCriteria}" th:text="#{col.index}">Index</th>
         <th scope="col" th:text="#{col.depot-account}">Depot/Konto</th>
         <th scope="col" class="text-end" th:text="#{col.quantity}">Anzahl</th>
         <th scope="col" class="text-end" th:text="#{col.price.eur}">Kurs (€)</th>
@@ -39,13 +39,13 @@
     <tbody>
       <tr th:each="pos : ${positions}">
         <td th:text="${pos.name}"></td>
-        <td th:if="${licensedCustomCriteria}">
+        <td th:if="${licensedAnyCriteria}">
           <span th:each="b : ${pos.type == 'ACCOUNT' ? accountPropertyBadges.get(pos.id) : assetPropertyBadges.get(pos.id)}"
                 th:class="${b.colorIndex != null} ? ('badge me-1 crit-color-' + ${b.colorIndex}) : 'badge bg-secondary me-1'"
                 th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
                 th:title="${b.tooltip}"></span>
         </td>
-        <td style="white-space:nowrap" th:if="${licensedCustomCriteria}" th:text="${pos.indexName ?: '-'}"></td>
+        <td style="white-space:nowrap" th:if="${licensedAnyCriteria}" th:text="${pos.indexName ?: '-'}"></td>
         <td>
           <th:block th:if="${pos.type != 'ACCOUNT' and depotsByAsset.get(pos.id) != null and !depotsByAsset.get(pos.id).isEmpty()}">
             <span th:each="entry, i : ${depotsByAsset.get(pos.id)}">
@@ -64,7 +64,7 @@
         <td class="text-end" style="white-space:nowrap" th:text="${pos.percentage != null ? #numbers.formatDecimal(pos.percentage, 1, 'DEFAULT', 2, 'DEFAULT') + ' %' : '-'}"></td>
       </tr>
       <tr th:if="${#lists.isEmpty(positions)}">
-        <td th:attr="colspan=${licensedCustomCriteria} ? 8 : 6" class="text-center text-muted" th:text="#{page.index.empty}">Noch keine Positionen.</td>
+        <td th:attr="colspan=${licensedAnyCriteria} ? 8 : 6" class="text-center text-muted" th:text="#{page.index.empty}">Noch keine Positionen.</td>
       </tr>
     </tbody>
   </table>

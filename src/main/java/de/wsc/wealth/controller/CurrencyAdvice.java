@@ -37,6 +37,11 @@ public class CurrencyAdvice {
         model.addAttribute("currentUri", request.getRequestURI());
         model.addAttribute("navCriteriaDefinitions", criteriaService.findAll());
         model.addAttribute("licensedCoins", licenseService.isFeatureEnabled(LicenseFeature.COINS));
+        // Gates full criteria management (/criteria, "+ Neu"): custom-criteria creation and the
+        // other system criteria, but not the Wittmann-only criterion.
         model.addAttribute("licensedCustomCriteria", licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA));
+        // Gates the generic "criteria exist" display (Eigenschaften/Index columns): true for
+        // either a full custom-criteria license or a Wittmann-only one.
+        model.addAttribute("licensedAnyCriteria", licenseService.hasAnyCriteriaFeature());
     }
 }

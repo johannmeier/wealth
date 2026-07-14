@@ -66,6 +66,13 @@ public class CriteriaMigrationService {
             new String[]{"THESAURIEREND", "Thesaurierend"}
         ));
         seedDefinition(SystemCriteria.INDEX_NAME, "Index", CriteriaValueType.FREE_TEXT, 4, Collections.emptyList());
+        seedDefinition(SystemCriteria.WITTMANN, "Wittmann", CriteriaValueType.FIXED_LIST, 5, List.of(
+            new String[]{"LIQUIDITAET_DEVISEN", "Liquidität/Devisen"},
+            new String[]{"EDELMETALLE", "Edelmetalle"},
+            new String[]{"UNTERNEHMEN", "Unternehmen"},
+            new String[]{"IMMOBILIEN", "Immobilien"},
+            new String[]{"SPEZIALANLAGEN", "Spezialanlagen"}
+        ));
     }
 
     @Transactional

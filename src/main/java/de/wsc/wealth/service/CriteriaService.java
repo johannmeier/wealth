@@ -43,16 +43,17 @@ public class CriteriaService {
     }
 
     /**
-     * System criteria are always included; user-defined ones only when licensed for
-     * {@link LicenseFeature#CUSTOM_CRITERIA} — unlicensed, they're excluded everywhere (this
+     * Only criteria the current license makes usable (see {@link LicenseService#isCriterionUsable}
+     * — e.g. a plain Wittmann license unlocks just the Wittmann criterion, not the other system
+     * criteria or custom-criteria management). Unlicensed criteria are excluded everywhere (this
      * list, the statistics menu, criteria pickers) without ever being deleted, so they reappear
      * exactly as before if the license is renewed.
      */
     @Transactional(readOnly = true)
     public List<CriteriaDefinition> findAll() {
-        List<CriteriaDefinition> all = definitionRepository.findAllByOrderBySortOrderAsc();
-        if (licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return all;
-        return all.stream().filter(d -> d.getSystemCode() != null).toList();
+        return definitionRepository.findAllByOrderBySortOrderAsc().stream()
+            .filter(licenseService::isCriterionUsable)
+            .toList();
     }
 
     @Transactional(readOnly = true)

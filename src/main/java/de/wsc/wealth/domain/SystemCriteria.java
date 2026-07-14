@@ -7,6 +7,7 @@ public final class SystemCriteria {
     public static final String ASSET_ALLOCATION = "ASSET_ALLOCATION";
     public static final String DISTRIBUTION_POLICY = "DISTRIBUTION_POLICY";
     public static final String INDEX_NAME = "INDEX_NAME";
+    public static final String WITTMANN = "WITTMANN";
 
     private SystemCriteria() {}
 }

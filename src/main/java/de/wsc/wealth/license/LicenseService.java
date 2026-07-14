@@ -1,5 +1,7 @@
 package de.wsc.wealth.license;
 
+import de.wsc.wealth.domain.CriteriaDefinition;
+import de.wsc.wealth.domain.SystemCriteria;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -39,6 +41,26 @@ public class LicenseService {
 
     public boolean isFeatureEnabled(String feature) {
         return payload != null && !payload.isExpired() && payload.features().contains(feature);
+    }
+
+    /**
+     * The single source of truth for which criterion a given license unlocks. The Wittmann
+     * criterion is seeded like any other system criterion (see CriteriaMigrationService) but is
+     * gated by its own {@link LicenseFeature#WITTMANN} feature instead of
+     * {@link LicenseFeature#CUSTOM_CRITERIA} — a Wittmann-only license makes exactly that one
+     * criterion usable, without unlocking custom-criteria management or the other system
+     * criteria (Kategorie, Wertpapierart, …).
+     */
+    public boolean isCriterionUsable(CriteriaDefinition definition) {
+        if (SystemCriteria.WITTMANN.equals(definition.getSystemCode())) {
+            return isFeatureEnabled(LicenseFeature.WITTMANN);
+        }
+        return isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA);
+    }
+
+    /** Whether any criterion at all could be usable — drives generic "criteria exist" UI (columns, badges). */
+    public boolean hasAnyCriteriaFeature() {
+        return isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA) || isFeatureEnabled(LicenseFeature.WITTMANN);
     }
 
     public boolean isValid() {

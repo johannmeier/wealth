@@ -1,7 +1,6 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.*;
-import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.service.AssetCriteriaService;
 import de.wsc.wealth.service.AssetSearchService;
 import de.wsc.wealth.service.AssetService;
@@ -50,10 +49,8 @@ public class AssetController {
         }
         model.addAttribute("assets", assets);
         model.addAttribute("eurPrices", eurPrices);
-        model.addAttribute("criteria", assetCriteriaService.getSnapshotsByAssetId());
+        model.addAttribute("indexNameByAsset", assetCriteriaService.getIndexNameByAssetId());
         model.addAttribute("propertyBadgesByAsset", assetCriteriaService.getPropertyBadgesByAssetId());
-        model.addAttribute("autoPriceByAsset",
-            assetCriteriaService.getAutoPriceByAssetId(assets.stream().map(Asset::getId).toList()));
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
         model.addAttribute("archivedAssets", assetService.findAllArchived());
         model.addAttribute("deletableIds", assetService.getDeletableArchivedIds());
@@ -162,7 +159,7 @@ public class AssetController {
     @PostMapping("/{id}/refresh-price")
     public String refreshPrice(@PathVariable Long id, RedirectAttributes ra) {
         assetService.findById(id).ifPresent(s -> {
-            if (assetCriteriaService.isAutoPrice(s) && s.getSymbol() != null) {
+            if (s.isAutoPrice()) {
                 priceService.updatePrice(s);
             }
         });
@@ -173,11 +170,8 @@ public class AssetController {
 
     @PostMapping("/refresh-all-prices")
     public String refreshAllPrices(RedirectAttributes ra) {
-        List<Asset> allAssets = assetService.findAll();
-        Map<Long, Boolean> autoPriceByAsset = assetCriteriaService.getAutoPriceByAssetId(
-            allAssets.stream().map(Asset::getId).toList());
-        List<Asset> toUpdate = allAssets.stream()
-            .filter(s -> autoPriceByAsset.getOrDefault(s.getId(), false) && s.getSymbol() != null)
+        List<Asset> toUpdate = assetService.findAll().stream()
+            .filter(Asset::isAutoPrice)
             .toList();
         toUpdate.forEach(priceService::updatePrice);
         ra.addFlashAttribute("success", toUpdate.size() + " Kurse aktualisiert.");
