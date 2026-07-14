@@ -33,7 +33,10 @@ public class StatisticsController {
         CriteriaDefinition selectedDefinition = definitions.stream()
             .filter(d -> d.getId().equals(selectedId)).findFirst().orElse(null);
 
-        List<StatisticsGroup> groups = selectedId != null
+        // Guards against a definitionId param for a criterion the license (no longer) grants:
+        // selectedDefinition would already be null in that case since it comes from the same
+        // license-filtered list.
+        List<StatisticsGroup> groups = selectedDefinition != null
             ? statisticsService.getStatsByCriteria(selectedId)
             : Collections.emptyList();
 

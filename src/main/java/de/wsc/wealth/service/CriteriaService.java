@@ -2,6 +2,8 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaOption;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -26,20 +28,31 @@ public class CriteriaService {
     private final CriteriaOptionRepository optionRepository;
     private final AssetCriteriaValueRepository valueRepository;
     private final AccountCriteriaValueRepository accountValueRepository;
+    private final LicenseService licenseService;
 
     public CriteriaService(CriteriaDefinitionRepository definitionRepository,
                            CriteriaOptionRepository optionRepository,
                            AssetCriteriaValueRepository valueRepository,
-                           AccountCriteriaValueRepository accountValueRepository) {
+                           AccountCriteriaValueRepository accountValueRepository,
+                           LicenseService licenseService) {
         this.definitionRepository = definitionRepository;
         this.optionRepository = optionRepository;
         this.valueRepository = valueRepository;
         this.accountValueRepository = accountValueRepository;
+        this.licenseService = licenseService;
     }
 
+    /**
+     * System criteria are always included; user-defined ones only when licensed for
+     * {@link LicenseFeature#CUSTOM_CRITERIA} — unlicensed, they're excluded everywhere (this
+     * list, the statistics menu, criteria pickers) without ever being deleted, so they reappear
+     * exactly as before if the license is renewed.
+     */
     @Transactional(readOnly = true)
     public List<CriteriaDefinition> findAll() {
-        return definitionRepository.findAllByOrderBySortOrderAsc();
+        List<CriteriaDefinition> all = definitionRepository.findAllByOrderBySortOrderAsc();
+        if (licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return all;
+        return all.stream().filter(d -> d.getSystemCode() != null).toList();
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +62,9 @@ public class CriteriaService {
 
     public CriteriaDefinition save(CriteriaDefinition form) {
         if (form.getId() == null) {
+            if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) {
+                throw new IllegalStateException("Eigene Kriterien erfordern eine Lizenz.");
+            }
             form.setSortOrder(nextDefinitionSortOrder());
             form.setColorIndex(form.getColorIndex() != null ? form.getColorIndex() : nextFreeColorIndex());
             return definitionRepository.save(form);

@@ -2,20 +2,25 @@ package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaValueType;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.service.CriteriaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -23,12 +28,13 @@ import static org.mockito.Mockito.*;
 class CriteriaControllerTest {
 
     @Mock private CriteriaService criteriaService;
+    @Mock private LicenseService licenseService;
 
     private CriteriaController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new CriteriaController(criteriaService);
+        controller = new CriteriaController(criteriaService, licenseService);
     }
 
     @Test
@@ -52,12 +58,44 @@ class CriteriaControllerTest {
     }
 
     @Test
+    void checkLicense_whenLicensed_doesNotThrow() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+
+        controller.checkLicense();
+    }
+
+    @Test
+    void checkLicense_whenNotLicensed_throwsNotFound() {
+        // Applied to every route in this controller via @ModelAttribute — the whole "Kriterien"
+        // section (list, create, edit, options) is 404 without a license, matching how
+        // CoinController gates Münzverwaltung.
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
+
+        assertThatThrownBy(() -> controller.checkLicense())
+            .isInstanceOf(ResponseStatusException.class)
+            .hasFieldOrPropertyWithValue("statusCode", HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void save_redirectsToCriteriaList() {
         CriteriaDefinition def = definition("Länder");
         String result = controller.save(def, new RedirectAttributesModelMap());
 
         assertThat(result).isEqualTo("redirect:/criteria");
         verify(criteriaService).save(def);
+    }
+
+    @Test
+    void save_whenLicenseRequired_setsErrorFlashAndRedirects() {
+        CriteriaDefinition def = definition("Länder");
+        doThrow(new IllegalStateException("Eigene Kriterien erfordern eine Lizenz."))
+            .when(criteriaService).save(def);
+        RedirectAttributesModelMap ra = new RedirectAttributesModelMap();
+
+        String result = controller.save(def, ra);
+
+        assertThat(result).isEqualTo("redirect:/criteria");
+        assertThat(ra.getFlashAttributes()).containsKey("error");
     }
 
     @Test

@@ -3,6 +3,8 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
 import de.wsc.wealth.dto.CriteriaBadge;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
@@ -25,30 +27,33 @@ public class AssetCriteriaService {
     private final CriteriaOptionRepository optionRepository;
     private final AssetCriteriaValueRepository valueRepository;
     private final AccountCriteriaValueRepository accountValueRepository;
+    private final LicenseService licenseService;
 
     public AssetCriteriaService(CriteriaDefinitionRepository definitionRepository,
                                 CriteriaOptionRepository optionRepository,
                                 AssetCriteriaValueRepository valueRepository,
-                                AccountCriteriaValueRepository accountValueRepository) {
+                                AccountCriteriaValueRepository accountValueRepository,
+                                LicenseService licenseService) {
         this.definitionRepository = definitionRepository;
         this.optionRepository = optionRepository;
         this.valueRepository = valueRepository;
         this.accountValueRepository = accountValueRepository;
-    }
-
-    @Transactional(readOnly = true)
-    public List<CriteriaDefinition> findAllActive() {
-        return definitionRepository.findAllByOrderBySortOrderAsc();
+        this.licenseService = licenseService;
     }
 
     /**
-     * Criteria assignable to accounts are restricted to user-defined (non-system) criteria —
-     * the system criteria (category/type/allocation/distribution/index) model security-specific
-     * concepts that don't apply to bank accounts.
+     * The whole criteria assignment UI (system + custom) is gated by
+     * {@link LicenseFeature#CUSTOM_CRITERIA} — an empty list here means the asset form renders
+     * no criteria fields at all. This must return empty rather than "system only" because
+     * {@link #saveAssignments(Asset, HttpServletRequest)} iterates this same list: fields that
+     * are never rendered would otherwise read as blank and delete existing assignments, which
+     * violates the rule that a lapsed/missing license never deletes data (see
+     * {@link CriteriaService#findAll()} for the matching gate on the criteria management side).
      */
     @Transactional(readOnly = true)
-    public List<CriteriaDefinition> findAllCustomActive() {
-        return findAllActive().stream().filter(d -> d.getSystemCode() == null).toList();
+    public List<CriteriaDefinition> findAllActive() {
+        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return List.of();
+        return definitionRepository.findAllByOrderBySortOrderAsc();
     }
 
     @Transactional(readOnly = true)
@@ -120,10 +125,13 @@ public class AssetCriteriaService {
     /**
      * All criteria values assigned to each asset (system + custom), sorted by the criterion's
      * sort order, as ready-to-render badges. The index criterion is excluded since it already
-     * has its own dedicated list column.
+     * has its own dedicated list column. Empty when {@link LicenseFeature#CUSTOM_CRITERIA} isn't
+     * licensed, matching {@link #findAllActive()} — the display is gated as a whole, not just
+     * the custom-criteria part of it.
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAssetId() {
+        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return Map.of();
         Map<Long, List<AssetCriteriaValue>> byAsset = new HashMap<>();
         for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
             if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
@@ -135,31 +143,23 @@ public class AssetCriteriaService {
         for (Map.Entry<Long, List<AssetCriteriaValue>> entry : byAsset.entrySet()) {
             List<AssetCriteriaValue> values = entry.getValue();
             values.sort(java.util.Comparator.comparing(v -> v.getDefinition().getSortOrder()));
-            result.put(entry.getKey(), values.stream().map(this::toBadge).toList());
+            result.put(entry.getKey(), values.stream()
+                .map(v -> toBadge(v.getDefinition(), v.getOption(), v.getFreeTextValue()))
+                .toList());
         }
         return result;
     }
 
-    private CriteriaBadge toBadge(AssetCriteriaValue v) {
-        String label = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
-        String messageKey = null;
-        if (v.getOption() != null && v.getOption().getSystemCode() != null) {
-            String prefix = SYSTEM_MESSAGE_KEY_PREFIX.get(v.getDefinition().getSystemCode());
-            if (prefix != null) messageKey = prefix + "." + v.getOption().getSystemCode();
-        }
-        return new CriteriaBadge(label, messageKey, v.getDefinition().getName(), v.getDefinition().getColorIndex());
-    }
-
     /**
      * All criteria values assigned to each account, sorted by the criterion's sort order, as
-     * ready-to-render badges. Accounts only ever carry user-defined criteria (see
-     * {@link #findAllCustomActive()}), so unlike {@link #getPropertyBadgesByAssetId()} no
-     * message-key resolution is needed here.
+     * ready-to-render badges — same shape and license gate as {@link #getPropertyBadgesByAssetId()}.
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAccountId() {
+        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) return Map.of();
         Map<Long, List<AccountCriteriaValue>> byAccount = new HashMap<>();
         for (AccountCriteriaValue v : accountValueRepository.findAllWithAccountAndDefinitionAndOption()) {
+            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display == null || display.isBlank()) continue;
             byAccount.computeIfAbsent(v.getAccount().getId(), k -> new java.util.ArrayList<>()).add(v);
@@ -169,14 +169,20 @@ public class AssetCriteriaService {
             List<AccountCriteriaValue> values = entry.getValue();
             values.sort(java.util.Comparator.comparing(v -> v.getDefinition().getSortOrder()));
             result.put(entry.getKey(), values.stream()
-                .map(v -> new CriteriaBadge(
-                    v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue(),
-                    null,
-                    v.getDefinition().getName(),
-                    v.getDefinition().getColorIndex()))
+                .map(v -> toBadge(v.getDefinition(), v.getOption(), v.getFreeTextValue()))
                 .toList());
         }
         return result;
+    }
+
+    private CriteriaBadge toBadge(CriteriaDefinition definition, CriteriaOption option, String freeTextValue) {
+        String label = option != null ? option.getValue() : freeTextValue;
+        String messageKey = null;
+        if (option != null && option.getSystemCode() != null) {
+            String prefix = SYSTEM_MESSAGE_KEY_PREFIX.get(definition.getSystemCode());
+            if (prefix != null) messageKey = prefix + "." + option.getSystemCode();
+        }
+        return new CriteriaBadge(label, messageKey, definition.getName(), definition.getColorIndex());
     }
 
     @Transactional(readOnly = true)
@@ -252,7 +258,7 @@ public class AssetCriteriaService {
     }
 
     public void saveAssignments(Account account, HttpServletRequest request) {
-        for (CriteriaDefinition definition : findAllCustomActive()) {
+        for (CriteriaDefinition definition : findAllActive()) {
             String raw = request.getParameter("crit_" + definition.getId());
             if (raw == null || raw.isBlank()) {
                 accountValueRepository.findByAccountAndDefinition(account, definition)

@@ -2,6 +2,8 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.WealthPosition;
+import de.wsc.wealth.license.LicenseFeature;
+import de.wsc.wealth.license.LicenseService;
 import de.wsc.wealth.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +35,7 @@ class StatisticsServiceTest {
     @Mock private CoinService coinService;
     @Mock private AssetService assetService;
     @Mock private AssetCriteriaService assetCriteriaService;
+    @Mock private LicenseService licenseService;
 
     private StatisticsService statisticsService;
 
@@ -40,8 +44,9 @@ class StatisticsServiceTest {
         statisticsService = new StatisticsService(assetRepository, accountRepository,
                 quantityRepository, balanceRepository,
                 priceHistoryRepository, exchangeRateService, coinRepository,
-                coinQuantityRepository, coinService, assetService, assetCriteriaService);
+                coinQuantityRepository, coinService, assetService, assetCriteriaService, licenseService);
         lenient().when(assetCriteriaService.getSnapshotsByAssetId()).thenReturn(Map.of());
+        lenient().when(licenseService.isFeatureEnabled(LicenseFeature.COINS)).thenReturn(true);
     }
 
     @Test
@@ -175,6 +180,21 @@ class StatisticsServiceTest {
         assertThat(pos.getName()).isEqualTo("Gold (physisch in Unzen)");
         assertThat(pos.getValue()).isEqualByComparingTo("250.00");
         assertThat(pos.getDepotName()).isEqualTo("Schließfach (Privat)");
+    }
+
+    @Test
+    void getAllPositions_whenCoinsNotLicensed_excludesCoinsEntirely() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.COINS)).thenReturn(false);
+        when(assetRepository.findAllByArchivedFalseOrderByNameAsc()).thenReturn(List.of());
+        when(quantityRepository.findAllWithAssetAndDepot()).thenReturn(List.of());
+        when(accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()).thenReturn(List.of());
+        when(balanceRepository.findAllWithAccount()).thenReturn(List.of());
+        when(assetService.getEffectivePricesByAssetId()).thenReturn(Map.of());
+
+        List<WealthPosition> positions = statisticsService.getAllPositions();
+
+        assertThat(positions).isEmpty();
+        verifyNoInteractions(coinRepository, coinService);
     }
 
     @Test
