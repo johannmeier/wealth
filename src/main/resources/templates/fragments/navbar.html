@@ -203,7 +203,7 @@
             </li>
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/settings/databases}" th:text="#{settings.databases}">Datenbank wechseln</a></li>
-            <li><a class="dropdown-item" th:href="@{/criteria}" th:text="#{settings.criteria}">Kriterien verwalten</a></li>
+            <li th:if="${licensedCustomCriteria}"><a class="dropdown-item" th:href="@{/criteria}" th:text="#{settings.criteria}">Kriterien verwalten</a></li>
             <li><a class="dropdown-item" th:href="@{/settings/license}" th:text="#{settings.license}">Lizenz</a></li>
             <li><hr class="dropdown-divider"/></li>
             <li><a class="dropdown-item" th:href="@{/bullionvault}"

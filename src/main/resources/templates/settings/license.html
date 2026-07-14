@@ -44,6 +44,7 @@
         <div class="mb-3">
           <label class="form-label" for="licenseKey" th:text="#{page.license.key-label}">Schlüssel</label>
           <textarea id="licenseKey" name="licenseKey" class="form-control font-monospace" rows="3"
+                    th:text="${currentLicenseKey}"
                     th:placeholder="#{page.license.key-placeholder}"></textarea>
           <div class="form-text" th:text="#{page.license.key-hint}">Leer lassen und speichern, um die Lizenz zu entfernen.</div>
         </div>

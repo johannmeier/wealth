@@ -36,6 +36,8 @@ public class LicenseController {
         model.addAttribute("expired", licenseService.isExpired());
         model.addAttribute("features", licenseService.getFeatures());
         model.addAttribute("expiresOn", licenseService.getExpiresOn());
+        String configPath = System.getProperty("wealth.config.path");
+        model.addAttribute("currentLicenseKey", readConfig(configPath).getProperty("license.key", ""));
         return "settings/license";
     }
 

@@ -23,19 +23,21 @@ public class CriteriaController {
         this.licenseService = licenseService;
     }
 
+    @ModelAttribute
+    public void checkLicense() {
+        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
     @GetMapping
     public String list(Model model) {
         model.addAttribute("definitions", criteriaService.findAll());
-        model.addAttribute("licensedCustomCriteria", licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA));
         return "criteria/list";
     }
 
     @GetMapping("/new")
-    public String newForm(Model model, RedirectAttributes ra) {
-        if (!licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)) {
-            ra.addFlashAttribute("error", "Eigene Kriterien erfordern eine Lizenz.");
-            return "redirect:/criteria";
-        }
+    public String newForm(Model model) {
         CriteriaDefinition definition = new CriteriaDefinition();
         definition.setColorIndex(criteriaService.nextFreeColorIndex());
         model.addAttribute("definition", definition);

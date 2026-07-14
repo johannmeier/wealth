@@ -37,5 +37,6 @@ public class CurrencyAdvice {
         model.addAttribute("currentUri", request.getRequestURI());
         model.addAttribute("navCriteriaDefinitions", criteriaService.findAll());
         model.addAttribute("licensedCoins", licenseService.isFeatureEnabled(LicenseFeature.COINS));
+        model.addAttribute("licensedCustomCriteria", licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA));
     }
 }

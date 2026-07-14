@@ -10,14 +10,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -46,24 +49,31 @@ class CriteriaControllerTest {
     }
 
     @Test
-    void newForm_whenLicensed_returnsFormViewWithEmptyDefinition() {
-        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+    void newForm_returnsFormViewWithEmptyDefinition() {
         Model model = new ExtendedModelMap();
-        String view = controller.newForm(model, new RedirectAttributesModelMap());
+        String view = controller.newForm(model);
 
         assertThat(view).isEqualTo("criteria/form");
         assertThat(model.asMap()).containsKey("definition");
     }
 
     @Test
-    void newForm_whenNotLicensed_redirectsWithErrorFlash() {
+    void checkLicense_whenLicensed_doesNotThrow() {
+        when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(true);
+
+        controller.checkLicense();
+    }
+
+    @Test
+    void checkLicense_whenNotLicensed_throwsNotFound() {
+        // Applied to every route in this controller via @ModelAttribute — the whole "Kriterien"
+        // section (list, create, edit, options) is 404 without a license, matching how
+        // CoinController gates Münzverwaltung.
         when(licenseService.isFeatureEnabled(LicenseFeature.CUSTOM_CRITERIA)).thenReturn(false);
-        RedirectAttributesModelMap ra = new RedirectAttributesModelMap();
 
-        String view = controller.newForm(new ExtendedModelMap(), ra);
-
-        assertThat(view).isEqualTo("redirect:/criteria");
-        assertThat(ra.getFlashAttributes()).containsKey("error");
+        assertThatThrownBy(() -> controller.checkLicense())
+            .isInstanceOf(ResponseStatusException.class)
+            .hasFieldOrPropertyWithValue("statusCode", HttpStatus.NOT_FOUND);
     }
 
     @Test

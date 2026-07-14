@@ -36,27 +36,22 @@
       <label class="form-label" th:text="#{col.currency}">Währung</label>
       <input type="text" th:field="*{currency}" class="form-control" placeholder="EUR"/>
     </div>
-    <div class="mb-3">
-      <label class="form-label" th:text="#{col.allocation}">Asset Allocation</label>
-      <select th:field="*{assetAllocation}" class="form-select">
-        <option value="" th:text="#{form.select}">-- wählen --</option>
-        <option th:each="a : ${allocations}" th:value="${a}"
-                th:text="${#messages.msg('assetAllocation.' + a.name())}"></option>
-      </select>
-    </div>
-    <div class="row">
-      <div class="col mb-3" th:each="def : ${criteriaDefinitions}">
+    <!-- Superseded by the generic criteria system below; kept as a hidden field so existing
+         values round-trip unchanged instead of being silently reset to the field's default. -->
+    <input type="hidden" th:field="*{assetAllocation}"/>
+    <div class="d-flex flex-wrap gap-3 mb-3">
+      <div th:each="def : ${criteriaDefinitions}">
         <label class="form-label" th:text="${def.name}">Kriterium</label>
         <select th:if="${def.valueType.name() == 'FIXED_LIST'}"
                 th:name="|crit_${def.id}|"
-                class="form-select">
+                class="form-select" style="width:auto">
           <option value="" th:text="#{form.select}">-- wählen --</option>
           <option th:each="o : ${criteriaOptions.get(def.id)}" th:value="${o.id}"
                   th:text="${o.value}"
                   th:selected="${accountCriteriaValues.get(def.id) != null and accountCriteriaValues.get(def.id).option != null and accountCriteriaValues.get(def.id).option.id == o.id}"></option>
         </select>
         <input th:unless="${def.valueType.name() == 'FIXED_LIST'}"
-               type="text" class="form-control"
+               type="text" class="form-control" style="width:auto"
                th:name="|crit_${def.id}|"
                th:value="${accountCriteriaValues.get(def.id)?.freeTextValue}"/>
       </div>

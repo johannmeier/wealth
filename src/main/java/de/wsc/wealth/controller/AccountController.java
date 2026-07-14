@@ -2,7 +2,6 @@ package de.wsc.wealth.controller;
 
 import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AccountBalance;
-import de.wsc.wealth.domain.AssetAllocation;
 import de.wsc.wealth.service.AccountService;
 import de.wsc.wealth.service.AssetCriteriaService;
 import de.wsc.wealth.service.BankService;
@@ -74,7 +73,6 @@ public class AccountController {
     @GetMapping("/new")
     public String newForm(Model model) {
         model.addAttribute("account", new Account());
-        model.addAttribute("allocations", AssetAllocation.values());
         model.addAttribute("banks", bankService.findAll());
         addCriteria(model, null);
         return "accounts/form";
@@ -85,7 +83,6 @@ public class AccountController {
         Account account = accountService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("account", account);
-        model.addAttribute("allocations", AssetAllocation.values());
         model.addAttribute("banks", bankService.findAll());
         addCriteria(model, account);
         return "accounts/form";
@@ -140,7 +137,7 @@ public class AccountController {
     }
 
     private void addCriteria(Model model, Account account) {
-        model.addAttribute("criteriaDefinitions", assetCriteriaService.findAllCustomActive());
+        model.addAttribute("criteriaDefinitions", assetCriteriaService.findAllActive());
         model.addAttribute("criteriaOptions", assetCriteriaService.getOptionsByDefinitionId());
         model.addAttribute("accountCriteriaValues", account != null
             ? assetCriteriaService.getValuesByDefinitionId(account)
