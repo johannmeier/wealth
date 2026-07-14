@@ -24,6 +24,8 @@ public class SystemTrayService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void initTrayIcon() {
+        openBrowser("http://localhost:" + serverPort + "/");
+
         if (!SystemTray.isSupported()) return;
 
         String version = Wealth.class.getPackage().getImplementationVersion();
