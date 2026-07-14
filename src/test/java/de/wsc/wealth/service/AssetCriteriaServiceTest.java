@@ -2,6 +2,7 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
+import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
 import de.wsc.wealth.repository.CriteriaOptionRepository;
@@ -28,12 +29,13 @@ class AssetCriteriaServiceTest {
     @Mock private CriteriaDefinitionRepository definitionRepository;
     @Mock private CriteriaOptionRepository optionRepository;
     @Mock private AssetCriteriaValueRepository valueRepository;
+    @Mock private AccountCriteriaValueRepository accountValueRepository;
 
     private AssetCriteriaService assetCriteriaService;
 
     @BeforeEach
     void setUp() {
-        assetCriteriaService = new AssetCriteriaService(definitionRepository, optionRepository, valueRepository);
+        assetCriteriaService = new AssetCriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository);
     }
 
     @Test
@@ -241,6 +243,70 @@ class AssetCriteriaServiceTest {
 
         verify(valueRepository).delete(existing);
         verify(valueRepository, never()).save(any());
+    }
+
+    @Test
+    void findAllCustomActive_excludesSystemDefinitions() {
+        CriteriaDefinition systemDef = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition customDef = definition(null, CriteriaValueType.FREE_TEXT);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef, customDef));
+
+        List<CriteriaDefinition> result = assetCriteriaService.findAllCustomActive();
+
+        assertThat(result).containsExactly(customDef);
+    }
+
+    @Test
+    void getValuesByAccountId_returnsOptionValueForFixedListCriterion() {
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FIXED_LIST);
+        definition.setId(30L);
+        Account account = account(1L);
+        AccountCriteriaValue value = new AccountCriteriaValue();
+        value.setAccount(account);
+        value.setDefinition(definition);
+        value.setOption(option(definition, null, "Deutschland"));
+        when(accountValueRepository.findAllWithAccountAndDefinitionAndOption()).thenReturn(List.of(value));
+
+        Map<Long, String> result = assetCriteriaService.getValuesByAccountId(30L);
+
+        assertThat(result).containsEntry(1L, "Deutschland");
+    }
+
+    @Test
+    void saveAssignments_account_freeTextWithValue_createsValue() {
+        Account account = account(1L);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
+        definition.setId(11L);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(definition));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter("crit_11")).thenReturn("Deutschland");
+        when(accountValueRepository.findByAccountAndDefinition(account, definition)).thenReturn(Optional.empty());
+
+        assetCriteriaService.saveAssignments(account, request);
+
+        ArgumentCaptor<AccountCriteriaValue> captor = ArgumentCaptor.forClass(AccountCriteriaValue.class);
+        verify(accountValueRepository).save(captor.capture());
+        assertThat(captor.getValue().getFreeTextValue()).isEqualTo("Deutschland");
+    }
+
+    @Test
+    void saveAssignments_account_ignoresSystemDefinitions() {
+        Account account = account(1L);
+        CriteriaDefinition systemDef = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        systemDef.setId(10L);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
+        assetCriteriaService.saveAssignments(account, request);
+
+        verify(request, never()).getParameter("crit_10");
+        verifyNoInteractions(accountValueRepository);
+    }
+
+    private Account account(Long id) {
+        Account account = new Account();
+        account.setId(id);
+        return account;
     }
 
     private Asset asset(Long id) {

@@ -2,6 +2,7 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaOption;
+import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
 import de.wsc.wealth.repository.CriteriaOptionRepository;
@@ -18,13 +19,16 @@ public class CriteriaService {
     private final CriteriaDefinitionRepository definitionRepository;
     private final CriteriaOptionRepository optionRepository;
     private final AssetCriteriaValueRepository valueRepository;
+    private final AccountCriteriaValueRepository accountValueRepository;
 
     public CriteriaService(CriteriaDefinitionRepository definitionRepository,
                            CriteriaOptionRepository optionRepository,
-                           AssetCriteriaValueRepository valueRepository) {
+                           AssetCriteriaValueRepository valueRepository,
+                           AccountCriteriaValueRepository accountValueRepository) {
         this.definitionRepository = definitionRepository;
         this.optionRepository = optionRepository;
         this.valueRepository = valueRepository;
+        this.accountValueRepository = accountValueRepository;
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +57,7 @@ public class CriteriaService {
             throw new IllegalStateException("System-Kriterien können nicht gelöscht werden.");
         }
         valueRepository.deleteByDefinition(definition);
+        accountValueRepository.deleteByDefinition(definition);
         optionRepository.deleteAll(optionRepository.findByDefinitionOrderBySortOrderAsc(definition));
         definitionRepository.delete(definition);
     }
@@ -83,6 +88,7 @@ public class CriteriaService {
             throw new IllegalStateException("System-Werte können nicht gelöscht werden.");
         }
         valueRepository.deleteByOption(option);
+        accountValueRepository.deleteByOption(option);
         optionRepository.delete(option);
     }
 

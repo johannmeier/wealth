@@ -2,6 +2,7 @@ package de.wsc.wealth.service;
 
 import de.wsc.wealth.domain.*;
 import de.wsc.wealth.dto.AssetCriteriaSnapshot;
+import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
 import de.wsc.wealth.repository.CriteriaOptionRepository;
@@ -22,13 +23,16 @@ public class AssetCriteriaService {
     private final CriteriaDefinitionRepository definitionRepository;
     private final CriteriaOptionRepository optionRepository;
     private final AssetCriteriaValueRepository valueRepository;
+    private final AccountCriteriaValueRepository accountValueRepository;
 
     public AssetCriteriaService(CriteriaDefinitionRepository definitionRepository,
                                 CriteriaOptionRepository optionRepository,
-                                AssetCriteriaValueRepository valueRepository) {
+                                AssetCriteriaValueRepository valueRepository,
+                                AccountCriteriaValueRepository accountValueRepository) {
         this.definitionRepository = definitionRepository;
         this.optionRepository = optionRepository;
         this.valueRepository = valueRepository;
+        this.accountValueRepository = accountValueRepository;
     }
 
     @Transactional(readOnly = true)
@@ -36,9 +40,25 @@ public class AssetCriteriaService {
         return definitionRepository.findAllByOrderBySortOrderAsc();
     }
 
+    /**
+     * Criteria assignable to accounts are restricted to user-defined (non-system) criteria —
+     * the system criteria (category/type/allocation/distribution/index) model security-specific
+     * concepts that don't apply to bank accounts.
+     */
+    @Transactional(readOnly = true)
+    public List<CriteriaDefinition> findAllCustomActive() {
+        return findAllActive().stream().filter(d -> d.getSystemCode() == null).toList();
+    }
+
     @Transactional(readOnly = true)
     public Map<Long, AssetCriteriaValue> getValuesByDefinitionId(Asset asset) {
         return valueRepository.findByAsset(asset).stream()
+            .collect(Collectors.toMap(v -> v.getDefinition().getId(), v -> v));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, AccountCriteriaValue> getValuesByDefinitionId(Account account) {
+        return accountValueRepository.findByAccount(account).stream()
             .collect(Collectors.toMap(v -> v.getDefinition().getId(), v -> v));
     }
 
@@ -98,6 +118,17 @@ public class AssetCriteriaService {
     }
 
     @Transactional(readOnly = true)
+    public Map<Long, String> getValuesByAccountId(Long definitionId) {
+        Map<Long, String> result = new HashMap<>();
+        for (AccountCriteriaValue v : accountValueRepository.findAllWithAccountAndDefinitionAndOption()) {
+            if (!v.getDefinition().getId().equals(definitionId)) continue;
+            String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
+            if (display != null && !display.isBlank()) result.put(v.getAccount().getId(), display);
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
     public boolean isAutoPrice(Asset asset) {
         AssetCriteriaSnapshot snapshot = getSnapshotsByAssetId().get(asset.getId());
         return snapshot != null && snapshot.isAutoPrice();
@@ -147,6 +178,23 @@ public class AssetCriteriaService {
         }
     }
 
+    public void saveAssignments(Account account, HttpServletRequest request) {
+        for (CriteriaDefinition definition : findAllCustomActive()) {
+            String raw = request.getParameter("crit_" + definition.getId());
+            if (raw == null || raw.isBlank()) {
+                accountValueRepository.findByAccountAndDefinition(account, definition)
+                    .ifPresent(accountValueRepository::delete);
+                continue;
+            }
+            if (definition.getValueType() == CriteriaValueType.FIXED_LIST) {
+                optionRepository.findById(Long.valueOf(raw))
+                    .ifPresent(option -> setOptionValue(account, definition, option));
+            } else {
+                setFreeTextValue(account, definition, raw);
+            }
+        }
+    }
+
     private java.util.Optional<CriteriaOption> findOptionBySystemCode(CriteriaDefinition definition, String systemCode) {
         if (systemCode == null) return java.util.Optional.empty();
         return optionRepository.findByDefinitionAndSystemCode(definition, systemCode);
@@ -171,6 +219,29 @@ public class AssetCriteriaService {
     private AssetCriteriaValue newValue(Asset asset, CriteriaDefinition definition) {
         AssetCriteriaValue value = new AssetCriteriaValue();
         value.setAsset(asset);
+        value.setDefinition(definition);
+        return value;
+    }
+
+    private void setOptionValue(Account account, CriteriaDefinition definition, CriteriaOption option) {
+        AccountCriteriaValue value = accountValueRepository.findByAccountAndDefinition(account, definition)
+            .orElseGet(() -> newValue(account, definition));
+        value.setOption(option);
+        value.setFreeTextValue(null);
+        accountValueRepository.save(value);
+    }
+
+    private void setFreeTextValue(Account account, CriteriaDefinition definition, String text) {
+        AccountCriteriaValue value = accountValueRepository.findByAccountAndDefinition(account, definition)
+            .orElseGet(() -> newValue(account, definition));
+        value.setOption(null);
+        value.setFreeTextValue(text);
+        accountValueRepository.save(value);
+    }
+
+    private AccountCriteriaValue newValue(Account account, CriteriaDefinition definition) {
+        AccountCriteriaValue value = new AccountCriteriaValue();
+        value.setAccount(account);
         value.setDefinition(definition);
         return value;
     }

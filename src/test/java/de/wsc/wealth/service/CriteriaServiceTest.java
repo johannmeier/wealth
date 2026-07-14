@@ -3,6 +3,7 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.CriteriaDefinition;
 import de.wsc.wealth.domain.CriteriaOption;
 import de.wsc.wealth.domain.CriteriaValueType;
+import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AssetCriteriaValueRepository;
 import de.wsc.wealth.repository.CriteriaDefinitionRepository;
 import de.wsc.wealth.repository.CriteriaOptionRepository;
@@ -26,12 +27,13 @@ class CriteriaServiceTest {
     @Mock private CriteriaDefinitionRepository definitionRepository;
     @Mock private CriteriaOptionRepository optionRepository;
     @Mock private AssetCriteriaValueRepository valueRepository;
+    @Mock private AccountCriteriaValueRepository accountValueRepository;
 
     private CriteriaService criteriaService;
 
     @BeforeEach
     void setUp() {
-        criteriaService = new CriteriaService(definitionRepository, optionRepository, valueRepository);
+        criteriaService = new CriteriaService(definitionRepository, optionRepository, valueRepository, accountValueRepository);
     }
 
     @Test
@@ -91,6 +93,7 @@ class CriteriaServiceTest {
         criteriaService.delete(2L);
 
         verify(valueRepository).deleteByDefinition(customDef);
+        verify(accountValueRepository).deleteByDefinition(customDef);
         verify(definitionRepository).delete(customDef);
     }
 
@@ -113,6 +116,7 @@ class CriteriaServiceTest {
         criteriaService.deleteOption(11L);
 
         verify(valueRepository).deleteByOption(customOption);
+        verify(accountValueRepository).deleteByOption(customOption);
         verify(optionRepository).delete(customOption);
     }
 

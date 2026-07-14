@@ -44,6 +44,23 @@
                 th:text="${#messages.msg('assetAllocation.' + a.name())}"></option>
       </select>
     </div>
+    <div class="row">
+      <div class="col mb-3" th:each="def : ${criteriaDefinitions}">
+        <label class="form-label" th:text="${def.name}">Kriterium</label>
+        <select th:if="${def.valueType.name() == 'FIXED_LIST'}"
+                th:name="|crit_${def.id}|"
+                class="form-select">
+          <option value="" th:text="#{form.select}">-- wählen --</option>
+          <option th:each="o : ${criteriaOptions.get(def.id)}" th:value="${o.id}"
+                  th:text="${o.value}"
+                  th:selected="${accountCriteriaValues.get(def.id) != null and accountCriteriaValues.get(def.id).option != null and accountCriteriaValues.get(def.id).option.id == o.id}"></option>
+        </select>
+        <input th:unless="${def.valueType.name() == 'FIXED_LIST'}"
+               type="text" class="form-control"
+               th:name="|crit_${def.id}|"
+               th:value="${accountCriteriaValues.get(def.id)?.freeTextValue}"/>
+      </div>
+    </div>
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
       <a th:href="@{/accounts}" class="btn btn-outline-secondary" th:text="#{common.cancel}">Abbrechen</a>

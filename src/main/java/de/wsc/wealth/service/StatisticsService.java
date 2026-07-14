@@ -385,19 +385,17 @@ public class StatisticsService {
     }
 
     public List<StatisticsGroup> getStatsByCriteria(Long definitionId) {
-        // Criteria are assigned to securities/coins only — accounts have no relationship to any
-        // criterion (custom or built-in) and are therefore excluded here entirely, unlike the
-        // fixed by-index/by-type/by-allocation views which bucket them under "Konten"/"KONTO".
-        List<WealthPosition> assetAndCoinPositions = getAllPositions().stream()
-            .filter(p -> "ASSET".equals(p.getType()) || "COIN".equals(p.getType()))
-            .toList();
-        BigDecimal total = totalValue(assetAndCoinPositions);
+        List<WealthPosition> all = getAllPositions();
+        BigDecimal total = totalValue(all);
 
         Map<Long, String> valueByAssetId = assetCriteriaService.getValuesByAssetId(definitionId);
+        Map<Long, String> valueByAccountId = assetCriteriaService.getValuesByAccountId(definitionId);
 
-        Map<String, List<WealthPosition>> grouped = assetAndCoinPositions.stream()
+        Map<String, List<WealthPosition>> grouped = all.stream()
             .collect(Collectors.groupingBy(
-                p -> valueByAssetId.getOrDefault(p.getId(), "KEIN_WERT"),
+                p -> "ACCOUNT".equals(p.getType())
+                    ? valueByAccountId.getOrDefault(p.getId(), "KEIN_WERT")
+                    : valueByAssetId.getOrDefault(p.getId(), "KEIN_WERT"),
                 LinkedHashMap::new, Collectors.toList()
             ));
 
