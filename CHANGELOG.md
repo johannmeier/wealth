@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.12] – 2026-07-14
+
+### Added
+- Self-managed classification criteria for securities, replacing the fixed Kategorie/Wertpapierart/Allocation/Ausschüttung/Index enums: new criteria can be created and managed via `/criteria` and assigned to any security
+- Custom criteria can now also be assigned to accounts
+- Generic statistics view (`/statistics/by-criteria`) grouping wealth by any classification criterion (system or custom); the statistics menu now lists one entry per criterion directly, replacing the old fixed report pages
+- Pie chart added to all group-based statistics views (overview, by-index, by-type, by-allocation, by-criteria), built with a self-contained SVG (no external chart library)
+- Color assigned automatically to each criterion (customizable via a picker), shown consistently on badges across the asset list, dashboard and criteria pages
+- Unified "Eigenschaften"/"Properties" badge column on the asset list and dashboard showing all assigned criteria (system and custom) in one place
+- Browser now opens automatically when the application starts
+- Offline, cryptographically signed license key system: Settings → License to view status and enter a key; gates Coin management and Custom Criteria without ever deleting data on a lapsed/missing license
+- "Wittmann" classification criterion (Liquidität/Devisen, Edelmetalle, Unternehmen, Immobilien, Spezialanlagen) as its own licensable feature, independent of the general Custom Criteria license
+
+### Fixed
+- Automatic price refresh no longer depends on a security's Kategorie/Wertpapierart classification (which could be hidden depending on license tier); it now depends solely on whether the security has a Yahoo Finance symbol
+- License key field on the settings page now shows the currently saved key instead of always appearing blank
+- Switching or creating a database no longer discards the saved license key (and other settings)
+- Total wealth on the by-criteria statistics page no longer understated when accounts were excluded from the criterion breakdown
+- Browser no longer opens duplicate tabs on Spring Boot DevTools hot reload during development
+
+### Changed
+- Asset edit form: criteria list wraps after 5 columns instead of expanding indefinitely
+
 ## [1.0.11] – 2026-07-04
 
 ### Added
