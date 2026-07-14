@@ -75,7 +75,9 @@ public class StatisticsController {
         model.addAttribute("selectedDefinitionId", selectedId);
         model.addAttribute("selectedDefinition", selectedDefinition);
         model.addAttribute("groups", groups);
-        model.addAttribute("totalWealth", sumGroupTotals(groups));
+        // Unlike the other stats pages, groups here deliberately exclude accounts (a criterion
+        // never applies to them), so summing the displayed groups would understate net worth.
+        model.addAttribute("totalWealth", statisticsService.getTotalWealth());
         return "statistics/by-criteria";
     }
 

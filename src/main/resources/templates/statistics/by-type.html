@@ -15,6 +15,8 @@
     <strong th:text="${#numbers.formatDecimal(totalWealth.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${displayCurrency}"></strong>
   </div>
 
+  <div id="pieChart"></div>
+
   <table class="table table-hover align-middle">
     <caption class="visually-hidden" th:text="#{page.statistics.by-type.title}">Auflistung nach Wertpapierart</caption>
     <thead class="table-dark">
@@ -27,7 +29,8 @@
     </thead>
     <tbody>
       <th:block th:each="group, i : ${groups}">
-        <tr class="fw-semibold" th:classappend="${i.odd} ? 'stat-row-alt' : ''">
+        <tr class="fw-semibold stat-summary-row" th:classappend="${i.odd} ? 'stat-row-alt' : ''"
+            th:attr="data-chart-label=${#messages.msgOrNull('assetType.' + group.name) ?: group.name},data-chart-value=${group.percentage}">
           <td th:text="${#messages.msgOrNull('assetType.' + group.name) ?: group.name}"></td>
           <td class="text-end" th:text="${#numbers.formatDecimal(group.totalValue.multiply(eurToDisplayRate), 1, 'DEFAULT', 2, 'DEFAULT')}"></td>
           <td class="text-end" style="white-space:nowrap" th:text="${#numbers.formatDecimal(group.percentage, 1, 'DEFAULT', 2, 'DEFAULT')} + ' %'"></td>
@@ -54,7 +57,8 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script th:src="@{/js/piechart.js}"></script>
+<script th:inline="javascript">
 document.querySelectorAll('.toggle-group').forEach(function (btn) {
   btn.addEventListener('click', function () {
     var target = this.dataset.target;
@@ -64,6 +68,8 @@ document.querySelectorAll('.toggle-group').forEach(function (btn) {
     this.innerHTML = rows.length + (expand ? ' ▼' : ' ▶');
   });
 });
+window.wealthPieChartOtherLabel = /*[[#{stats.other}]]*/ 'Sonstige';
+wealthRenderPieChart(document.getElementById('pieChart'), '.stat-summary-row');
 </script>
 </body>
 </html>
