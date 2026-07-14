@@ -211,7 +211,12 @@
             <li><a class="dropdown-item" th:href="@{/traderepublic}"
                    th:classappend="${currentUri.startsWith('/traderepublic')} ? ' active' : ''">Trade Republic</a></li>
             <li><hr class="dropdown-divider"/></li>
-            <li><a class="dropdown-item" th:href="@{/info}" th:text="#{nav.info}">Info</a></li>
+            <li>
+              <a class="dropdown-item d-flex justify-content-between align-items-center" th:href="@{/info}">
+                <span th:text="#{nav.info}">Info</span>
+                <span th:if="${updateAvailable}" class="badge bg-warning text-dark ms-2" th:text="#{nav.new-version}">Neue Version</span>
+              </a>
+            </li>
           </ul>
         </li>
       </ul>

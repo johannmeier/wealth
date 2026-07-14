@@ -10,6 +10,11 @@
 
 <div class="container mt-5" style="max-width:640px">
   <h3 class="mb-4" th:text="#{page.info.title}">Programminformation</h3>
+  <div th:if="${updateAvailable}" class="alert alert-info d-flex justify-content-between align-items-center">
+    <span th:text="#{page.info.update-available} + ' ' + ${latestVersion}"></span>
+    <a th:if="${releaseUrl}" th:href="${releaseUrl}" target="_blank" rel="noopener"
+       class="btn btn-sm btn-primary" th:text="#{page.info.update-download}">Herunterladen</a>
+  </div>
   <table class="table table-bordered">
     <tbody>
       <tr>
@@ -30,7 +35,7 @@
       </tr>
       <tr>
         <th class="table-secondary" th:text="#{page.info.license}">Lizenz</th>
-        <td th:text="#{page.info.license.text}">MIT</td>
+        <td th:text="#{page.info.license.text}">PolyForm Noncommercial 1.0.0</td>
       </tr>
     </tbody>
   </table>
