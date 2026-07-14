@@ -41,8 +41,8 @@
         <input type="text" th:field="*{symbol}" class="form-control" placeholder="AAPL, GC=F"/>
       </div>
     </div>
-    <div class="row">
-      <div class="col mb-3" th:each="def : ${criteriaDefinitions}">
+    <div class="row row-cols-1 row-cols-sm-3 row-cols-lg-5 g-3 mb-3">
+      <div class="col" th:each="def : ${criteriaDefinitions}">
         <label class="form-label" th:text="${def.name}">Kriterium</label>
         <select th:if="${def.valueType.name() == 'FIXED_LIST'}"
                 th:name="|crit_${def.id}|"
