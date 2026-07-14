@@ -10,12 +10,9 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Track exchange-traded securities (stocks, ETFs, bonds, funds, crypto, currencies)
 - Record precious metal securities (e.g. gold ETCs with ISIN)
 - Track other assets without automatic price updates (e.g. pension plans, employer contributions)
-- Automatic price updates via Yahoo Finance at startup and daily on weekdays at 18:00
+- A security with a Yahoo Finance symbol gets automatic price updates at startup and daily on weekdays at 18:00, regardless of how it's classified
 - Record date-based quantity snapshots per security and depot (e.g. when you buy or sell)
-- Assign index name (e.g. MSCI World, S&P 500)
-- Assign security type: Stock, Equity Fund, ETF, Bond, Currency, Precious Metal, Crypto, Other
-- Assign asset allocation: Risky or Risk-Free
-- Assign distribution policy: Distributing or Accumulating
+- Classified via [classification criteria](#classification-criteria) (built-in: Index, Type, Allocation, Distribution Policy, Wittmann; plus any custom criteria you define)
 - Archive securities to hide them without losing history
 
 **Security search (create form):**
@@ -24,6 +21,14 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Security type, asset allocation and distribution policy are pre-filled automatically:
   - Bond-related keywords (Bond, Anleihe, Aggregate, Overnight, Money Market, …) with matching base currency → Risk-Free
   - "Acc" / "Accumul" → Accumulating; "Dist" / "Income" → Distributing
+
+### Classification Criteria
+Securities and accounts are classified through a generic, self-managed criteria system instead of a fixed set of fields:
+- Built-in system criteria: Index, Type (Stock, Equity Fund, ETF, Bond, Currency, Precious Metal, Crypto, Other), Asset Allocation (Risky / Risk-Free), Distribution Policy (Distributing / Accumulating), Wittmann (Liquidität/Devisen, Edelmetalle, Unternehmen, Immobilien, Spezialanlagen)
+- Define your own criteria (**Settings → Manage Criteria**) with either a fixed list of values or free text (e.g. a "Country" criterion)
+- Each criterion has a color assigned automatically (customizable), shown consistently on badges across the asset list, dashboard and criteria pages
+- System criteria apply to securities only; custom criteria can be assigned to both securities and accounts
+- All assigned criteria for a security or account are shown together in a single "Properties" badge column
 
 ### Banks
 - Manage banks as a central entity that groups accounts and depots
@@ -40,6 +45,7 @@ A personal wealth tracking application to manage and monitor your entire financi
 - Balances are displayed in your configured display currency with the native account currency shown below for reference
 - Sorted alphabetically (case-insensitive) by bank, then account number
 - "Last changed" column shows the date of the most recent balance entry, highlighted in green when it's today
+- Custom classification criteria can be assigned, same as securities
 
 ### Depots (Portfolios)
 - Group securities into depots
@@ -68,14 +74,7 @@ An "Update" / "View" mode switch in the navbar helps track your daily update rou
 - Assign coins to depots
 
 ### Statistics
-Four current-value views, each showing total wealth and individual position percentages:
-
-| View | Groups positions by |
-|------|---------------------|
-| Overview | Asset allocation (Risky / Risk-Free) |
-| By Index | Index name (MSCI World, S&P 500, …) |
-| By Security Type | ETF, Stock, Bond, Account, … |
-| By Allocation | Same as overview, with collapsible detail rows |
+The statistics menu lists one entry per classification criterion (system and custom), each grouping positions by that criterion's values and showing total wealth, individual position percentages, and a pie chart. Positions without a value for the selected criterion — e.g. accounts under a security-only system criterion — fall into a shared "No Value" group.
 
 ### Wealth History
 Monthly chart and table showing how total wealth developed over time, broken down into securities, accounts and coins. Values are calculated using recorded historical prices and quantities for each month-end date.
@@ -176,7 +175,7 @@ mvn package
 java -jar target/wealth-*.jar
 ```
 
-The application starts on **http://localhost:8080**.
+The application starts on **http://localhost:8080** and opens automatically in your default browser (once per process start).
 
 **First launch:** A dialog (or console prompt in headless mode) asks for a name to identify the database file. This name is saved and reused on subsequent starts.
 
@@ -215,12 +214,28 @@ For exchange-traded precious metal securities, use the following Yahoo Finance s
 **How to set up a precious metal security:**
 1. Create a new security manually (without search)
 2. Enter name (e.g. *Gold*), symbol `GC=F`, currency `USD`
-3. Set category to *Exchange-Traded* — this enables automatic price updates
-4. Record holdings in troy ounces (`1 g = 0.03215 oz`)
+3. Record holdings in troy ounces (`1 g = 0.03215 oz`)
+
+Any security with a symbol gets automatic price updates — classification (Kategorie, Wertpapierart, …) is independent and purely informational.
 
 The app converts the USD spot price to EUR automatically using the current exchange rate.
 
 For **physical coins**, use the dedicated Coins section instead — weight is entered in grams per coin and the app handles the troy ounce conversion internally.
+
+---
+
+## Licensing
+
+The app is fully usable without a license (Community tier). A license key unlocks additional features:
+
+| Feature | Community | Licensed |
+|---------|-----------|----------|
+| Securities, accounts, depots, statistics, sync, CSV import | ✓ | ✓ |
+| Physical coin management | – | ✓ (`COINS`) |
+| Wittmann classification criterion | – | ✓ (`WITTMANN`) |
+| Self-defined custom criteria + all other system criteria (Index, Type, Allocation, Distribution Policy) | – | ✓ (`CUSTOM_CRITERIA`) |
+
+Enter a key under **Settings → License**; a lapsed or missing license never deletes data — it simply stops surfacing the gated features until a valid key is entered again. License keys are offline, cryptographically signed, and optionally time-limited.
 
 ---
 
