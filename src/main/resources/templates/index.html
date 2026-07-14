@@ -27,8 +27,7 @@
     <thead class="table-dark">
       <tr>
         <th scope="col" th:text="#{col.name}">Name</th>
-        <th scope="col" th:text="#{col.type}">Art</th>
-        <th scope="col" th:text="#{col.allocation}">Allocation</th>
+        <th scope="col" th:text="#{col.properties}">Eigenschaften</th>
         <th scope="col" th:text="#{col.index}">Index</th>
         <th scope="col" th:text="#{col.depot-account}">Depot/Konto</th>
         <th scope="col" class="text-end" th:text="#{col.quantity}">Anzahl</th>
@@ -41,13 +40,10 @@
       <tr th:each="pos : ${positions}">
         <td th:text="${pos.name}"></td>
         <td>
-          <span th:if="${pos.type == 'ACCOUNT'}" class="badge bg-info" th:text="#{assetType.KONTO}">Konto</span>
-          <span th:if="${pos.assetType != null}" class="badge bg-primary" th:text="${#messages.msgOrNull('assetType.' + pos.assetType) ?: pos.assetType}"></span>
-        </td>
-        <td>
-          <span th:if="${pos.assetAllocation != null}"
-                th:class="${pos.assetAllocation == 'RISIKOBEHAFTET'} ? 'badge bg-warning text-dark' : 'badge bg-success'"
-                th:text="${#messages.msgOrNull('assetAllocation.' + pos.assetAllocation) ?: pos.assetAllocation}"></span>
+          <span th:each="b : ${pos.type == 'ACCOUNT' ? accountPropertyBadges.get(pos.id) : assetPropertyBadges.get(pos.id)}"
+                class="badge bg-secondary me-1"
+                th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
+                th:title="${b.tooltip}"></span>
         </td>
         <td style="white-space:nowrap" th:text="${pos.indexName ?: '-'}"></td>
         <td>
@@ -68,7 +64,7 @@
         <td class="text-end" style="white-space:nowrap" th:text="${pos.percentage != null ? #numbers.formatDecimal(pos.percentage, 1, 'DEFAULT', 2, 'DEFAULT') + ' %' : '-'}"></td>
       </tr>
       <tr th:if="${#lists.isEmpty(positions)}">
-        <td colspan="9" class="text-center text-muted" th:text="#{page.index.empty}">Noch keine Positionen.</td>
+        <td colspan="8" class="text-center text-muted" th:text="#{page.index.empty}">Noch keine Positionen.</td>
       </tr>
     </tbody>
   </table>

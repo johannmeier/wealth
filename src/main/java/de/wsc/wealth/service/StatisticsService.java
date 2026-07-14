@@ -101,8 +101,6 @@ public class StatisticsService {
                 p.setType("ASSET");
                 AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(asset.getId());
                 if (snapshot != null) {
-                    p.setAssetType(displayCode(snapshot.getTypeCode(), snapshot.getTypeLabel()));
-                    p.setAssetAllocation(displayCode(snapshot.getAllocationCode(), snapshot.getAllocationLabel()));
                     p.setIndexName(snapshot.getIndexName());
                 }
                 p.setQuantity(totalQuantity);
@@ -124,7 +122,6 @@ public class StatisticsService {
             p.setId(account.getId());
             p.setName(account.getDisplayName());
             p.setType("ACCOUNT");
-            p.setAssetAllocation(account.getAssetAllocation() != null ? account.getAssetAllocation().name() : null);
             p.setValue(balEur);
             p.setCurrency("EUR");
             positions.add(p);
@@ -174,8 +171,6 @@ public class StatisticsService {
             p.setType("COIN");
             AssetCriteriaSnapshot snapshot = criteriaByAssetId.get(assetId);
             if (snapshot != null) {
-                p.setAssetType(displayCode(snapshot.getTypeCode(), snapshot.getTypeLabel()));
-                p.setAssetAllocation(displayCode(snapshot.getAllocationCode(), snapshot.getAllocationLabel()));
                 p.setIndexName(snapshot.getIndexName());
             }
             p.setValue(entry.getValue());
@@ -407,10 +402,6 @@ public class StatisticsService {
             .map(WealthPosition::getValue)
             .filter(Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private String displayCode(String code, String label) {
-        return code != null ? code : label;
     }
 
     private BigDecimal computeValue(BigDecimal quantity, BigDecimal price) {

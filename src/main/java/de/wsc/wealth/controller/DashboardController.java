@@ -1,6 +1,7 @@
 package de.wsc.wealth.controller;
 
 import de.wsc.wealth.dto.WealthPosition;
+import de.wsc.wealth.service.AssetCriteriaService;
 import de.wsc.wealth.service.AssetService;
 import de.wsc.wealth.service.StatisticsService;
 import org.springframework.stereotype.Controller;
@@ -16,10 +17,13 @@ public class DashboardController {
 
     private final StatisticsService statisticsService;
     private final AssetService assetService;
+    private final AssetCriteriaService assetCriteriaService;
 
-    public DashboardController(StatisticsService statisticsService, AssetService assetService) {
+    public DashboardController(StatisticsService statisticsService, AssetService assetService,
+                               AssetCriteriaService assetCriteriaService) {
         this.statisticsService = statisticsService;
         this.assetService = assetService;
+        this.assetCriteriaService = assetCriteriaService;
     }
 
     @GetMapping("/")
@@ -32,6 +36,8 @@ public class DashboardController {
         model.addAttribute("positions", positions);
         model.addAttribute("totalWealth", total);
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
+        model.addAttribute("assetPropertyBadges", assetCriteriaService.getPropertyBadgesByAssetId());
+        model.addAttribute("accountPropertyBadges", assetCriteriaService.getPropertyBadgesByAccountId());
         return "index";
     }
 }

@@ -51,6 +51,7 @@ public class AssetController {
         model.addAttribute("assets", assets);
         model.addAttribute("eurPrices", eurPrices);
         model.addAttribute("criteria", assetCriteriaService.getSnapshotsByAssetId());
+        model.addAttribute("propertyBadgesByAsset", assetCriteriaService.getPropertyBadgesByAssetId());
         model.addAttribute("autoPriceByAsset",
             assetCriteriaService.getAutoPriceByAssetId(assets.stream().map(Asset::getId).toList()));
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
