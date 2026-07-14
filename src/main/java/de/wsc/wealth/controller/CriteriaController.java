@@ -27,7 +27,10 @@ public class CriteriaController {
 
     @GetMapping("/new")
     public String newForm(Model model) {
-        model.addAttribute("definition", new CriteriaDefinition());
+        CriteriaDefinition definition = new CriteriaDefinition();
+        definition.setColorIndex(criteriaService.nextFreeColorIndex());
+        model.addAttribute("definition", definition);
+        addColorIndexes(model);
         return "criteria/form";
     }
 
@@ -35,6 +38,7 @@ public class CriteriaController {
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("definition", criteriaService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        addColorIndexes(model);
         return "criteria/form";
     }
 
@@ -83,5 +87,9 @@ public class CriteriaController {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/criteria/" + id + "/options";
+    }
+
+    private void addColorIndexes(Model model) {
+        model.addAttribute("colorIndexes", java.util.stream.IntStream.range(0, CriteriaService.COLOR_COUNT).boxed().toList());
     }
 }

@@ -41,7 +41,7 @@
         <td th:text="${pos.name}"></td>
         <td>
           <span th:each="b : ${pos.type == 'ACCOUNT' ? accountPropertyBadges.get(pos.id) : assetPropertyBadges.get(pos.id)}"
-                class="badge bg-secondary me-1"
+                th:class="${b.colorIndex != null} ? ('badge me-1 crit-color-' + ${b.colorIndex}) : 'badge bg-secondary me-1'"
                 th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
                 th:title="${b.tooltip}"></span>
         </td>

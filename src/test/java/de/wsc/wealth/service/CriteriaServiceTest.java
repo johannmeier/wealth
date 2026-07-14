@@ -54,6 +54,105 @@ class CriteriaServiceTest {
     }
 
     @Test
+    void save_newDefinition_withoutExplicitColor_assignsNextFreeColor() {
+        CriteriaDefinition existing = definition(null, 0);
+        existing.setColorIndex(0);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(existing));
+        when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CriteriaDefinition form = new CriteriaDefinition();
+        form.setName("Länder");
+        form.setValueType(CriteriaValueType.FIXED_LIST);
+
+        CriteriaDefinition saved = criteriaService.save(form);
+
+        assertThat(saved.getColorIndex()).isEqualTo(1);
+    }
+
+    @Test
+    void save_newDefinition_respectsExplicitColorChoice() {
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of());
+        when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CriteriaDefinition form = new CriteriaDefinition();
+        form.setName("Länder");
+        form.setValueType(CriteriaValueType.FIXED_LIST);
+        form.setColorIndex(7);
+
+        CriteriaDefinition saved = criteriaService.save(form);
+
+        assertThat(saved.getColorIndex()).isEqualTo(7);
+    }
+
+    @Test
+    void save_existingDefinition_updatesColorIndexWhenProvided() {
+        CriteriaDefinition existing = definition("CATEGORY", 0);
+        existing.setId(5L);
+        existing.setColorIndex(2);
+        when(definitionRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CriteriaDefinition form = new CriteriaDefinition();
+        form.setId(5L);
+        form.setName("Kategorie");
+        form.setColorIndex(9);
+
+        CriteriaDefinition saved = criteriaService.save(form);
+
+        assertThat(saved.getColorIndex()).isEqualTo(9);
+    }
+
+    @Test
+    void nextFreeColorIndex_noneUsed_returnsZero() {
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of());
+
+        assertThat(criteriaService.nextFreeColorIndex()).isEqualTo(0);
+    }
+
+    @Test
+    void nextFreeColorIndex_someUsed_returnsLowestFree() {
+        CriteriaDefinition d0 = definition(null, 0); d0.setColorIndex(0);
+        CriteriaDefinition d1 = definition(null, 1); d1.setColorIndex(1);
+        CriteriaDefinition d2 = definition(null, 2); d2.setColorIndex(2);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(d0, d1, d2));
+
+        assertThat(criteriaService.nextFreeColorIndex()).isEqualTo(3);
+    }
+
+    @Test
+    void nextFreeColorIndex_allTenUsed_returnsLeastUsedIndex() {
+        List<CriteriaDefinition> all = new java.util.ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            CriteriaDefinition d = definition(null, i);
+            d.setColorIndex(i);
+            all.add(d);
+        }
+        CriteriaDefinition duplicate = definition(null, 10);
+        duplicate.setColorIndex(0);
+        all.add(duplicate);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(all);
+
+        assertThat(criteriaService.nextFreeColorIndex()).isEqualTo(1);
+    }
+
+    @Test
+    void assignMissingColorIndexes_onlyBackfillsNullColors() {
+        CriteriaDefinition colored = definition(null, 0);
+        colored.setId(1L);
+        colored.setColorIndex(5);
+        CriteriaDefinition uncolored = definition(null, 1);
+        uncolored.setId(2L);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(colored, uncolored));
+        when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        criteriaService.assignMissingColorIndexes();
+
+        verify(definitionRepository, never()).save(colored);
+        assertThat(uncolored.getColorIndex()).isNotNull();
+        verify(definitionRepository).save(uncolored);
+    }
+
+    @Test
     void save_existingDefinition_onlyUpdatesName() {
         CriteriaDefinition existing = definition("CATEGORY", 0);
         existing.setId(5L);

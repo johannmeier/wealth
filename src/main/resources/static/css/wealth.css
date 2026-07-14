@@ -62,3 +62,40 @@ body:not(.wealth-update-mode) .wealth-update-col {
 }
 
 .stat-row-alt { --bs-table-bg: var(--bs-tertiary-bg); }
+
+/* Criteria color pairs — 10 CVD-safe hues, one light/dark step each, validated with
+   scripts/validate_palette.js from the dataviz skill (worst adjacent CVD deltaE 17.1). */
+.crit-color-0 { background-color: #2a78d6; color: #fff; }
+.crit-color-1 { background-color: #1baf7a; color: #1a1a1a; }
+.crit-color-2 { background-color: #eda100; color: #1a1a1a; }
+.crit-color-3 { background-color: #008300; color: #fff; }
+.crit-color-4 { background-color: #4a3aa7; color: #fff; }
+.crit-color-5 { background-color: #e34948; color: #1a1a1a; }
+.crit-color-6 { background-color: #e87ba4; color: #1a1a1a; }
+.crit-color-7 { background-color: #eb6834; color: #1a1a1a; }
+.crit-color-8 { background-color: #a0522d; color: #fff; }
+.crit-color-9 { background-color: #0d9488; color: #1a1a1a; }
+
+[data-bs-theme="dark"] .crit-color-0 { background-color: #3987e5; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-1 { background-color: #199e70; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-2 { background-color: #c98500; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-3 { background-color: #008300; color: #fff; }
+[data-bs-theme="dark"] .crit-color-4 { background-color: #9085e9; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-5 { background-color: #e66767; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-6 { background-color: #d55181; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-7 { background-color: #d95926; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-8 { background-color: #c2703f; color: #1a1a1a; }
+[data-bs-theme="dark"] .crit-color-9 { background-color: #0f9b8e; color: #1a1a1a; }
+
+.crit-color-swatch { cursor: pointer; }
+.crit-color-swatch-dot {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+}
+.crit-color-swatch input:checked + .crit-color-swatch-dot {
+    border-color: var(--bs-body-color);
+    box-shadow: 0 0 0 2px var(--bs-body-bg);
+}

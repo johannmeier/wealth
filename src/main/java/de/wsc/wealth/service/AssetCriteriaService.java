@@ -147,7 +147,7 @@ public class AssetCriteriaService {
             String prefix = SYSTEM_MESSAGE_KEY_PREFIX.get(v.getDefinition().getSystemCode());
             if (prefix != null) messageKey = prefix + "." + v.getOption().getSystemCode();
         }
-        return new CriteriaBadge(label, messageKey, v.getDefinition().getName());
+        return new CriteriaBadge(label, messageKey, v.getDefinition().getName(), v.getDefinition().getColorIndex());
     }
 
     /**
@@ -172,7 +172,8 @@ public class AssetCriteriaService {
                 .map(v -> new CriteriaBadge(
                     v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue(),
                     null,
-                    v.getDefinition().getName()))
+                    v.getDefinition().getName(),
+                    v.getDefinition().getColorIndex()))
                 .toList());
         }
         return result;
