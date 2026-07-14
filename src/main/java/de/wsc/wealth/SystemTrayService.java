@@ -7,11 +7,25 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.RenderingHints;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 
 @Component
 public class SystemTrayService {
+
+    // A JVM-wide system property (not an instance/static field) survives Spring Boot DevTools'
+    // restart-classloader reloads, so the auto-open only fires once per actual process — not
+    // once per dev-time hot-reload restart, which would otherwise pile up duplicate tabs.
+    private static final String BROWSER_OPENED_PROPERTY = "wealth.browserOpened";
 
     private final ApplicationContext applicationContext;
     private final int serverPort;
@@ -24,7 +38,10 @@ public class SystemTrayService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void initTrayIcon() {
-        openBrowser("http://localhost:" + serverPort + "/");
+        if (System.getProperty(BROWSER_OPENED_PROPERTY) == null) {
+            System.setProperty(BROWSER_OPENED_PROPERTY, "true");
+            openBrowser("http://localhost:" + serverPort + "/");
+        }
 
         if (!SystemTray.isSupported()) return;
 
