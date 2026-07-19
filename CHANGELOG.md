@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] – 2026-07-19
+
+### Added
+- Interactive Brokers automatic sync via the Flex Web Service: token and Flex Query ID configured on a settings page, cash balances and portfolio positions created and updated automatically, following the same pattern as the Trade Republic and BullionVault integrations
+- Update check: the GitHub releases API is polled at startup and daily at 09:00; when a newer release exists, a badge appears next to the Info nav entry and the Info page shows a banner with a download link (check-only — no automatic download or restart)
+
+### Changed
+- The five formerly built-in classification criteria (Kategorie, Wertpapierart, Allocation, Ausschüttung, Index) are now ordinary user-managed criteria — renamable and deletable like any other; only the license-gated Wittmann criterion remains system-protected. Existing databases are converted automatically at startup
+- License switched from MIT to PolyForm Noncommercial 1.0.0, reflecting that Coins, Custom Criteria and Wittmann are paid features gated by license keys
+
 ## [1.0.12] – 2026-07-14
 
 ### Added
