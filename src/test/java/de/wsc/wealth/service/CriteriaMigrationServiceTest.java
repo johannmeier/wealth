@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,22 +41,22 @@ class CriteriaMigrationServiceTest {
     }
 
     @Test
-    void seedSystemCriteria_whenNotSeeded_createsAllSixDefinitions() {
+    void seedSystemCriteria_whenNotSeeded_createsWittmannOnly() {
         when(definitionRepository.findBySystemCode(any())).thenReturn(Optional.empty());
         when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(optionRepository.findByDefinitionAndSystemCode(any(), any())).thenReturn(Optional.empty());
 
         migrationService.seedSystemCriteria();
 
-        verify(definitionRepository, times(6)).save(any());
-        // 3 category + 8 type + 2 allocation + 2 distribution + 0 index + 5 wittmann options = 20
-        verify(optionRepository, times(20)).save(any());
+        verify(definitionRepository, times(1))
+            .save(argThat(d -> SystemCriteria.WITTMANN.equals(d.getSystemCode())));
+        verify(optionRepository, times(5)).save(any());
     }
 
     @Test
     void seedSystemCriteria_whenAlreadySeeded_doesNotDuplicate() {
         CriteriaDefinition existing = new CriteriaDefinition();
-        existing.setSystemCode(SystemCriteria.CATEGORY);
+        existing.setSystemCode(SystemCriteria.WITTMANN);
         when(definitionRepository.findBySystemCode(any())).thenReturn(Optional.of(existing));
         CriteriaOption existingOption = new CriteriaOption();
         when(optionRepository.findByDefinitionAndSystemCode(any(), any())).thenReturn(Optional.of(existingOption));
@@ -72,23 +74,16 @@ class CriteriaMigrationServiceTest {
         migrationService.backfillAssetCriteriaValues();
 
         verify(jdbcTemplate, never()).queryForList(any(String.class));
-        verifyNoInteractions(valueRepository);
+        verifyNoInteractions(valueRepository, definitionRepository);
     }
 
     @Test
-    void backfillAssetCriteriaValues_createsValuesFromLegacyColumns() {
+    void backfillAssetCriteriaValues_createsUserCriteriaAndValuesFromLegacyColumns() {
         when(jdbcTemplate.queryForObject(any(String.class), eq(Integer.class))).thenReturn(1);
-
-        CriteriaDefinition category = definition(SystemCriteria.CATEGORY);
-        CriteriaDefinition type = definition(SystemCriteria.TYPE);
-        CriteriaDefinition allocation = definition(SystemCriteria.ASSET_ALLOCATION);
-        CriteriaDefinition distribution = definition(SystemCriteria.DISTRIBUTION_POLICY);
-        CriteriaDefinition index = definition(SystemCriteria.INDEX_NAME);
-        when(definitionRepository.findBySystemCode(SystemCriteria.CATEGORY)).thenReturn(Optional.of(category));
-        when(definitionRepository.findBySystemCode(SystemCriteria.TYPE)).thenReturn(Optional.of(type));
-        when(definitionRepository.findBySystemCode(SystemCriteria.ASSET_ALLOCATION)).thenReturn(Optional.of(allocation));
-        when(definitionRepository.findBySystemCode(SystemCriteria.DISTRIBUTION_POLICY)).thenReturn(Optional.of(distribution));
-        when(definitionRepository.findBySystemCode(SystemCriteria.INDEX_NAME)).thenReturn(Optional.of(index));
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(Collections.emptyList());
+        when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(optionRepository.findByDefinitionOrderBySortOrderAsc(any())).thenReturn(Collections.emptyList());
+        when(optionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> row = new HashMap<>();
         row.put("ID", 1L);
@@ -103,15 +98,12 @@ class CriteriaMigrationServiceTest {
         asset.setId(1L);
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
         when(valueRepository.existsByAssetAndDefinition(any(), any())).thenReturn(false);
-        CriteriaOption categoryOption = new CriteriaOption();
-        when(optionRepository.findByDefinitionAndSystemCode(category, "BOERSENGEHANDELT")).thenReturn(Optional.of(categoryOption));
-        CriteriaOption typeOption = new CriteriaOption();
-        when(optionRepository.findByDefinitionAndSystemCode(type, "ETF")).thenReturn(Optional.of(typeOption));
-        CriteriaOption allocationOption = new CriteriaOption();
-        when(optionRepository.findByDefinitionAndSystemCode(allocation, "RISIKOBEHAFTET")).thenReturn(Optional.of(allocationOption));
 
         migrationService.backfillAssetCriteriaValues();
 
+        // the five legacy criteria are created as plain user criteria without a systemCode
+        verify(definitionRepository, times(5)).save(argThat(d -> d.getSystemCode() == null));
+        verify(optionRepository, never()).save(argThat(o -> o.getSystemCode() != null));
         // category + type + allocation + index (4 values); distribution is null -> skipped
         verify(valueRepository, times(4)).save(any());
     }
@@ -119,9 +111,10 @@ class CriteriaMigrationServiceTest {
     @Test
     void backfillAssetCriteriaValues_skipsAssetWithExistingValue() {
         when(jdbcTemplate.queryForObject(any(String.class), eq(Integer.class))).thenReturn(1);
-
-        CriteriaDefinition category = definition(SystemCriteria.CATEGORY);
-        when(definitionRepository.findBySystemCode(any())).thenReturn(Optional.of(category));
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(Collections.emptyList());
+        when(definitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(optionRepository.findByDefinitionOrderBySortOrderAsc(any())).thenReturn(Collections.emptyList());
+        when(optionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> row = new HashMap<>();
         row.put("ID", 1L);
@@ -142,9 +135,26 @@ class CriteriaMigrationServiceTest {
         verify(valueRepository, never()).save(any());
     }
 
-    private CriteriaDefinition definition(String systemCode) {
-        CriteriaDefinition definition = new CriteriaDefinition();
-        definition.setSystemCode(systemCode);
-        return definition;
+    @Test
+    void clearLegacySystemCodes_clearsAllButWittmann() {
+        CriteriaDefinition legacy = new CriteriaDefinition();
+        legacy.setSystemCode("CATEGORY");
+        CriteriaDefinition wittmann = new CriteriaDefinition();
+        wittmann.setSystemCode(SystemCriteria.WITTMANN);
+        CriteriaDefinition custom = new CriteriaDefinition();
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(legacy, wittmann, custom));
+        CriteriaOption legacyOption = new CriteriaOption();
+        legacyOption.setSystemCode("AKTIE");
+        when(optionRepository.findByDefinitionOrderBySortOrderAsc(legacy)).thenReturn(List.of(legacyOption));
+
+        migrationService.clearLegacySystemCodes();
+
+        assertThat(legacy.getSystemCode()).isNull();
+        assertThat(legacyOption.getSystemCode()).isNull();
+        assertThat(wittmann.getSystemCode()).isEqualTo(SystemCriteria.WITTMANN);
+        verify(definitionRepository).save(legacy);
+        verify(optionRepository).save(legacyOption);
+        verify(definitionRepository, never()).save(wittmann);
+        verify(definitionRepository, never()).save(custom);
     }
 }

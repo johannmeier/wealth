@@ -30,16 +30,13 @@ public class CsvImportService {
     private final AssetRepository assetRepository;
     private final AssetQuantityRepository quantityRepository;
     private final AssetSearchService assetSearchService;
-    private final AssetCriteriaService assetCriteriaService;
 
     public CsvImportService(AssetRepository assetRepository,
                             AssetQuantityRepository quantityRepository,
-                            AssetSearchService assetSearchService,
-                            AssetCriteriaService assetCriteriaService) {
+                            AssetSearchService assetSearchService) {
         this.assetRepository = assetRepository;
         this.quantityRepository = quantityRepository;
         this.assetSearchService = assetSearchService;
-        this.assetCriteriaService = assetCriteriaService;
     }
 
     public ImportResult importDkb(InputStream in, Depot depot) throws IOException {
@@ -165,10 +162,6 @@ public class CsvImportService {
     private Asset createAsset(String isin, List<String> newAssets) {
         Asset a = new Asset();
         a.setIsin(isin);
-        String type = "AKTIE";
-        String category = "BOERSENGEHANDELT";
-        String allocation = "RISIKOBEHAFTET";
-        String distribution = null;
         try {
             var results = assetSearchService.search(isin, "EUR");
             if (!results.isEmpty()) {
@@ -177,10 +170,6 @@ public class CsvImportService {
                 String sym = r.get("symbol");
                 if (sym != null && !sym.isBlank()) a.setSymbol(sym);
                 a.setCurrency(r.getOrDefault("currency", "EUR"));
-                type = r.getOrDefault("type", "AKTIE");
-                category = r.getOrDefault("category", "BOERSENGEHANDELT");
-                allocation = r.getOrDefault("assetAllocation", "RISIKOBEHAFTET");
-                distribution = r.get("distributionPolicy");
             } else {
                 a.setName(isin);
                 a.setCurrency("EUR");
@@ -191,10 +180,6 @@ public class CsvImportService {
             a.setCurrency("EUR");
         }
         Asset saved = assetRepository.save(a);
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.TYPE, type, "AKTIE");
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.CATEGORY, category, "BOERSENGEHANDELT");
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.ASSET_ALLOCATION, allocation, "RISIKOBEHAFTET");
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.DISTRIBUTION_POLICY, distribution, null);
         newAssets.add(isin);
         log.info("Neues Wertpapier aus CSV angelegt: {}", isin);
         return saved;
