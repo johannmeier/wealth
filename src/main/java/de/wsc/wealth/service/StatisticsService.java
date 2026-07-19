@@ -80,8 +80,6 @@ public class StatisticsService {
                 c.getDate().isAfter(a.getDate()) ? c : a);
         }
 
-        Map<Long, String> indexNameByAssetId = assetCriteriaService.getIndexNameByAssetId();
-
         Map<Long, BigDecimal> effectivePrices = assetService.getEffectivePricesByAssetId();
         for (Asset asset : assetRepository.findAllByArchivedFalseOrderByNameAsc()) {
             BigDecimal priceEur = exchangeRateService.toEur(effectivePrices.get(asset.getId()), asset.getCurrency());
@@ -103,7 +101,6 @@ public class StatisticsService {
                 p.setId(asset.getId());
                 p.setName(asset.getName());
                 p.setType("ASSET");
-                p.setIndexName(indexNameByAssetId.get(asset.getId()));
                 p.setQuantity(totalQuantity);
                 p.setPrice(priceEur);
                 p.setCurrency("EUR");
@@ -171,7 +168,6 @@ public class StatisticsService {
                 p.setId(assetId);
                 p.setName(asset.getName());
                 p.setType("COIN");
-                p.setIndexName(indexNameByAssetId.get(assetId));
                 p.setValue(entry.getValue());
                 p.setCurrency("EUR");
                 Set<String> coinDepots = coinDepotsByAssetId.get(assetId);

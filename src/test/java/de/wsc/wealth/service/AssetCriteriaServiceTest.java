@@ -91,26 +91,25 @@ class AssetCriteriaServiceTest {
     }
 
     @Test
-    void getPropertyBadgesByAssetId_systemCriterionGetsMessageKey() {
+    void getPropertyBadgesByAssetId_optionValue_usesOptionAsLabel() {
         Asset asset = asset(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FIXED_LIST);
         definition.setSortOrder(0);
         AssetCriteriaValue value = new AssetCriteriaValue();
         value.setAsset(asset);
         value.setDefinition(definition);
-        value.setOption(option(definition, "EDELMETALL", "Edelmetall"));
+        value.setOption(option(definition, null, "Edelmetall"));
         when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
 
         List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAssetId().get(1L);
 
         assertThat(badges).hasSize(1);
         assertThat(badges.get(0).getLabel()).isEqualTo("Edelmetall");
-        assertThat(badges.get(0).getMessageKey()).isEqualTo("assetCategory.EDELMETALL");
         assertThat(badges.get(0).getTooltip()).isEqualTo(definition.getName());
     }
 
     @Test
-    void getPropertyBadgesByAssetId_customCriterionHasNoMessageKey() {
+    void getPropertyBadgesByAssetId_freeTextValue_usesTextAsLabel() {
         Asset asset = asset(1L);
         CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
         definition.setSortOrder(0);
@@ -124,22 +123,21 @@ class AssetCriteriaServiceTest {
 
         assertThat(badges).hasSize(1);
         assertThat(badges.get(0).getLabel()).isEqualTo("Deutschland");
-        assertThat(badges.get(0).getMessageKey()).isNull();
     }
 
     @Test
     void getPropertyBadgesByAssetId_whenDefinitionNotUsable_excludesItsValues() {
-        // Per-value gate: even a system-criterion value disappears once isCriterionUsable()
-        // says no for its definition (e.g. no license at all, or a Wittmann-only license and
-        // this is some other system criterion).
+        // Per-value gate: a value disappears once isCriterionUsable() says no for its
+        // definition (e.g. no license at all, or a Wittmann-only license and this is a
+        // custom criterion).
         when(licenseService.isCriterionUsable(any())).thenReturn(false);
         Asset asset = asset(1L);
-        CriteriaDefinition systemDefinition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
-        AssetCriteriaValue systemValue = new AssetCriteriaValue();
-        systemValue.setAsset(asset);
-        systemValue.setDefinition(systemDefinition);
-        systemValue.setOption(option(systemDefinition, "EDELMETALL", "Edelmetall"));
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(systemValue));
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FIXED_LIST);
+        AssetCriteriaValue value = new AssetCriteriaValue();
+        value.setAsset(asset);
+        value.setDefinition(definition);
+        value.setOption(option(definition, null, "Edelmetall"));
+        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
 
         Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAssetId();
 
@@ -170,7 +168,7 @@ class AssetCriteriaServiceTest {
         // delete the asset's existing assignment for it, which the license gate must never do.
         when(licenseService.isCriterionUsable(any())).thenReturn(false);
         when(definitionRepository.findAllByOrderBySortOrderAsc())
-            .thenReturn(List.of(definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST)));
+            .thenReturn(List.of(definition(SystemCriteria.WITTMANN, CriteriaValueType.FIXED_LIST)));
 
         List<CriteriaDefinition> result = assetCriteriaService.findAllActive();
 
@@ -180,13 +178,13 @@ class AssetCriteriaServiceTest {
     @Test
     void findAllActive_withMixedUsability_returnsOnlyUsableDefinitions() {
         // End-to-end check that per-definition filtering (not "all or nothing") really reaches
-        // findAllActive() — e.g. a Wittmann-only license includes Wittmann but excludes other
-        // system criteria and custom ones.
+        // findAllActive() — e.g. a Wittmann-only license includes Wittmann but excludes
+        // custom criteria.
         CriteriaDefinition wittmannDef = definition(SystemCriteria.WITTMANN, CriteriaValueType.FIXED_LIST);
-        CriteriaDefinition categoryDef = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition customDef = definition(null, CriteriaValueType.FIXED_LIST);
         when(licenseService.isCriterionUsable(wittmannDef)).thenReturn(true);
-        when(licenseService.isCriterionUsable(categoryDef)).thenReturn(false);
-        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(categoryDef, wittmannDef));
+        when(licenseService.isCriterionUsable(customDef)).thenReturn(false);
+        when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(customDef, wittmannDef));
 
         List<CriteriaDefinition> result = assetCriteriaService.findAllActive();
 
@@ -197,28 +195,13 @@ class AssetCriteriaServiceTest {
     void saveAssignments_asset_whenNoDefinitionUsable_leavesExistingAssignmentsUntouched() {
         when(licenseService.isCriterionUsable(any())).thenReturn(false);
         when(definitionRepository.findAllByOrderBySortOrderAsc())
-            .thenReturn(List.of(definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST)));
+            .thenReturn(List.of(definition(null, CriteriaValueType.FIXED_LIST)));
         Asset asset = asset(1L);
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         assetCriteriaService.saveAssignments(asset, request);
 
         verifyNoInteractions(valueRepository, optionRepository);
-    }
-
-    @Test
-    void getPropertyBadgesByAssetId_excludesIndexCriterion() {
-        Asset asset = asset(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.INDEX_NAME, CriteriaValueType.FREE_TEXT);
-        AssetCriteriaValue value = new AssetCriteriaValue();
-        value.setAsset(asset);
-        value.setDefinition(definition);
-        value.setFreeTextValue("MSCI World");
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
-
-        Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAssetId();
-
-        assertThat(result).isEmpty();
     }
 
     @Test
@@ -249,7 +232,7 @@ class AssetCriteriaServiceTest {
     }
 
     @Test
-    void getPropertyBadgesByAccountId_returnsBadgeWithoutMessageKey() {
+    void getPropertyBadgesByAccountId_freeTextValue_usesTextAsLabel() {
         Account account = account(1L);
         CriteriaDefinition definition = definition(null, CriteriaValueType.FREE_TEXT);
         definition.setSortOrder(0);
@@ -264,120 +247,31 @@ class AssetCriteriaServiceTest {
 
         assertThat(badges).hasSize(1);
         assertThat(badges.get(0).getLabel()).isEqualTo("Frankreich");
-        assertThat(badges.get(0).getMessageKey()).isNull();
         assertThat(badges.get(0).getTooltip()).isEqualTo("Länder");
     }
 
     @Test
-    void getPropertyBadgesByAccountId_systemCriterionGetsMessageKey() {
-        // Accounts can now carry system-criterion values too, so their badges must resolve
-        // message keys the same way asset badges do.
+    void getPropertyBadgesByAccountId_optionValue_usesOptionAsLabel() {
         Account account = account(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FIXED_LIST);
         AccountCriteriaValue value = new AccountCriteriaValue();
         value.setAccount(account);
         value.setDefinition(definition);
-        value.setOption(option(definition, "EDELMETALL", "Edelmetall"));
+        value.setOption(option(definition, null, "Edelmetall"));
         when(accountValueRepository.findAllWithAccountAndDefinitionAndOption()).thenReturn(List.of(value));
 
         List<CriteriaBadge> badges = assetCriteriaService.getPropertyBadgesByAccountId().get(1L);
 
         assertThat(badges).hasSize(1);
-        assertThat(badges.get(0).getMessageKey()).isEqualTo("assetCategory.EDELMETALL");
-    }
-
-    @Test
-    void getPropertyBadgesByAccountId_excludesIndexCriterion() {
-        Account account = account(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.INDEX_NAME, CriteriaValueType.FREE_TEXT);
-        AccountCriteriaValue value = new AccountCriteriaValue();
-        value.setAccount(account);
-        value.setDefinition(definition);
-        value.setFreeTextValue("MSCI World");
-        when(accountValueRepository.findAllWithAccountAndDefinitionAndOption()).thenReturn(List.of(value));
-
-        Map<Long, List<CriteriaBadge>> result = assetCriteriaService.getPropertyBadgesByAccountId();
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void getIndexNameByAssetId_ignoresValuesForOtherCriteria() {
-        Asset asset = asset(1L);
-        CriteriaDefinition customDefinition = definition(null, CriteriaValueType.FREE_TEXT);
-        AssetCriteriaValue customValue = new AssetCriteriaValue();
-        customValue.setAsset(asset);
-        customValue.setDefinition(customDefinition);
-        customValue.setFreeTextValue("Deutschland");
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(customValue));
-
-        Map<Long, String> indexNames = assetCriteriaService.getIndexNameByAssetId();
-
-        assertThat(indexNames).isEmpty();
-    }
-
-    @Test
-    void getIndexNameByAssetId_returnsFreeTextForIndexNameCriterion() {
-        Asset asset = asset(1L);
-        AssetCriteriaValue value = valueFor(asset, SystemCriteria.INDEX_NAME, null, null);
-        value.setFreeTextValue("MSCI World");
-        when(valueRepository.findAllWithAssetAndDefinitionAndOption()).thenReturn(List.of(value));
-
-        Map<Long, String> indexNames = assetCriteriaService.getIndexNameByAssetId();
-
-        assertThat(indexNames).containsEntry(1L, "MSCI World");
-    }
-
-    @Test
-    void assignSystemValueOrDefault_usesRawValueWhenValidOption() {
-        Asset asset = asset(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
-        CriteriaOption option = option(definition, "EDELMETALL", "Edelmetall");
-        when(definitionRepository.findBySystemCode(SystemCriteria.CATEGORY)).thenReturn(Optional.of(definition));
-        when(optionRepository.findByDefinitionAndSystemCode(definition, "EDELMETALL")).thenReturn(Optional.of(option));
-        when(valueRepository.findByAssetAndDefinition(asset, definition)).thenReturn(Optional.empty());
-
-        assetCriteriaService.assignSystemValueOrDefault(asset, SystemCriteria.CATEGORY, "EDELMETALL", "BOERSENGEHANDELT");
-
-        ArgumentCaptor<AssetCriteriaValue> captor = ArgumentCaptor.forClass(AssetCriteriaValue.class);
-        verify(valueRepository).save(captor.capture());
-        assertThat(captor.getValue().getOption()).isSameAs(option);
-    }
-
-    @Test
-    void assignSystemValueOrDefault_fallsBackToDefaultWhenRawInvalid() {
-        Asset asset = asset(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
-        CriteriaOption fallback = option(definition, "BOERSENGEHANDELT", "Börsengehandelt");
-        when(definitionRepository.findBySystemCode(SystemCriteria.CATEGORY)).thenReturn(Optional.of(definition));
-        when(optionRepository.findByDefinitionAndSystemCode(definition, "UNKNOWN")).thenReturn(Optional.empty());
-        when(optionRepository.findByDefinitionAndSystemCode(definition, "BOERSENGEHANDELT")).thenReturn(Optional.of(fallback));
-        when(valueRepository.findByAssetAndDefinition(asset, definition)).thenReturn(Optional.empty());
-
-        assetCriteriaService.assignSystemValueOrDefault(asset, SystemCriteria.CATEGORY, "UNKNOWN", "BOERSENGEHANDELT");
-
-        ArgumentCaptor<AssetCriteriaValue> captor = ArgumentCaptor.forClass(AssetCriteriaValue.class);
-        verify(valueRepository).save(captor.capture());
-        assertThat(captor.getValue().getOption()).isSameAs(fallback);
-    }
-
-    @Test
-    void assignSystemValueOrDefault_withNeitherRawNorDefaultValid_leavesValueUnset() {
-        Asset asset = asset(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.DISTRIBUTION_POLICY, CriteriaValueType.FIXED_LIST);
-        when(definitionRepository.findBySystemCode(SystemCriteria.DISTRIBUTION_POLICY)).thenReturn(Optional.of(definition));
-
-        assetCriteriaService.assignSystemValueOrDefault(asset, SystemCriteria.DISTRIBUTION_POLICY, null, null);
-
-        verify(valueRepository, never()).save(any());
+        assertThat(badges.get(0).getLabel()).isEqualTo("Edelmetall");
     }
 
     @Test
     void saveAssignments_fixedListWithSelectedOption_createsValue() {
         Asset asset = asset(1L);
-        CriteriaDefinition definition = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition definition = definition(null, CriteriaValueType.FIXED_LIST);
         definition.setId(10L);
-        CriteriaOption option = option(definition, "EDELMETALL", "Edelmetall");
+        CriteriaOption option = option(definition, null, "Edelmetall");
         option.setId(20L);
         when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(definition));
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -463,13 +357,12 @@ class AssetCriteriaServiceTest {
 
     @Test
     void saveAssignments_account_processesSystemDefinitionsToo() {
-        // Accounts can now be assigned any licensed criterion, system or custom — the old
-        // "system criteria don't apply to accounts" restriction was dropped so licensed users
-        // get full parity with the asset form.
+        // Accounts can be assigned any licensed criterion, system (Wittmann) or custom —
+        // licensed users get full parity with the asset form.
         Account account = account(1L);
-        CriteriaDefinition systemDef = definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST);
+        CriteriaDefinition systemDef = definition(SystemCriteria.WITTMANN, CriteriaValueType.FIXED_LIST);
         systemDef.setId(10L);
-        CriteriaOption option = option(systemDef, "EDELMETALL", "Edelmetall");
+        CriteriaOption option = option(systemDef, "EDELMETALLE", "Edelmetalle");
         option.setId(20L);
         when(definitionRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of(systemDef));
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -488,7 +381,7 @@ class AssetCriteriaServiceTest {
     void saveAssignments_account_whenNoDefinitionUsable_leavesExistingAssignmentsUntouched() {
         when(licenseService.isCriterionUsable(any())).thenReturn(false);
         when(definitionRepository.findAllByOrderBySortOrderAsc())
-            .thenReturn(List.of(definition(SystemCriteria.CATEGORY, CriteriaValueType.FIXED_LIST)));
+            .thenReturn(List.of(definition(null, CriteriaValueType.FIXED_LIST)));
         Account account = account(1L);
         HttpServletRequest request = mock(HttpServletRequest.class);
 
@@ -523,15 +416,5 @@ class AssetCriteriaServiceTest {
         option.setSystemCode(systemCode);
         option.setValue(value);
         return option;
-    }
-
-    private AssetCriteriaValue valueFor(Asset asset, String definitionSystemCode, String optionSystemCode, String optionValue) {
-        CriteriaDefinition definition = definition(definitionSystemCode, CriteriaValueType.FIXED_LIST);
-        CriteriaOption option = option(definition, optionSystemCode, optionValue);
-        AssetCriteriaValue value = new AssetCriteriaValue();
-        value.setAsset(asset);
-        value.setDefinition(definition);
-        value.setOption(option);
-        return value;
     }
 }

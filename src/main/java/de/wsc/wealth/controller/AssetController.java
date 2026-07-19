@@ -49,7 +49,6 @@ public class AssetController {
         }
         model.addAttribute("assets", assets);
         model.addAttribute("eurPrices", eurPrices);
-        model.addAttribute("indexNameByAsset", assetCriteriaService.getIndexNameByAssetId());
         model.addAttribute("propertyBadgesByAsset", assetCriteriaService.getPropertyBadgesByAssetId());
         model.addAttribute("depotsByAsset", assetService.getDepotsByAssetId());
         model.addAttribute("archivedAssets", assetService.findAllArchived());

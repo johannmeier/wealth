@@ -6,7 +6,6 @@ public class WealthPosition {
     private Long id;
     private String name;
     private String type; // "ASSET" or "ACCOUNT"
-    private String indexName;
     private BigDecimal quantity;
     private BigDecimal price;
     private BigDecimal value;
@@ -22,8 +21,6 @@ public class WealthPosition {
     public void setName(String name) { this.name = name; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
-    public String getIndexName() { return indexName; }
-    public void setIndexName(String indexName) { this.indexName = indexName; }
     public BigDecimal getQuantity() { return quantity; }
     public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
     public BigDecimal getPrice() { return price; }

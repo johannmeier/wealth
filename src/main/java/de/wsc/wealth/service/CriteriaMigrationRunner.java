@@ -20,6 +20,7 @@ public class CriteriaMigrationRunner implements ApplicationRunner {
         migrationService.seedSystemCriteria();
         migrationService.backfillAssetCriteriaValues();
         migrationService.dropLegacyAssetColumns();
+        migrationService.clearLegacySystemCodes();
         criteriaService.assignMissingColorIndexes();
     }
 }

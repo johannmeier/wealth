@@ -342,35 +342,19 @@ public class IbkrService {
                 String sym = r.get("symbol");
                 if (sym != null && !sym.isBlank()) a.setSymbol(sym);
                 a.setCurrency(r.getOrDefault("currency", "EUR"));
-                try { a.setType(AssetType.valueOf(r.getOrDefault("type", "AKTIE"))); }
-                catch (IllegalArgumentException e) { a.setType(AssetType.AKTIE); }
-                try { a.setCategory(AssetCategory.valueOf(r.getOrDefault("category", "BOERSENGEHANDELT"))); }
-                catch (IllegalArgumentException e) { a.setCategory(AssetCategory.BOERSENGEHANDELT); }
-                try { a.setAssetAllocation(AssetAllocation.valueOf(r.getOrDefault("assetAllocation", "RISIKOBEHAFTET"))); }
-                catch (IllegalArgumentException e) { a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET); }
-                String dp = r.get("distributionPolicy");
-                if (dp != null) {
-                    try { a.setDistributionPolicy(DistributionPolicy.valueOf(dp)); }
-                    catch (IllegalArgumentException ignored) {}
-                }
                 log.info("Asset via Yahoo Finance aufgelöst: {} → {}", isin, a.getName());
             } else {
                 a.setName(isin);
-                a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
-                a.setCategory(AssetCategory.BOERSENGEHANDELT);
-                a.setType(AssetType.AKTIE);
                 a.setCurrency("EUR");
                 log.warn("Kein Yahoo-Finance-Treffer für ISIN {}, verwende ISIN als Namen", isin);
             }
         } catch (Exception e) {
             a.setName(isin);
-            a.setAssetAllocation(AssetAllocation.RISIKOBEHAFTET);
-            a.setCategory(AssetCategory.BOERSENGEHANDELT);
-            a.setType(AssetType.AKTIE);
             a.setCurrency("EUR");
             log.warn("Yahoo-Finance-Suche für {} fehlgeschlagen: {}", isin, e.getMessage());
         }
-        newAssets.add(a.getName());
-        return assetRepository.save(a);
+        Asset saved = assetRepository.save(a);
+        newAssets.add(saved.getName());
+        return saved;
     }
 }

@@ -76,38 +76,16 @@ public class AssetCriteriaService {
         return result;
     }
 
-    @Transactional(readOnly = true)
-    public Map<Long, String> getIndexNameByAssetId() {
-        Map<Long, String> result = new HashMap<>();
-        for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
-            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) {
-                result.put(v.getAsset().getId(), v.getFreeTextValue());
-            }
-        }
-        return result;
-    }
-
-    // Maps a system criterion to the i18n key family used for its FIXED_LIST option labels
-    // (kept separate from SystemCriteria's own naming for backward compatibility with
-    // pre-existing message keys shared with other parts of the UI, e.g. Account.assetAllocation).
-    private static final Map<String, String> SYSTEM_MESSAGE_KEY_PREFIX = Map.of(
-        SystemCriteria.CATEGORY, "assetCategory",
-        SystemCriteria.TYPE, "assetType",
-        SystemCriteria.ASSET_ALLOCATION, "assetAllocation",
-        SystemCriteria.DISTRIBUTION_POLICY, "distributionPolicy"
-    );
-
     /**
      * All criteria values assigned to each asset (system + custom), sorted by the criterion's
-     * sort order, as ready-to-render badges. The index criterion is excluded since it already
-     * has its own dedicated list column. Per-value licensed via {@link #findAllActive()}'s same
-     * rule, so e.g. a Wittmann-only license shows Wittmann badges without custom-criteria ones.
+     * sort order, as ready-to-render badges. Per-value licensed via {@link #findAllActive()}'s
+     * same rule, so e.g. a Wittmann-only license shows Wittmann badges without custom-criteria
+     * ones.
      */
     @Transactional(readOnly = true)
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAssetId() {
         Map<Long, List<AssetCriteriaValue>> byAsset = new HashMap<>();
         for (AssetCriteriaValue v : valueRepository.findAllWithAssetAndDefinitionAndOption()) {
-            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
             if (!licenseService.isCriterionUsable(v.getDefinition())) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display == null || display.isBlank()) continue;
@@ -133,7 +111,6 @@ public class AssetCriteriaService {
     public Map<Long, List<CriteriaBadge>> getPropertyBadgesByAccountId() {
         Map<Long, List<AccountCriteriaValue>> byAccount = new HashMap<>();
         for (AccountCriteriaValue v : accountValueRepository.findAllWithAccountAndDefinitionAndOption()) {
-            if (SystemCriteria.INDEX_NAME.equals(v.getDefinition().getSystemCode())) continue;
             if (!licenseService.isCriterionUsable(v.getDefinition())) continue;
             String display = v.getOption() != null ? v.getOption().getValue() : v.getFreeTextValue();
             if (display == null || display.isBlank()) continue;
@@ -152,12 +129,7 @@ public class AssetCriteriaService {
 
     private CriteriaBadge toBadge(CriteriaDefinition definition, CriteriaOption option, String freeTextValue) {
         String label = option != null ? option.getValue() : freeTextValue;
-        String messageKey = null;
-        if (option != null && option.getSystemCode() != null) {
-            String prefix = SYSTEM_MESSAGE_KEY_PREFIX.get(definition.getSystemCode());
-            if (prefix != null) messageKey = prefix + "." + option.getSystemCode();
-        }
-        return new CriteriaBadge(label, messageKey, definition.getName(), definition.getColorIndex());
+        return new CriteriaBadge(label, definition.getName(), definition.getColorIndex());
     }
 
     @Transactional(readOnly = true)
@@ -180,23 +152,6 @@ public class AssetCriteriaService {
             if (display != null && !display.isBlank()) result.put(v.getAccount().getId(), display);
         }
         return result;
-    }
-
-    /**
-     * Used by import/sync paths: assigns the option matching {@code rawOptionSystemCode} if it
-     * exists for the given system criterion, falling back to {@code defaultOptionSystemCode}.
-     * If neither is found, the value is left unset (mirrors the previous try/valueOf-with-fallback
-     * behavior, including leaving distributionPolicy null when undetected).
-     */
-    public void assignSystemValueOrDefault(Asset asset, String criteriaSystemCode,
-                                           String rawOptionSystemCode, String defaultOptionSystemCode) {
-        CriteriaDefinition definition = definitionRepository.findBySystemCode(criteriaSystemCode).orElseThrow();
-        CriteriaOption option = findOptionBySystemCode(definition, rawOptionSystemCode)
-            .or(() -> findOptionBySystemCode(definition, defaultOptionSystemCode))
-            .orElse(null);
-        if (option != null) {
-            setOptionValue(asset, definition, option);
-        }
     }
 
     public void saveAssignments(Asset asset, HttpServletRequest request) {
@@ -230,11 +185,6 @@ public class AssetCriteriaService {
                 setFreeTextValue(account, definition, raw);
             }
         }
-    }
-
-    private java.util.Optional<CriteriaOption> findOptionBySystemCode(CriteriaDefinition definition, String systemCode) {
-        if (systemCode == null) return java.util.Optional.empty();
-        return optionRepository.findByDefinitionAndSystemCode(definition, systemCode);
     }
 
     private void setOptionValue(Asset asset, CriteriaDefinition definition, CriteriaOption option) {

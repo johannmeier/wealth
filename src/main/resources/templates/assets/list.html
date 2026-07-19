@@ -34,7 +34,6 @@
           <th scope="col" th:text="#{col.name}">Name</th>
           <th scope="col" th:text="#{col.isin}">ISIN</th>
           <th scope="col" class="d-none d-xl-table-cell" th:if="${licensedAnyCriteria}" th:text="#{col.properties}">Eigenschaften</th>
-          <th scope="col" th:if="${licensedAnyCriteria}" th:text="#{col.index}">Index</th>
           <th scope="col" th:text="#{col.depots}">Depots</th>
           <th scope="col" class="text-end" th:text="#{col.price}">Kurs</th>
           <th scope="col"></th>
@@ -50,10 +49,9 @@
           <td class="d-none d-xl-table-cell" th:if="${licensedAnyCriteria}">
             <span th:each="b : ${propertyBadgesByAsset.get(s.id)}"
                   th:class="${b.colorIndex != null} ? ('badge me-1 crit-color-' + ${b.colorIndex}) : 'badge bg-secondary me-1'"
-                  th:text="${b.messageKey != null} ? (${#messages.msgOrNull(b.messageKey)} ?: ${b.label}) : ${b.label}"
+                  th:text="${b.label}"
                   th:title="${b.tooltip}"></span>
           </td>
-          <td style="white-space:nowrap" th:if="${licensedAnyCriteria}" th:text="${indexNameByAsset.get(s.id) ?: '-'}"></td>
           <td class="small">
             <span th:if="${depotsByAsset.get(s.id) == null}" class="text-muted">-</span>
             <span th:each="entry, i : ${depotsByAsset.get(s.id)}">

@@ -30,16 +30,6 @@ class LicenseServiceTest {
     }
 
     @Test
-    void isCriterionUsable_otherSystemCriterion_requiresCustomCriteriaFeature() throws Exception {
-        LicenseService customOnly = withPayload(new LicensePayload(Set.of(LicenseFeature.CUSTOM_CRITERIA), null));
-        LicenseService wittmannOnly = withPayload(new LicensePayload(Set.of(LicenseFeature.WITTMANN), null));
-        CriteriaDefinition categoryDef = definition(SystemCriteria.CATEGORY);
-
-        assertThat(customOnly.isCriterionUsable(categoryDef)).isTrue();
-        assertThat(wittmannOnly.isCriterionUsable(categoryDef)).isFalse();
-    }
-
-    @Test
     void isCriterionUsable_customDefinition_requiresCustomCriteriaFeature() throws Exception {
         LicenseService customOnly = withPayload(new LicensePayload(Set.of(LicenseFeature.CUSTOM_CRITERIA), null));
         LicenseService wittmannOnly = withPayload(new LicensePayload(Set.of(LicenseFeature.WITTMANN), null));

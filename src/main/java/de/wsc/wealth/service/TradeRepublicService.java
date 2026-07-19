@@ -48,7 +48,6 @@ public class TradeRepublicService {
     private final DepotRepository depotRepository;
     private final AssetRepository assetRepository;
     private final AssetQuantityRepository quantityRepository;
-    private final AssetCriteriaService assetCriteriaService;
 
     public TradeRepublicService(ObjectMapper objectMapper,
                                 AssetSearchService assetSearchService,
@@ -58,8 +57,7 @@ public class TradeRepublicService {
                                 AccountBalanceRepository balanceRepository,
                                 DepotRepository depotRepository,
                                 AssetRepository assetRepository,
-                                AssetQuantityRepository quantityRepository,
-                                AssetCriteriaService assetCriteriaService) {
+                                AssetQuantityRepository quantityRepository) {
         this.objectMapper       = objectMapper;
         this.assetSearchService = assetSearchService;
         this.configRepository   = configRepository;
@@ -69,7 +67,6 @@ public class TradeRepublicService {
         this.depotRepository    = depotRepository;
         this.assetRepository    = assetRepository;
         this.quantityRepository = quantityRepository;
-        this.assetCriteriaService = assetCriteriaService;
     }
 
     public record SyncResult(
@@ -438,10 +435,6 @@ public class TradeRepublicService {
     private Asset createAssetFromIsin(String isin, List<String> newAssets) {
         Asset a = new Asset();
         a.setIsin(isin);
-        String type = "AKTIE";
-        String category = "BOERSENGEHANDELT";
-        String allocation = "RISIKOBEHAFTET";
-        String distribution = null;
         try {
             var results = assetSearchService.search(isin, "EUR");
             if (!results.isEmpty()) {
@@ -450,10 +443,6 @@ public class TradeRepublicService {
                 String sym = r.get("symbol");
                 if (sym != null && !sym.isBlank()) a.setSymbol(sym);
                 a.setCurrency(r.getOrDefault("currency", "EUR"));
-                type = r.getOrDefault("type", "AKTIE");
-                category = r.getOrDefault("category", "BOERSENGEHANDELT");
-                allocation = r.getOrDefault("assetAllocation", "RISIKOBEHAFTET");
-                distribution = r.get("distributionPolicy");
                 log.info("Asset via Yahoo Finance aufgelöst: {} → {}", isin, a.getName());
             } else {
                 a.setName(isin);
@@ -466,10 +455,6 @@ public class TradeRepublicService {
             log.warn("Yahoo-Finance-Suche für {} fehlgeschlagen: {}", isin, e.getMessage());
         }
         Asset saved = assetRepository.save(a);
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.TYPE, type, "AKTIE");
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.CATEGORY, category, "BOERSENGEHANDELT");
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.ASSET_ALLOCATION, allocation, "RISIKOBEHAFTET");
-        assetCriteriaService.assignSystemValueOrDefault(saved, SystemCriteria.DISTRIBUTION_POLICY, distribution, null);
         newAssets.add(saved.getName());
         return saved;
     }
