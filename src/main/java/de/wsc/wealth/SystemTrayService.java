@@ -1,5 +1,7 @@
 package de.wsc.wealth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -22,6 +24,8 @@ import java.awt.image.BufferedImage;
 @Component
 public class SystemTrayService {
 
+    private static final Logger log = LoggerFactory.getLogger(SystemTrayService.class);
+
     // A JVM-wide system property (not an instance/static field) survives Spring Boot DevTools'
     // restart-classloader reloads, so the auto-open only fires once per actual process — not
     // once per dev-time hot-reload restart, which would otherwise pile up duplicate tabs.
@@ -43,7 +47,10 @@ public class SystemTrayService {
             openBrowser("http://localhost:" + serverPort + "/");
         }
 
-        if (!SystemTray.isSupported()) return;
+        if (!SystemTray.isSupported()) {
+            log.warn("SystemTray is not supported on this platform/JVM; skipping tray icon");
+            return;
+        }
 
         String version = Wealth.class.getPackage().getImplementationVersion();
         if (version == null) version = "dev";
@@ -71,7 +78,8 @@ public class SystemTrayService {
 
         try {
             SystemTray.getSystemTray().add(trayIcon);
-        } catch (AWTException ignored) {
+        } catch (AWTException e) {
+            log.warn("Failed to add tray icon", e);
         }
     }
 
