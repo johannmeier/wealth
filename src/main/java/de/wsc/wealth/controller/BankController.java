@@ -4,6 +4,7 @@ import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.Bank;
 import de.wsc.wealth.domain.Depot;
 import de.wsc.wealth.repository.BullionVaultConfigRepository;
+import de.wsc.wealth.repository.FintsConfigRepository;
 import de.wsc.wealth.repository.TradeRepublicConfigRepository;
 import de.wsc.wealth.service.AccountService;
 import de.wsc.wealth.service.BankService;
@@ -31,17 +32,20 @@ public class BankController {
     private final ExchangeRateService exchangeRateService;
     private final BullionVaultConfigRepository bvConfigRepo;
     private final TradeRepublicConfigRepository trConfigRepo;
+    private final FintsConfigRepository fintsConfigRepo;
 
     public BankController(BankService bankService, AccountService accountService,
                           DepotService depotService, ExchangeRateService exchangeRateService,
                           BullionVaultConfigRepository bvConfigRepo,
-                          TradeRepublicConfigRepository trConfigRepo) {
+                          TradeRepublicConfigRepository trConfigRepo,
+                          FintsConfigRepository fintsConfigRepo) {
         this.bankService = bankService;
         this.accountService = accountService;
         this.depotService = depotService;
         this.exchangeRateService = exchangeRateService;
         this.bvConfigRepo = bvConfigRepo;
         this.trConfigRepo = trConfigRepo;
+        this.fintsConfigRepo = fintsConfigRepo;
     }
 
     @GetMapping
@@ -83,6 +87,7 @@ public class BankController {
         Map<Long, String> syncUrls = new HashMap<>();
         bvConfigRepo.findAll().forEach(c -> { if (c.getBank() != null) syncUrls.put(c.getBank().getId(), "/bullionvault"); });
         trConfigRepo.findAll().forEach(c -> { if (c.getBank() != null) syncUrls.put(c.getBank().getId(), "/traderepublic"); });
+        fintsConfigRepo.findAll().forEach(c -> { if (c.getBank() != null) syncUrls.put(c.getBank().getId(), "/fints"); });
 
         model.addAttribute("banks", banks);
         model.addAttribute("bankAccounts", bankAccounts);
