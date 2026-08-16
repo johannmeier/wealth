@@ -131,7 +131,7 @@ public class CsvImportService {
 
         for (Map.Entry<String, BigDecimal> entry : positions.entrySet()) {
             String isin = entry.getKey();
-            BigDecimal newQty = entry.getValue();
+            BigDecimal newQty = entry.getValue().multiply(depot.getOwnershipFactor());
 
             Asset asset = assetRepository.findFirstByIsinAndArchivedFalse(isin)
                 .or(() -> assetRepository.findFirstByArchivedTrueAndIsin(isin))

@@ -37,6 +37,8 @@
             <div class="mb-3">
               <label class="form-label" for="quantity" th:text="#{col.quantity}">Anzahl</label>
               <input type="number" name="quantity" id="quantity" class="form-control" step="any" required/>
+              <div class="form-text" th:if="${depot.ownershipShare != null and depot.ownershipShare.compareTo(T(java.math.BigDecimal).valueOf(100)) != 0}"
+                   th:text="#{page.depots.positions.ownership-hint(${depot.ownershipShare})}">Hinweis.</div>
             </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>

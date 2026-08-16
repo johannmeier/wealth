@@ -89,6 +89,8 @@ public class StatisticsService {
 
             Map<Long, AssetQuantity> byDepot = latestQtyByAssetDepot.getOrDefault(asset.getId(), Map.of());
             for (AssetQuantity latest : byDepot.values()) {
+                // Already scaled to the depot's ownership share at save time (see
+                // DepotService/AssetService.saveQuantity and each import service's persist step).
                 BigDecimal qty = latest.getQuantity();
                 if (qty.compareTo(BigDecimal.ZERO) <= 0) continue;
                 totalQuantity = totalQuantity.add(qty);
@@ -114,6 +116,8 @@ public class StatisticsService {
         for (Account account : accountRepository.findAllByOrderByBankNameAscAccountNumberAsc()) {
             AccountBalance latest = latestBalByAccount.get(account.getId());
             if (latest == null) continue;
+            // Account balances are already scaled to the ownership share at save time (see
+            // AccountService.saveBalance / FintsService.persistData) — no further scaling here.
             BigDecimal balEur = exchangeRateService.toEur(latest.getBalance(), account.getCurrency());
             if (balEur == null) continue;
             WealthPosition p = new WealthPosition();
@@ -292,6 +296,7 @@ public class StatisticsService {
                 Long assetId = Long.parseLong(entry.getKey().split("_")[0]);
                 Asset asset = assetById.get(assetId);
                 if (asset == null) continue;
+                // Already scaled to the depot's ownership share at save time.
 
                 BigDecimal priceEur = null;
                 TreeMap<LocalDate, PriceHistory> prMap = priceMap.get(assetId);
@@ -315,6 +320,7 @@ public class StatisticsService {
                 if (balEntry == null || balEntry.getValue() == null) continue;
                 Account account = accountById.get(entry.getKey());
                 if (account == null) continue;
+                // Already scaled to the ownership share at save time (see saveBalance/persistData).
                 BigDecimal balEur = exchangeRateService.toEur(balEntry.getValue(), account.getCurrency());
                 if (balEur != null) accountsValue = accountsValue.add(balEur);
             }

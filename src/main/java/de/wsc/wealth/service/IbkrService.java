@@ -287,7 +287,7 @@ public class IbkrService {
                     b.setDate(today);
                     return b;
                 });
-            bal.setBalance(amount);
+            bal.setBalance(amount.multiply(account.getOwnershipFactor()));
             balanceRepository.save(bal);
             balancesUpdated++;
         }
@@ -308,12 +308,13 @@ public class IbkrService {
                 .or(() -> assetRepository.findFirstByArchivedTrueAndIsin(pos.isin()))
                 .orElseGet(() -> createAssetFromIsin(pos.isin(), newAssets));
 
+            BigDecimal newQty = pos.quantity().multiply(depot.getOwnershipFactor());
             BigDecimal oldQty = quantityRepository
                 .findFirstByAssetAndDepotOrderByDateDesc(asset, depot)
                 .map(AssetQuantity::getQuantity)
                 .orElse(null);
 
-            if (oldQty == null || oldQty.compareTo(pos.quantity()) != 0) {
+            if (oldQty == null || oldQty.compareTo(newQty) != 0) {
                 AssetQuantity q = quantityRepository.findByAssetAndDepotAndDate(asset, depot, today)
                     .orElseGet(() -> {
                         AssetQuantity aq = new AssetQuantity();
@@ -322,9 +323,9 @@ public class IbkrService {
                         aq.setDate(today);
                         return aq;
                     });
-                q.setQuantity(pos.quantity());
+                q.setQuantity(newQty);
                 quantityRepository.save(q);
-                changedPositions.add(new ChangedPosition(asset.getName(), pos.isin(), oldQty, pos.quantity()));
+                changedPositions.add(new ChangedPosition(asset.getName(), pos.isin(), oldQty, newQty));
             }
         }
 

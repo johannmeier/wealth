@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface AccountCriteriaValueRepository extends JpaRepository<AccountCriteriaValue, Long> {
     Optional<AccountCriteriaValue> findByAccountAndDefinition(Account account, CriteriaDefinition definition);
     List<AccountCriteriaValue> findByAccount(Account account);
+    void deleteByAccount(Account account);
     void deleteByDefinition(CriteriaDefinition definition);
     void deleteByOption(CriteriaOption option);
 

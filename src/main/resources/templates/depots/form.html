@@ -27,6 +27,12 @@
       <label class="form-label" th:text="#{col.description}">Beschreibung</label>
       <input type="text" th:field="*{description}" class="form-control"/>
     </div>
+    <div class="mb-3">
+      <label class="form-label" th:text="#{field.ownership-share}">Eigentumsanteil %</label>
+      <input type="number" th:field="*{ownershipShare}" class="form-control" step="0.01" min="0" max="100"
+             placeholder="100"/>
+      <div class="form-text" th:text="#{field.ownership-share.hint}">Optional.</div>
+    </div>
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
       <a th:href="@{/depots}" class="btn btn-outline-secondary" th:text="#{common.cancel}">Abbrechen</a>

@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+
 @Controller
 @RequestMapping("/fints")
 public class FintsController {
@@ -22,6 +24,7 @@ public class FintsController {
     public String page(Model model) {
         model.addAttribute("configs", fintsService.findAll());
         model.addAttribute("suggestedDefaults", FintsService.SUGGESTED_DEFAULTS);
+        model.addAttribute("banks", fintsService.findAllBanks());
         return "fints/settings";
     }
 
@@ -30,9 +33,11 @@ public class FintsController {
                              @RequestParam String blz,
                              @RequestParam String fintsUrl,
                              @RequestParam(required = false) String tanVerfahren,
+                             @RequestParam(required = false) Long bankId,
+                             @RequestParam(required = false) BigDecimal ownershipShare,
                              RedirectAttributes ra) {
         try {
-            fintsService.saveConfig(id, blz, fintsUrl, tanVerfahren);
+            fintsService.saveConfig(id, blz, fintsUrl, tanVerfahren, bankId, ownershipShare);
             ra.addFlashAttribute("configSaved", true);
         } catch (Exception e) {
             ra.addFlashAttribute("syncError", e.getMessage());

@@ -3,6 +3,7 @@ package de.wsc.wealth.service;
 import de.wsc.wealth.domain.Account;
 import de.wsc.wealth.domain.AccountBalance;
 import de.wsc.wealth.repository.AccountBalanceRepository;
+import de.wsc.wealth.repository.AccountCriteriaValueRepository;
 import de.wsc.wealth.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,13 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final AccountBalanceRepository balanceRepository;
+    private final AccountCriteriaValueRepository criteriaValueRepository;
 
-    public AccountService(AccountRepository accountRepository, AccountBalanceRepository balanceRepository) {
+    public AccountService(AccountRepository accountRepository, AccountBalanceRepository balanceRepository,
+                           AccountCriteriaValueRepository criteriaValueRepository) {
         this.accountRepository = accountRepository;
         this.balanceRepository = balanceRepository;
+        this.criteriaValueRepository = criteriaValueRepository;
     }
 
     @Transactional(readOnly = true)
@@ -46,12 +50,20 @@ public class AccountService {
 
     public Account save(Account account) { return accountRepository.save(account); }
 
-    public void delete(Long id) { accountRepository.deleteById(id); }
+    public void delete(Long id) {
+        Account account = accountRepository.findById(id).orElseThrow();
+        balanceRepository.deleteByAccount(account);
+        criteriaValueRepository.deleteByAccount(account);
+        accountRepository.delete(account);
+    }
 
     public AccountBalance saveBalance(Long accountId, AccountBalance balance) {
         Account account = accountRepository.findById(accountId).orElseThrow();
         balance.setId(null);
         balance.setAccount(account);
+        if (balance.getBalance() != null) {
+            balance.setBalance(balance.getBalance().multiply(account.getOwnershipFactor()));
+        }
         return balanceRepository.save(balance);
     }
 
