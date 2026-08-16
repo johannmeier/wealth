@@ -7,6 +7,19 @@
 </head>
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<!-- Progress overlay shown while a sync/TAN-confirm request is in flight (both are blocking
+     server calls to the bank, up to ~30s) -->
+<div id="fints-progress-overlay" style="display:none; position:fixed; inset:0; z-index:2000;
+     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div class="card text-center p-4">
+    <div class="spinner-border text-primary mx-auto mb-3" role="status">
+      <span class="visually-hidden" th:text="#{fints.progress.default}">Wird verarbeitet…</span>
+    </div>
+    <p class="mb-0" id="fints-progress-message" th:text="#{fints.progress.default}">Wird verarbeitet…</p>
+  </div>
+</div>
+
 <div class="container mt-4" style="max-width:700px">
 
   <h3 th:text="#{fints.title}">FinTS</h3>
@@ -67,7 +80,8 @@
       <img th:if="${challenge.imageBase64() != null}"
            th:src="@{'data:' + ${challenge.imageMimeType()} + ';base64,' + ${challenge.imageBase64()}}"
            class="img-fluid border mb-3" alt="TAN"/>
-      <form th:action="@{/fints/submit-tan}" method="post">
+      <form th:action="@{/fints/submit-tan}" method="post" class="fints-async-form"
+            th:attr="data-progress-message=#{fints.progress.tan}">
         <input type="hidden" name="processId" th:value="${challenge.processId()}"/>
         <div class="mb-3">
           <label class="form-label" for="fints-tan" th:text="#{fints.tan.label}">TAN</label>
@@ -88,6 +102,7 @@
           <th th:text="#{col.bank}">Bank</th>
           <th th:text="#{fints.config.blz}">BLZ</th>
           <th th:text="#{fints.config.tan-verfahren}">TAN-Verfahren</th>
+          <th th:text="#{field.ownership-share}">Eigentumsanteil %</th>
           <th></th>
         </tr>
       </thead>
@@ -99,6 +114,7 @@
           </td>
           <td th:text="${c.blz}"></td>
           <td th:text="${c.tanVerfahren != null and !c.tanVerfahren.isEmpty()} ? ${c.tanVerfahren} : '–'"></td>
+          <td th:text="${c.ownershipShare != null} ? ${c.ownershipShare} + '%' : '100%'"></td>
           <td class="text-end">
             <div class="dropdown">
               <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
@@ -111,6 +127,13 @@
                      th:text="#{fints.start.run}">Abrufen</a>
                 </li>
                 <li>
+                  <button type="button" class="dropdown-item"
+                          th:attr="data-id=${c.id},data-blz=${c.blz},data-url=${c.fintsUrl},
+                                    data-tan=${c.tanVerfahren},data-bank-id=${c.bank != null ? c.bank.id : ''},
+                                    data-ownership=${c.ownershipShare}"
+                          onclick="startEditConfig(this)" th:text="#{common.edit}">Bearbeiten</button>
+                </li>
+                <li>
                   <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal"
                           data-bs-target="#fints-delete-modal"
                           th:attr="onclick=|document.getElementById('fints-delete-form').action='@{/fints/{id}/delete(id=${c.id})}';|"
@@ -121,14 +144,15 @@
           </td>
         </tr>
         <tr th:each="c : ${configs}">
-          <td colspan="4" class="p-0 border-0">
+          <td colspan="5" class="p-0 border-0">
             <div class="collapse" th:id="'start-' + ${c.id}">
               <div class="card card-body m-2">
                 <p class="text-muted small" th:text="#{fints.start.hint}">Salden und Depotbestand werden abgerufen.</p>
-                <form th:action="@{/fints/{id}/start(id=${c.id})}" method="post">
+                <form th:action="@{/fints/{id}/start(id=${c.id})}" method="post" class="fints-async-form"
+                      th:attr="data-progress-message=#{fints.progress.sync}">
                   <div class="mb-2">
                     <label class="form-label" th:text="#{fints.user-id}">Nutzerkennung</label>
-                    <input type="text" name="userId" class="form-control" required/>
+                    <input type="text" name="userId" class="form-control" th:value="${c.userId}" required/>
                     <div class="form-text" th:text="#{fints.user-id.hint}">Bankspezifisches Format beachten.</div>
                   </div>
                   <div class="mb-2">
@@ -166,9 +190,9 @@
     </div>
   </div>
 
-  <!-- New bank connection -->
+  <!-- New / edit bank connection -->
   <div class="card mb-4">
-    <div class="card-header" th:text="#{fints.config.new}">Neue Bankverbindung</div>
+    <div class="card-header" id="fints-config-header" th:text="#{fints.config.new}">Neue Bankverbindung</div>
     <div class="card-body">
       <div class="mb-3" th:if="${!suggestedDefaults.isEmpty()}">
         <div class="form-text mb-1" th:text="#{fints.config.suggested.hint}">Recherchierte Werte, vor Nutzung gegenprüfen.</div>
@@ -177,10 +201,11 @@
                 th:text="${d.bankName()}"
                 th:attr="onclick=|document.getElementById('fints-blz').value='${d.blz()}';
                          document.getElementById('fints-url').value='${d.fintsUrl()}';
-                         document.getElementById('fints-tan').value='${d.tanVerfahren()}';|">
+                         document.getElementById('fints-config-tan').value='${d.tanVerfahren()}';|">
         </button>
       </div>
       <form th:action="@{/fints/config}" method="post">
+        <input type="hidden" id="fints-config-id" name="id" value=""/>
         <div class="mb-3">
           <label class="form-label" for="fints-blz" th:text="#{fints.config.blz}">BLZ</label>
           <input type="text" id="fints-blz" name="blz" class="form-control" required/>
@@ -190,16 +215,72 @@
           <input type="text" id="fints-url" name="fintsUrl" class="form-control" required/>
         </div>
         <div class="mb-3">
-          <label class="form-label" for="fints-tan" th:text="#{fints.config.tan-verfahren}">TAN-Verfahren</label>
-          <input type="text" id="fints-tan" name="tanVerfahren" class="form-control"/>
+          <label class="form-label" for="fints-config-tan" th:text="#{fints.config.tan-verfahren}">TAN-Verfahren</label>
+          <input type="text" id="fints-config-tan" name="tanVerfahren" class="form-control"/>
           <div class="form-text" th:text="#{fints.config.tan-verfahren.hint}">Optional.</div>
         </div>
-        <button type="submit" class="btn btn-primary" th:text="#{fints.config.save}">Speichern</button>
+        <div class="mb-3">
+          <label class="form-label" for="fints-bank" th:text="#{fints.config.bank}">Bank</label>
+          <select id="fints-bank" name="bankId" class="form-select">
+            <option value="" th:text="#{fints.config.bank.new}">-- neu anlegen --</option>
+            <option th:each="b : ${banks}" th:value="${b.id}" th:text="${b.name}"></option>
+          </select>
+          <div class="form-text" th:text="#{fints.config.bank.hint}">Optional. Ordnet die Verbindung einer bereits vorhandenen Bank zu, statt beim ersten Abruf eine neue anzulegen.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="fints-ownership" th:text="#{field.ownership-share}">Eigentumsanteil %</label>
+          <input type="number" id="fints-ownership" name="ownershipShare" class="form-control"
+                 step="0.01" min="0" max="100" placeholder="100"/>
+          <div class="form-text" th:text="#{fints.config.ownership-share.hint}">Optional.</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary" th:text="#{fints.config.save}">Speichern</button>
+          <button type="button" class="btn btn-outline-secondary" id="fints-config-cancel"
+                  style="display:none" onclick="cancelEditConfig()" th:text="#{common.cancel}">Abbrechen</button>
+        </div>
       </form>
     </div>
   </div>
 
 </div>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const labelNewConfig = /*[[#{fints.config.new}]]*/ 'Neue Bankverbindung';
+  const labelEditConfig = /*[[#{fints.config.edit}]]*/ 'Bankverbindung bearbeiten';
+
+  function startEditConfig(btn) {
+    document.getElementById('fints-config-id').value = btn.dataset.id;
+    document.getElementById('fints-blz').value = btn.dataset.blz || '';
+    document.getElementById('fints-url').value = btn.dataset.url || '';
+    document.getElementById('fints-config-tan').value = btn.dataset.tan || '';
+    document.getElementById('fints-bank').value = btn.dataset.bankId || '';
+    document.getElementById('fints-ownership').value = btn.dataset.ownership || '';
+    document.getElementById('fints-config-header').textContent = labelEditConfig;
+    document.getElementById('fints-config-cancel').style.display = '';
+    document.getElementById('fints-config-header').scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
+
+  function cancelEditConfig() {
+    document.getElementById('fints-config-id').value = '';
+    document.getElementById('fints-blz').value = '';
+    document.getElementById('fints-url').value = '';
+    document.getElementById('fints-config-tan').value = '';
+    document.getElementById('fints-bank').value = '';
+    document.getElementById('fints-ownership').value = '';
+    document.getElementById('fints-config-header').textContent = labelNewConfig;
+    document.getElementById('fints-config-cancel').style.display = 'none';
+  }
+
+  document.querySelectorAll('form.fints-async-form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      document.getElementById('fints-progress-message').textContent = form.dataset.progressMessage;
+      document.getElementById('fints-progress-overlay').style.display = 'flex';
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+    });
+  });
+  /*]]>*/
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

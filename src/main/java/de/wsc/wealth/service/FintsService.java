@@ -133,20 +133,52 @@ public class FintsService {
         return configRepository.findAll();
     }
 
+    /** For the "link to existing bank" dropdown on the config form. */
+    @Transactional(readOnly = true)
+    public List<Bank> findAllBanks() {
+        return bankRepository.findAll().stream()
+            .sorted(Comparator.comparing(Bank::getName, String.CASE_INSENSITIVE_ORDER))
+            .toList();
+    }
+
     @Transactional
     public void deleteConfig(Long id) {
         configRepository.deleteById(id);
     }
 
     @Transactional
-    public FintsConfig saveConfig(Long id, String blz, String fintsUrl, String tanVerfahren) {
+    public FintsConfig saveConfig(Long id, String blz, String fintsUrl, String tanVerfahren, Long bankId,
+                                  BigDecimal ownershipShare) {
         FintsConfig config = id != null
             ? configRepository.findById(id).orElseGet(FintsConfig::new)
             : new FintsConfig();
         config.setBlz(blz.strip());
         config.setFintsUrl(fintsUrl.strip());
         config.setTanVerfahren(tanVerfahren == null ? null : tanVerfahren.strip());
-        return configRepository.save(config);
+        config.setOwnershipShare(ownershipShare);
+        if (bankId != null) {
+            config.setBank(bankRepository.findById(bankId)
+                .orElseThrow(() -> new IllegalStateException("Bank nicht gefunden.")));
+        }
+        FintsConfig saved = configRepository.save(config);
+        // The connection is the single source of truth for its bank's ownership share: setting
+        // it here immediately applies to every account/depot already linked to that bank, not
+        // just ones created by future syncs.
+        if (ownershipShare != null && saved.getBank() != null) {
+            applyOwnershipShare(saved.getBank(), ownershipShare);
+        }
+        return saved;
+    }
+
+    private void applyOwnershipShare(Bank bank, BigDecimal ownershipShare) {
+        for (Account a : accountRepository.findByBankIdOrderByAccountNumberAsc(bank.getId())) {
+            a.setOwnershipShare(ownershipShare);
+            accountRepository.save(a);
+        }
+        for (Depot d : depotRepository.findByBankIdOrderByNameAsc(bank.getId())) {
+            d.setOwnershipShare(ownershipShare);
+            depotRepository.save(d);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -158,8 +190,14 @@ public class FintsService {
         FintsConfig config = configRepository.findById(configId)
             .orElseThrow(() -> new IllegalStateException("FinTS-Konfiguration nicht gefunden."));
 
+        String strippedUserId = userId.strip();
+        if (!strippedUserId.equals(config.getUserId())) {
+            config.setUserId(strippedUserId);
+            configRepository.save(config);
+        }
+
         String processId = UUID.randomUUID().toString();
-        DialogState state = new DialogState(config, userId.strip(), pin.strip());
+        DialogState state = new DialogState(config, strippedUserId, pin.strip());
         pendingDialogs.put(processId, state);
 
         state.executorFuture = dialogExecutor.submit(() -> runDialog(processId, state));
@@ -446,10 +484,14 @@ public class FintsService {
             if (accountNumber == null) continue;
             String currency = rb.currency() != null ? rb.currency() : "EUR";
 
+            // Matched by IBAN alone (normalized, whitespace-insensitive) — it uniquely identifies
+            // the account, including distinguishing currency sub-accounts that share a Kontonummer.
+            // Existing accounts may have it stored with spaces (e.g. copied from a statement).
             String finalAccountNumber = accountNumber;
+            String normalizedIban = normalizeIdentifier(rb.iban());
             Account account = accountRepository.findByBankIdOrderByAccountNumberAsc(bank.getId())
                 .stream()
-                .filter(a -> finalAccountNumber.equals(a.getAccountNumber()))
+                .filter(a -> normalizedIban != null && normalizedIban.equals(normalizeIdentifier(a.getIban())))
                 .findFirst()
                 .orElseGet(() -> {
                     Account a = new Account();
@@ -458,6 +500,7 @@ public class FintsService {
                     a.setIban(rb.iban());
                     a.setCurrency(currency);
                     a.setAssetAllocation(AssetAllocation.RISIKOFREI);
+                    a.setOwnershipShare(config.getOwnershipShare());
                     newAccounts.add(finalAccountNumber);
                     return accountRepository.save(a);
                 });
@@ -469,18 +512,16 @@ public class FintsService {
                     b.setDate(today);
                     return b;
                 });
-            bal.setBalance(rb.amount());
+            // Scaled by the account's ownership share at write time, e.g. for a jointly owned
+            // account: only this user's portion of the reported balance is stored.
+            bal.setBalance(rb.amount().multiply(account.getOwnershipFactor()));
             balanceRepository.save(bal);
             balancesUpdated++;
         }
 
-        Depot depot = depotRepository.findByBankIdAndName(bank.getId(), bank.getName())
-            .orElseGet(() -> {
-                Depot d = new Depot();
-                d.setName(bank.getName());
-                d.setBank(bank);
-                return depotRepository.save(d);
-            });
+        // One FinTS connection can report several real depots (e.g. Consorsbank: multiple
+        // Wertpapierdepots under one login) — resolved per depot number, cached per sync run.
+        Map<String, Depot> depotsByNumber = new HashMap<>();
 
         List<ChangedPosition> changedPositions = new ArrayList<>();
         List<String> newAssets = new ArrayList<>();
@@ -488,7 +529,12 @@ public class FintsService {
         for (RawPosition rp : raw.positions()) {
             if (rp.isin() == null || rp.isin().isBlank()) continue;
             String isin = rp.isin();
-            BigDecimal newQty = rp.quantity();
+            Depot depot = depotsByNumber.computeIfAbsent(
+                rp.depotAccountNumber() == null ? "" : rp.depotAccountNumber(),
+                num -> resolveDepot(bank, num, config.getOwnershipShare()));
+            // Scaled by the depot's ownership share at write time, e.g. for a jointly owned
+            // depot: only this user's portion of the reported quantity is stored.
+            BigDecimal newQty = rp.quantity().multiply(depot.getOwnershipFactor());
 
             Asset asset = assetRepository.findFirstByIsinAndArchivedFalse(isin)
                 .or(() -> assetRepository.findFirstByArchivedTrueAndIsin(isin))
@@ -515,6 +561,42 @@ public class FintsService {
         }
 
         return new SyncResult(balancesUpdated, newAccounts, changedPositions, newAssets, bank.getId());
+    }
+
+    /** Strips whitespace and normalizes case so "DE12 3456 ..." matches "DE123456...". */
+    private static String normalizeIdentifier(String s) {
+        return s == null ? null : s.replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
+    }
+
+    /**
+     * Reuses an existing Depot for this bank whose name already contains the bank-reported depot
+     * number (matches the common practice of naming a depot with its number, e.g.
+     * "Consorsbank 123456789") — avoids collapsing multiple real depots under one login into a
+     * single Depot record. Falls back to a single bank-named depot when no number was reported at
+     * all (e.g. a bank that doesn't expose one), and creates a new depot when no existing one's
+     * name matches a reported number.
+     */
+    private Depot resolveDepot(Bank bank, String depotNumber, BigDecimal ownershipShare) {
+        if (depotNumber.isBlank()) {
+            return depotRepository.findByBankIdAndName(bank.getId(), bank.getName())
+                .orElseGet(() -> {
+                    Depot d = new Depot();
+                    d.setName(bank.getName());
+                    d.setBank(bank);
+                    d.setOwnershipShare(ownershipShare);
+                    return depotRepository.save(d);
+                });
+        }
+        return depotRepository.findByBankIdOrderByNameAsc(bank.getId()).stream()
+            .filter(d -> d.getName() != null && d.getName().contains(depotNumber))
+            .findFirst()
+            .orElseGet(() -> {
+                Depot d = new Depot();
+                d.setName(bank.getName() + " " + depotNumber);
+                d.setBank(bank);
+                d.setOwnershipShare(ownershipShare);
+                return depotRepository.save(d);
+            });
     }
 
     private Asset createAssetFromIsin(String isin, String fallbackName, List<String> newAssets) {

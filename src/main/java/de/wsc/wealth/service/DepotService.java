@@ -101,7 +101,8 @@ public class DepotService {
                 q.setDate(quantity.getDate());
                 return q;
             });
-        entry.setQuantity(quantity.getQuantity());
+        entry.setQuantity(quantity.getQuantity() != null
+            ? quantity.getQuantity().multiply(depot.getOwnershipFactor()) : null);
         return quantityRepository.save(entry);
     }
 

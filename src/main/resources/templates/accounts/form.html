@@ -36,6 +36,12 @@
       <label class="form-label" th:text="#{col.currency}">Währung</label>
       <input type="text" th:field="*{currency}" class="form-control" placeholder="EUR"/>
     </div>
+    <div class="mb-3">
+      <label class="form-label" th:text="#{field.ownership-share}">Eigentumsanteil %</label>
+      <input type="number" th:field="*{ownershipShare}" class="form-control" step="0.01" min="0" max="100"
+             placeholder="100"/>
+      <div class="form-text" th:text="#{field.ownership-share.hint.account}">Optional.</div>
+    </div>
     <!-- Superseded by the generic criteria system below; kept as a hidden field so existing
          values round-trip unchanged instead of being silently reset to the field's default. -->
     <input type="hidden" th:field="*{assetAllocation}"/>

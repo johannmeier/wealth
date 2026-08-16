@@ -142,7 +142,7 @@ public class BullionVaultService {
                     b.setDate(today);
                     return b;
                 });
-            bal.setBalance(amount);
+            bal.setBalance(amount.multiply(account.getOwnershipFactor()));
             balanceRepository.save(bal);
             balancesUpdated++;
         }
@@ -171,12 +171,13 @@ public class BullionVaultService {
                     return depotRepository.save(d);
                 });
 
+            BigDecimal newQty = pos.oz().multiply(depot.getOwnershipFactor());
             BigDecimal oldQty = quantityRepository
                 .findFirstByAssetAndDepotOrderByDateDesc(asset, depot)
                 .map(AssetQuantity::getQuantity)
                 .orElse(null);
 
-            if (oldQty == null || oldQty.compareTo(pos.oz()) != 0) {
+            if (oldQty == null || oldQty.compareTo(newQty) != 0) {
                 AssetQuantity qty = quantityRepository
                     .findByAssetAndDepotAndDate(asset, depot, today)
                     .orElseGet(() -> {
@@ -186,9 +187,9 @@ public class BullionVaultService {
                         q.setDate(today);
                         return q;
                     });
-                qty.setQuantity(pos.oz());
+                qty.setQuantity(newQty);
                 quantityRepository.save(qty);
-                changed.add(new ChangedPosition(asset.getName(), pos.metal() + " – " + pos.locationName(), oldQty, pos.oz()));
+                changed.add(new ChangedPosition(asset.getName(), pos.metal() + " – " + pos.locationName(), oldQty, newQty));
             }
             if (!metalsUpdated.contains(pos.metal())) metalsUpdated.add(pos.metal());
         }

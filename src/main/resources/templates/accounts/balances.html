@@ -30,6 +30,8 @@
                 <span th:text="#{col.balance}">Saldo</span> (<span th:text="${account.currency}"></span>)
               </label>
               <input type="number" id="bal-balance" name="balance" class="form-control" step="0.01" required/>
+              <div class="form-text" th:if="${account.ownershipShare != null and account.ownershipShare.compareTo(T(java.math.BigDecimal).valueOf(100)) != 0}"
+                   th:text="#{page.accounts.balances.ownership-hint(${account.ownershipShare})}">Hinweis.</div>
             </div>
             <button type="submit" class="btn btn-primary" th:text="#{common.save}">Speichern</button>
           </form>

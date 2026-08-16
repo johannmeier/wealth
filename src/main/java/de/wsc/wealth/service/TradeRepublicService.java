@@ -385,7 +385,7 @@ public class TradeRepublicService {
                     b.setDate(today);
                     return b;
                 });
-            bal.setBalance(amount);
+            bal.setBalance(amount.multiply(account.getOwnershipFactor()));
             balanceRepository.save(bal);
             balancesUpdated++;
         }
@@ -403,7 +403,7 @@ public class TradeRepublicService {
 
         for (Map.Entry<String, BigDecimal> entry : positions.entrySet()) {
             String isin = entry.getKey();
-            BigDecimal newQty = entry.getValue();
+            BigDecimal newQty = entry.getValue().multiply(depot.getOwnershipFactor());
 
             Asset asset = assetRepository.findFirstByIsinAndArchivedFalse(isin)
                 .or(() -> assetRepository.findFirstByArchivedTrueAndIsin(isin))

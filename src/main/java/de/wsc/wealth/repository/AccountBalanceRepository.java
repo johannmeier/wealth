@@ -12,6 +12,7 @@ public interface AccountBalanceRepository extends JpaRepository<AccountBalance, 
     List<AccountBalance> findByAccountOrderByDateDesc(Account account);
     Optional<AccountBalance> findFirstByAccountOrderByDateDesc(Account account);
     Optional<AccountBalance> findByAccountAndDate(Account account, LocalDate date);
+    void deleteByAccount(Account account);
 
     @Query("SELECT b FROM AccountBalance b JOIN FETCH b.account")
     List<AccountBalance> findAllWithAccount();

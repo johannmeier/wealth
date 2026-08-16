@@ -2,6 +2,8 @@ package de.wsc.wealth.domain;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "account")
 public class Account {
@@ -27,6 +29,10 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     private AssetAllocation assetAllocation = AssetAllocation.RISIKOFREI;
+
+    /** Percentage (0-100) of the balance that belongs to this app's user, e.g. 50 for a
+        Gemeinschaftskonto split evenly. Null means fully owned (100%). */
+    private BigDecimal ownershipShare;
 
     public Account() {}
 
@@ -57,4 +63,12 @@ public class Account {
     public void setCurrency(String currency) { this.currency = currency; }
     public AssetAllocation getAssetAllocation() { return assetAllocation; }
     public void setAssetAllocation(AssetAllocation assetAllocation) { this.assetAllocation = assetAllocation; }
+    public BigDecimal getOwnershipShare() { return ownershipShare; }
+    public void setOwnershipShare(BigDecimal ownershipShare) { this.ownershipShare = ownershipShare; }
+
+    /** {@link #ownershipShare} as a 0-1 multiplier, defaulting to 1 (full ownership) when unset. */
+    public BigDecimal getOwnershipFactor() {
+        return (ownershipShare != null ? ownershipShare : BigDecimal.valueOf(100))
+            .divide(BigDecimal.valueOf(100));
+    }
 }
