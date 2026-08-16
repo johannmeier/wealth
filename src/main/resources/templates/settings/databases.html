@@ -26,12 +26,10 @@
               <span th:if="${db == currentDb}" class="badge bg-success ms-2" th:text="#{page.databases.active}">aktiv</span>
             </td>
             <td class="text-end">
-              <form th:if="${db != currentDb}"
-                    th:action="@{/settings/databases/switch}" method="post"
-                    th:attr="onsubmit=|return confirm('#{page.databases.confirm-switch}')|">
-                <input type="hidden" name="dbName" th:value="${db}"/>
-                <button type="submit" class="btn btn-sm btn-outline-primary" th:text="#{page.databases.switch}">Wechseln</button>
-              </form>
+              <button th:if="${db != currentDb}" type="button" class="btn btn-sm btn-outline-primary"
+                      data-bs-toggle="modal" data-bs-target="#db-switch-modal"
+                      th:attr="onclick=|document.getElementById('db-switch-name').value='${db}';|"
+                      th:text="#{page.databases.switch}">Wechseln</button>
             </td>
           </tr>
           <tr th:if="${#lists.isEmpty(databases)}">
@@ -77,6 +75,25 @@
         </div>
         <button type="submit" class="btn btn-primary" th:text="#{page.databases.path-btn}">Speichern und neu starten</button>
       </form>
+    </div>
+  </div>
+
+  <div class="modal fade" id="db-switch-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{common.confirm}">Bestätigen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:attr="aria-label=#{common.close}"></button>
+        </div>
+        <div class="modal-body" th:text="#{page.databases.confirm-switch}">Datenbank wirklich wechseln?</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{common.cancel}">Abbrechen</button>
+          <form id="db-switch-form" th:action="@{/settings/databases/switch}" method="post">
+            <input type="hidden" name="dbName" id="db-switch-name"/>
+            <button type="submit" class="btn btn-primary" th:text="#{page.databases.switch}">Wechseln</button>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -134,6 +134,11 @@ public class FintsService {
     }
 
     @Transactional
+    public void deleteConfig(Long id) {
+        configRepository.deleteById(id);
+    }
+
+    @Transactional
     public FintsConfig saveConfig(Long id, String blz, String fintsUrl, String tanVerfahren) {
         FintsConfig config = id != null
             ? configRepository.findById(id).orElseGet(FintsConfig::new)

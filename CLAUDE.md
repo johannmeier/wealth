@@ -61,7 +61,7 @@ The app starts on **http://localhost:8080**. On first launch it prompts for a na
 
 ## Controller / Service / Template Conventions
 
-Controllers are plain `@Controller` (not REST), POST actions redirect with `RedirectAttributes` flash attributes for success/error messages displayed once. Destructive operations use HTML `<form method="post">` with `onsubmit=return confirm(...)`.
+Controllers are plain `@Controller` (not REST), POST actions redirect with `RedirectAttributes` flash attributes for success/error messages displayed once. Destructive or otherwise confirmable actions use a Bootstrap modal, never the native `confirm()` dialog: one shared modal per page (placed once, outside the row loop), with a trigger button (`data-bs-toggle="modal"`, `data-bs-target="#page-action-modal"`) that sets the modal's form `action` (and any hidden fields) via a small inline `onclick`, so all rows share the same modal instance.
 
 Every list page table has an **Actions dropdown** (`<div class="dropdown">` + Bootstrap `data-bs-toggle="dropdown"`) for per-row actions. Follow this pattern for consistency.
 
