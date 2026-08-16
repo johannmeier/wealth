@@ -58,6 +58,17 @@ public class FintsController {
         return "redirect:/fints";
     }
 
+    @PostMapping("/{configId}/delete")
+    public String delete(@PathVariable Long configId, RedirectAttributes ra) {
+        try {
+            fintsService.deleteConfig(configId);
+            ra.addFlashAttribute("configDeleted", true);
+        } catch (Exception e) {
+            ra.addFlashAttribute("syncError", e.getMessage());
+        }
+        return "redirect:/fints";
+    }
+
     @PostMapping("/submit-tan")
     public String submitTan(@RequestParam String processId,
                             @RequestParam String tan,

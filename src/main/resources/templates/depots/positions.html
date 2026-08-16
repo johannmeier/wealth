@@ -96,10 +96,10 @@
                     </li>
                     <li><hr class="dropdown-divider"/></li>
                     <li>
-                      <form th:action="@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}" method="post"
-                            th:attr="onsubmit=|return confirm('#{confirm.delete-position}')|">
-                        <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
-                      </form>
+                      <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal"
+                              data-bs-target="#position-delete-modal"
+                              th:attr="onclick=|document.getElementById('position-delete-form').action='@{/depots/{id}/positions/{qid}/delete(id=${depot.id},qid=${q.id})}';|"
+                              th:text="#{common.delete}">Löschen</button>
                     </li>
                   </ul>
                 </div>
@@ -135,6 +135,24 @@
       </div>
     </div>
   </div>
+  </div>
+
+  <div class="modal fade" id="position-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{common.delete}">Löschen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:attr="aria-label=#{common.close}"></button>
+        </div>
+        <div class="modal-body" th:text="#{confirm.delete-position}">Bestand wirklich löschen?</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{common.cancel}">Abbrechen</button>
+          <form id="position-delete-form" method="post">
+            <button type="submit" class="btn btn-danger" th:text="#{common.delete}">Löschen</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

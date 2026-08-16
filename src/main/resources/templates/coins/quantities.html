@@ -52,10 +52,10 @@
               <td th:text="${#temporals.format(q.date, 'dd.MM.yyyy')}"></td>
               <td class="text-end" th:text="${q.quantity}"></td>
               <td>
-                <form th:action="@{/coins/{id}/quantities/{qid}/delete(id=${coin.id},qid=${q.id})}" method="post"
-                      th:attr="onsubmit=|return confirm('#{confirm.delete-coin-quantity}')|">
-                  <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
-                </form>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                        data-bs-target="#coin-quantity-delete-modal"
+                        th:attr="onclick=|document.getElementById('coin-quantity-delete-form').action='@{/coins/{id}/quantities/{qid}/delete(id=${coin.id},qid=${q.id})}';|"
+                        th:text="#{common.delete}">Löschen</button>
               </td>
             </tr>
             <tr th:if="${#lists.isEmpty(quantities)}">
@@ -66,6 +66,24 @@
       </div>
     </div>
   </div>
+  </div>
+
+  <div class="modal fade" id="coin-quantity-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{common.delete}">Löschen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:attr="aria-label=#{common.close}"></button>
+        </div>
+        <div class="modal-body" th:text="#{confirm.delete-coin-quantity}">Mengeneintrag wirklich löschen?</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{common.cancel}">Abbrechen</button>
+          <form id="coin-quantity-delete-form" method="post">
+            <button type="submit" class="btn btn-danger" th:text="#{common.delete}">Löschen</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

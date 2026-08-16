@@ -25,6 +25,12 @@
     <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
   </div>
 
+  <!-- Config deleted alert -->
+  <div th:if="${configDeleted}" class="alert alert-success alert-dismissible fade show">
+    <span th:text="#{fints.config.deleted}">Bankverbindung gelöscht.</span>
+    <button type="button" class="btn-close" th:attr="aria-label=#{common.close}" data-bs-dismiss="alert"></button>
+  </div>
+
   <!-- Success alert -->
   <div th:if="${syncResult}" class="alert alert-success alert-dismissible fade show">
     <strong th:text="#{fints.sync.success}">Abruf erfolgreich.</strong>
@@ -104,6 +110,12 @@
                   <a class="dropdown-item" data-bs-toggle="collapse" th:href="'#start-' + ${c.id}"
                      th:text="#{fints.start.run}">Abrufen</a>
                 </li>
+                <li>
+                  <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal"
+                          data-bs-target="#fints-delete-modal"
+                          th:attr="onclick=|document.getElementById('fints-delete-form').action='@{/fints/{id}/delete(id=${c.id})}';|"
+                          th:text="#{common.delete}">Löschen</button>
+                </li>
               </ul>
             </div>
           </td>
@@ -133,6 +145,25 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Delete confirmation modal, shared by all rows above; the triggering button sets the form action -->
+  <div class="modal fade" id="fints-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{common.delete}">Löschen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:attr="aria-label=#{common.close}"></button>
+        </div>
+        <div class="modal-body" th:text="#{confirm.delete}">Wirklich löschen?</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{common.cancel}">Abbrechen</button>
+          <form id="fints-delete-form" method="post">
+            <button type="submit" class="btn btn-danger" th:text="#{common.delete}">Löschen</button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- New bank connection -->

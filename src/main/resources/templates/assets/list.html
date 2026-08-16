@@ -91,16 +91,16 @@
                 </li>
                 <li><hr class="dropdown-divider"/></li>
                 <li th:if="${deletableActiveIds.contains(s.id)}">
-                  <form th:action="@{/assets/{id}/hard-delete(id=${s.id})}" method="post"
-                        th:attr="onsubmit=|return confirm('#{confirm.hard-delete}')|">
-                    <button type="submit" class="dropdown-item text-danger" th:text="#{common.delete}">Löschen</button>
-                  </form>
+                  <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal"
+                          data-bs-target="#asset-hard-delete-modal"
+                          th:attr="onclick=|document.getElementById('asset-hard-delete-form').action='@{/assets/{id}/hard-delete(id=${s.id})}';|"
+                          th:text="#{common.delete}">Löschen</button>
                 </li>
                 <li th:unless="${deletableActiveIds.contains(s.id)}">
-                  <form th:action="@{/assets/{id}/delete(id=${s.id})}" method="post"
-                        th:attr="onsubmit=|return confirm('#{confirm.archive}')|">
-                    <button type="submit" class="dropdown-item text-secondary" th:text="#{common.archive}">Archivieren</button>
-                  </form>
+                  <button type="button" class="dropdown-item text-secondary" data-bs-toggle="modal"
+                          data-bs-target="#asset-archive-modal"
+                          th:attr="onclick=|document.getElementById('asset-archive-form').action='@{/assets/{id}/delete(id=${s.id})}';|"
+                          th:text="#{common.archive}">Archivieren</button>
                 </li>
               </ul>
             </div>
@@ -135,15 +135,50 @@
               <form th:action="@{/assets/{id}/restore(id=${s.id})}" method="post" class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-success" th:text="#{common.restore}">Wiederherstellen</button>
               </form>
-              <form th:if="${deletableIds.contains(s.id)}"
-                    th:action="@{/assets/{id}/hard-delete(id=${s.id})}" method="post" class="d-inline"
-                    th:attr="onsubmit=|return confirm('#{confirm.hard-delete}')|">
-                <button type="submit" class="btn btn-sm btn-outline-danger" th:text="#{common.delete}">Löschen</button>
-              </form>
+              <button th:if="${deletableIds.contains(s.id)}" type="button" class="btn btn-sm btn-outline-danger"
+                      data-bs-toggle="modal" data-bs-target="#asset-hard-delete-modal"
+                      th:attr="onclick=|document.getElementById('asset-hard-delete-form').action='@{/assets/{id}/hard-delete(id=${s.id})}';|"
+                      th:text="#{common.delete}">Löschen</button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <div class="modal fade" id="asset-hard-delete-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{common.delete}">Löschen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:attr="aria-label=#{common.close}"></button>
+        </div>
+        <div class="modal-body" th:text="#{confirm.hard-delete}">Wertpapier endgültig löschen? Kurshistorie wird ebenfalls entfernt.</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{common.cancel}">Abbrechen</button>
+          <form id="asset-hard-delete-form" method="post">
+            <button type="submit" class="btn btn-danger" th:text="#{common.delete}">Löschen</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="asset-archive-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{common.archive}">Archivieren</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" th:attr="aria-label=#{common.close}"></button>
+        </div>
+        <div class="modal-body" th:text="#{confirm.archive}">Wertpapier archivieren? Die Kurs- und Bestandshistorie bleibt erhalten.</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{common.cancel}">Abbrechen</button>
+          <form id="asset-archive-form" method="post">
+            <button type="submit" class="btn btn-secondary" th:text="#{common.archive}">Archivieren</button>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </div>

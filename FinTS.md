@@ -137,6 +137,12 @@ Ein vollautomatischer Cron-Abruf ohne Nutzerinteraktion ist daher möglicherweis
 nicht bei allen drei Banken möglich. Bitte:
 1. Für jede Bank prüfen/dokumentieren, ob ein TAN-freies Leseprofil existiert
    (manche Banken erlauben das über eine eingeschränkte Berechtigtennummer).
+   **Für Norisbank bestätigt (Live-Test 2026-08-16)**: HKSAL (Saldenabfrage) lief
+   ohne TAN-Abfrage durch — vermutlich PSD2-SCA-Ausnahme für reine
+   Saldenabfragen (viele Banken verlangen TAN nur für Überweisungen und/oder
+   HKWPD, nicht für HKSAL). `startDialog()` behandelt diesen Fall bereits
+   korrekt (Sofort-Ergebnis ohne TAN-Callback). Ob HKWPD bei Norisbank
+   TAN-pflichtig ist, ist noch nicht getestet (Testkonto hat kein Depot).
 2. Architektur so auslegen, dass sowohl ein manuell getriggerter Abruf (mit
    TAN-Eingabe durch den Nutzer) als auch — wo möglich — ein automatischer Abruf
    unterstützt wird. Kein Hard-Assumption auf vollautomatischen Betrieb treffen.
